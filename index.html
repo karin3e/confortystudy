@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ComfortStudy - Login</title>
+
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="container">
+
+        
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+
+            <h1>
+                Comfort<span>Study</span>
+            </h1>
+
+            <p>
+                Organize seus estudos,<br>
+                conquiste seus objetivos.
+            </p>
+        </div>
+
+
+        
+        <section class="login-box">
+
+            <h2>Bem-vindo de volta!</h2>
+
+            <p class="description">
+                Entre na sua conta para continuar.
+            </p>
+
+
+            
+            <div class="input-box">
+
+                <i class="fa-regular fa-envelope"></i>
+
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="E-mail"
+                >
+
+            </div>
+
+
+            
+            <div class="input-box">
+
+                <i class="fa-solid fa-lock"></i>
+
+                <input
+                    type="password"
+                    id="senha"
+                    placeholder="Senha"
+                >
+
+                <button
+                    type="button"
+                    class="eye"
+                    onclick="mostrarSenha()"
+                >
+                    <i id="eyeIcon" class="fa-regular fa-eye"></i>
+                </button>
+
+            </div>
+
+
+            
+            <div class="forgot">
+
+                <a href="#" onclick="esqueciSenha()">
+                    Esqueceu sua senha?
+                </a>
+
+            </div>
+
+
+            
+            <button
+                class="btn-login"
+                onclick="entrar()"
+            >
+
+                Entrar
+
+                <i class="fa-solid fa-arrow-right"></i>
+
+            </button>
+
+
+        
+            <div class="divider">
+
+                <span></span>
+
+                <p>ou</p>
+
+                <span></span>
+
+            </div>
+
+
+        
+            <button
+                class="google-btn"
+                onclick="loginGoogle()"
+            >
+
+                <i class="fa-brands fa-google"></i>
+
+                Entrar com Google
+
+            </button>
+
+
+    
+            <p class="register">
+
+                Ainda não tem uma conta?
+
+                <a href="cadastro.html">
+                    Cadastre-se
+                </a>
+
+            </p>
+
+        </section>
+
+    </main>
+
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
