@@ -52,7 +52,7 @@ function entrar() {
         return;
     }
 
-    alert("Login realizado com sucesso!");
+    window.location.href = "index_2.html";
 }
 
 function cadastrar() {
@@ -78,7 +78,6 @@ function cadastrar() {
     }
 
     alert("Conta criada com sucesso!");
-
     window.location.href = "index.html";
 }
 
