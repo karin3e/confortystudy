@@ -93,6 +93,8 @@ const closeModal = document.getElementById("closeModal");
 
 function openModal(title, content) {
 
+    if (!modal) return;
+
     modalTitle.textContent = title;
 
     modalBody.innerHTML = content;
@@ -104,21 +106,29 @@ function openModal(title, content) {
 
 function hideModal() {
 
+    if (!modal) return;
+
     modal.classList.remove("show");
 
 }
 
 
-closeModal.addEventListener("click", hideModal);
+if (closeModal) {
+    closeModal.addEventListener("click", hideModal);
+}
 
 
-modal.addEventListener("click", function(event) {
+if (modal) {
 
-    if (event.target === modal) {
-        hideModal();
-    }
+    modal.addEventListener("click", function(event) {
 
-});
+        if (event.target === modal) {
+            hideModal();
+        }
+
+    });
+
+}
 
 
 /* =====================================================
@@ -205,9 +215,18 @@ function showTaskModal() {
     );
 
 
-    document
-        .getElementById("taskForm")
-        .addEventListener("submit", addTask);
+    const form =
+        document.getElementById("taskForm");
+
+
+    if (form) {
+
+        form.addEventListener(
+            "submit",
+            addTask
+        );
+
+    }
 
 }
 
@@ -218,7 +237,7 @@ function addTask(event) {
 
 
     const name =
-        document.getElementById("taskName").value;
+        document.getElementById("taskName").value.trim();
 
     const subject =
         document.getElementById("taskSubject").value;
@@ -228,16 +247,24 @@ function addTask(event) {
 
 
     const task = {
+
         id: Date.now(),
+
         name,
+
         subject,
+
         date,
+
         completed: false
+
     };
 
 
     const tasks =
-        JSON.parse(localStorage.getItem("comfortTasks")) || [];
+        JSON.parse(
+            localStorage.getItem("comfortTasks")
+        ) || [];
 
 
     tasks.push(task);
@@ -256,27 +283,57 @@ function addTask(event) {
 
     updateDashboard();
 
+    createCalendar();
 
-    alert("✅ Tarefa adicionada com sucesso!");
+
+    alert(
+        "✅ Tarefa adicionada com sucesso!"
+    );
 
 }
 
 
-/* BOTÕES DE NOVA TAREFA */
+/* =====================================================
+   BOTÕES DE NOVA TAREFA
+   ===================================================== */
 
-document
-    .getElementById("newTaskButton")
-    .addEventListener("click", showTaskModal);
+const newTaskButton =
+    document.getElementById("newTaskButton");
+
+if (newTaskButton) {
+
+    newTaskButton.addEventListener(
+        "click",
+        showTaskModal
+    );
+
+}
 
 
-document
-    .getElementById("dashboardAddTask")
-    .addEventListener("click", showTaskModal);
+const dashboardAddTask =
+    document.getElementById("dashboardAddTask");
+
+if (dashboardAddTask) {
+
+    dashboardAddTask.addEventListener(
+        "click",
+        showTaskModal
+    );
+
+}
 
 
-document
-    .getElementById("newTaskPageButton")
-    .addEventListener("click", showTaskModal);
+const newTaskPageButton =
+    document.getElementById("newTaskPageButton");
+
+if (newTaskPageButton) {
+
+    newTaskPageButton.addEventListener(
+        "click",
+        showTaskModal
+    );
+
+}
 
 
 /* =====================================================
@@ -293,7 +350,9 @@ function renderTasks() {
 
 
     const tasks =
-        JSON.parse(localStorage.getItem("comfortTasks")) || [];
+        JSON.parse(
+            localStorage.getItem("comfortTasks")
+        ) || [];
 
 
     container.innerHTML = "";
@@ -388,11 +447,15 @@ function renderTasks() {
 function toggleTask(id) {
 
     const tasks =
-        JSON.parse(localStorage.getItem("comfortTasks")) || [];
+        JSON.parse(
+            localStorage.getItem("comfortTasks")
+        ) || [];
 
 
     const task =
-        tasks.find(item => item.id === id);
+        tasks.find(
+            item => item.id === id
+        );
 
 
     if (!task) return;
@@ -411,6 +474,8 @@ function toggleTask(id) {
     renderTasks();
 
     updateDashboard();
+
+    createCalendar();
 
 }
 
@@ -475,23 +540,33 @@ function formatDate(date) {
 function updateDashboard() {
 
     const tasks =
-        JSON.parse(localStorage.getItem("comfortTasks")) || [];
+        JSON.parse(
+            localStorage.getItem("comfortTasks")
+        ) || [];
 
 
     const completed =
-        tasks.filter(task => task.completed).length;
+        tasks.filter(
+            task => task.completed
+        ).length;
 
 
     const pending =
-        tasks.filter(task => !task.completed).length;
+        tasks.filter(
+            task => !task.completed
+        ).length;
 
 
     const completedElement =
-        document.getElementById("dashboard-concluidas");
+        document.getElementById(
+            "dashboard-concluidas"
+        );
 
 
     const pendingElement =
-        document.getElementById("dashboard-prazos");
+        document.getElementById(
+            "dashboard-prazos"
+        );
 
 
     if (completedElement) {
@@ -516,9 +591,18 @@ function updateDashboard() {
    NOVA PROVA
    ===================================================== */
 
-document
-    .getElementById("newExamButton")
-    .addEventListener("click", showExamModal);
+const newExamButton =
+    document.getElementById("newExamButton");
+
+
+if (newExamButton) {
+
+    newExamButton.addEventListener(
+        "click",
+        showExamModal
+    );
+
+}
 
 
 function showExamModal() {
@@ -582,12 +666,18 @@ function showExamModal() {
     );
 
 
-    document
-        .getElementById("examForm")
-        .addEventListener(
+    const form =
+        document.getElementById("examForm");
+
+
+    if (form) {
+
+        form.addEventListener(
             "submit",
             addExam
         );
+
+    }
 
 }
 
@@ -598,17 +688,28 @@ function addExam(event) {
 
 
     const name =
-        document.getElementById("examName").value;
+        document
+            .getElementById("examName")
+            .value
+            .trim();
+
 
     const subject =
-        document.getElementById("examSubject").value;
+        document
+            .getElementById("examSubject")
+            .value;
+
 
     const date =
-        document.getElementById("examDate").value;
+        document
+            .getElementById("examDate")
+            .value;
 
 
     const exams =
-        JSON.parse(localStorage.getItem("comfortExams")) || [];
+        JSON.parse(
+            localStorage.getItem("comfortExams")
+        ) || [];
 
 
     exams.push({
@@ -632,10 +733,15 @@ function addExam(event) {
 
     hideModal();
 
+
     renderExams();
 
+    createCalendar();
 
-    alert("📚 Prova adicionada!");
+
+    alert(
+        "📚 Prova adicionada!"
+    );
 
 }
 
@@ -654,7 +760,9 @@ function renderExams() {
 
 
     const exams =
-        JSON.parse(localStorage.getItem("comfortExams")) || [];
+        JSON.parse(
+            localStorage.getItem("comfortExams")
+        ) || [];
 
 
     container.innerHTML = "";
@@ -769,13 +877,20 @@ let timerRunning = false;
 
 
 const timerDisplay =
-    document.getElementById("timerDisplay");
+    document.getElementById(
+        "timerDisplay"
+    );
 
 
 function updateTimerDisplay() {
 
+    if (!timerDisplay) return;
+
+
     const minutes =
-        Math.floor(timerSeconds / 60);
+        Math.floor(
+            timerSeconds / 60
+        );
 
 
     const seconds =
@@ -788,22 +903,55 @@ function updateTimerDisplay() {
 }
 
 
-document
-    .getElementById("startTimer")
-    .addEventListener("click", startTimer);
+const startTimer =
+    document.getElementById(
+        "startTimer"
+    );
 
 
-document
-    .getElementById("pauseTimer")
-    .addEventListener("click", pauseTimer);
+if (startTimer) {
+
+    startTimer.addEventListener(
+        "click",
+        startTimerFunction
+    );
+
+}
 
 
-document
-    .getElementById("resetTimer")
-    .addEventListener("click", resetTimer);
+const pauseTimerButton =
+    document.getElementById(
+        "pauseTimer"
+    );
 
 
-function startTimer() {
+if (pauseTimerButton) {
+
+    pauseTimerButton.addEventListener(
+        "click",
+        pauseTimer
+    );
+
+}
+
+
+const resetTimerButton =
+    document.getElementById(
+        "resetTimer"
+    );
+
+
+if (resetTimerButton) {
+
+    resetTimerButton.addEventListener(
+        "click",
+        resetTimer
+    );
+
+}
+
+
+function startTimerFunction() {
 
     if (timerRunning) return;
 
@@ -816,11 +964,15 @@ function startTimer() {
 
             if (timerSeconds <= 0) {
 
-                clearInterval(timerInterval);
+                clearInterval(
+                    timerInterval
+                );
 
                 timerRunning = false;
 
-                alert("🎉 Tempo encerrado! Hora de descansar.");
+                alert(
+                    "🎉 Tempo encerrado! Hora de descansar."
+                );
 
                 return;
 
@@ -838,7 +990,9 @@ function startTimer() {
 
 function pauseTimer() {
 
-    clearInterval(timerInterval);
+    clearInterval(
+        timerInterval
+    );
 
     timerRunning = false;
 
@@ -847,7 +1001,9 @@ function pauseTimer() {
 
 function resetTimer() {
 
-    clearInterval(timerInterval);
+    clearInterval(
+        timerInterval
+    );
 
     timerRunning = false;
 
@@ -858,10 +1014,14 @@ function resetTimer() {
 }
 
 
-/* PRESETS */
+/* =====================================================
+   PRESETS DO CRONÔMETRO
+   ===================================================== */
 
 document
-    .querySelectorAll(".timer-presets button")
+    .querySelectorAll(
+        ".timer-presets button"
+    )
     .forEach(button => {
 
         button.addEventListener(
@@ -871,7 +1031,9 @@ document
                 pauseTimer();
 
                 timerSeconds =
-                    Number(this.dataset.time);
+                    Number(
+                        this.dataset.time
+                    );
 
                 updateTimerDisplay();
 
@@ -885,10 +1047,21 @@ document
    CALENDÁRIO
    ===================================================== */
 
+let currentCalendarYear = 2026;
+
+let currentCalendarMonth = 8;
+
+
+/* =====================================================
+   CRIAR CALENDÁRIO
+   ===================================================== */
+
 function createCalendar() {
 
     const container =
-        document.getElementById("calendarDays");
+        document.getElementById(
+            "calendarDays"
+        );
 
 
     if (!container) return;
@@ -897,9 +1070,12 @@ function createCalendar() {
     container.innerHTML = "";
 
 
-    const year = 2026;
+    const year =
+        currentCalendarYear;
 
-    const month = 8;
+
+    const month =
+        currentCalendarMonth;
 
 
     const firstDay =
@@ -924,6 +1100,34 @@ function createCalendar() {
             : firstDay - 1;
 
 
+    /* =================================================
+       PEGAR TAREFAS SALVAS
+       ================================================= */
+
+    const tasks =
+        JSON.parse(
+            localStorage.getItem(
+                "comfortTasks"
+            )
+        ) || [];
+
+
+    /* =================================================
+       PEGAR PROVAS SALVAS
+       ================================================= */
+
+    const exams =
+        JSON.parse(
+            localStorage.getItem(
+                "comfortExams"
+            )
+        ) || [];
+
+
+    /* =================================================
+       DIAS VAZIOS
+       ================================================= */
+
     for (
         let i = 0;
         i < startDay;
@@ -933,12 +1137,19 @@ function createCalendar() {
         const empty =
             document.createElement("div");
 
-        empty.style.border = "none";
+        empty.className =
+            "calendar-empty";
 
-        container.appendChild(empty);
+        container.appendChild(
+            empty
+        );
 
     }
 
+
+    /* =================================================
+       CRIAR CADA DIA
+       ================================================= */
 
     for (
         let day = 1;
@@ -950,11 +1161,130 @@ function createCalendar() {
             document.createElement("div");
 
 
-        dayElement.textContent =
+        dayElement.className =
+            "calendar-day";
+
+
+        /* DATA */
+
+        const dateString =
+            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+
+        /* =================================================
+           TAREFAS DESTE DIA
+           ================================================= */
+
+        const dayTasks =
+            tasks.filter(
+                task =>
+                    task.date === dateString
+            );
+
+
+        /* =================================================
+           PROVAS DESTE DIA
+           ================================================= */
+
+        const dayExams =
+            exams.filter(
+                exam =>
+                    exam.date === dateString
+            );
+
+
+        /* =================================================
+           NÚMERO DO DIA
+           ================================================= */
+
+        const number =
+            document.createElement("div");
+
+
+        number.className =
+            "calendar-number";
+
+
+        number.textContent =
             day;
 
 
-        if (day === 23) {
+        dayElement.appendChild(
+            number
+        );
+
+
+        /* =================================================
+           MOSTRAR TAREFAS
+           ================================================= */
+
+        dayTasks.forEach(task => {
+
+            const event =
+                document.createElement("div");
+
+
+            event.className =
+                "calendar-event task-event";
+
+
+            event.innerHTML = `
+                <span>✓</span>
+                ${task.name}
+            `;
+
+
+            dayElement.appendChild(
+                event
+            );
+
+        });
+
+
+        /* =================================================
+           MOSTRAR PROVAS
+           ================================================= */
+
+        dayExams.forEach(exam => {
+
+            const event =
+                document.createElement("div");
+
+
+            event.className =
+                "calendar-event exam-event";
+
+
+            event.innerHTML = `
+                <span>📚</span>
+                ${exam.name}
+            `;
+
+
+            dayElement.appendChild(
+                event
+            );
+
+        });
+
+
+        /* =================================================
+           DESTACAR HOJE
+           ================================================= */
+
+        const today =
+            new Date();
+
+
+        if (
+
+            day === today.getDate() &&
+
+            month === today.getMonth() &&
+
+            year === today.getFullYear()
+
+        ) {
 
             dayElement.classList.add(
                 "today"
@@ -963,12 +1293,18 @@ function createCalendar() {
         }
 
 
+        /* =================================================
+           CLICAR NO DIA
+           ================================================= */
+
         dayElement.addEventListener(
             "click",
             () => {
 
-                alert(
-                    `📅 Dia ${day} selecionado!`
+                showCalendarDay(
+                    dateString,
+                    dayTasks,
+                    dayExams
                 );
 
             }
@@ -985,13 +1321,184 @@ function createCalendar() {
 
 
 /* =====================================================
+   MOSTRAR ATIVIDADES DO DIA
+   ===================================================== */
+
+function showCalendarDay(
+    date,
+    tasks,
+    exams
+) {
+
+    let content = "";
+
+
+    content += `
+
+        <h3 style="
+            margin-bottom:20px;
+        ">
+
+            📅 ${formatDate(date)}
+
+        </h3>
+
+    `;
+
+
+    /* =================================================
+       TAREFAS
+       ================================================= */
+
+    if (tasks.length > 0) {
+
+        content += `
+
+            <h4 style="
+                margin-bottom:10px;
+            ">
+
+                📝 Tarefas
+
+            </h4>
+
+        `;
+
+
+        tasks.forEach(task => {
+
+            content += `
+
+                <div style="
+                    padding:12px;
+                    margin-bottom:8px;
+                    background:#f1f5f9;
+                    border-radius:10px;
+                ">
+
+                    <strong>
+                        ${task.name}
+                    </strong>
+
+                    <p style="
+                        margin-top:4px;
+                        color:#718096;
+                        font-size:13px;
+                    ">
+
+                        ${task.subject}
+
+                    </p>
+
+                </div>
+
+            `;
+
+        });
+
+    }
+
+
+    /* =================================================
+       PROVAS
+       ================================================= */
+
+    if (exams.length > 0) {
+
+        content += `
+
+            <h4 style="
+                margin-top:20px;
+                margin-bottom:10px;
+            ">
+
+                📚 Provas
+
+            </h4>
+
+        `;
+
+
+        exams.forEach(exam => {
+
+            content += `
+
+                <div style="
+                    padding:12px;
+                    margin-bottom:8px;
+                    background:#f3e8ff;
+                    border-radius:10px;
+                ">
+
+                    <strong>
+                        ${exam.name}
+                    </strong>
+
+                    <p style="
+                        margin-top:4px;
+                        color:#718096;
+                        font-size:13px;
+                    ">
+
+                        ${exam.subject}
+
+                    </p>
+
+                </div>
+
+            `;
+
+        });
+
+    }
+
+
+    /* =================================================
+       NENHUMA ATIVIDADE
+       ================================================= */
+
+    if (
+
+        tasks.length === 0 &&
+        exams.length === 0
+
+    ) {
+
+        content += `
+
+            <div style="
+                text-align:center;
+                padding:20px;
+                color:#718096;
+            ">
+
+                Nenhuma atividade neste dia.
+
+            </div>
+
+        `;
+
+    }
+
+
+    openModal(
+        "Atividades do dia",
+        content
+    );
+
+}
+
+
+/* =====================================================
    AVISOS
    ===================================================== */
 
 function renderNotices() {
 
     const container =
-        document.getElementById("noticeList");
+        document.getElementById(
+            "noticeList"
+        );
 
 
     if (!container) return;
@@ -1068,7 +1575,9 @@ function renderNotices() {
         `;
 
 
-        container.appendChild(item);
+        container.appendChild(
+            item
+        );
 
     });
 
@@ -1079,227 +1588,300 @@ function renderNotices() {
    BOTÃO DE NOVO AVISO
    ===================================================== */
 
-document
-    .getElementById("newNoticeButton")
-    .addEventListener("click", () => {
-
-        openModal(
-
-            "Novo Aviso",
-
-            `
-
-            <form
-                class="modal-form"
-                id="noticeForm">
-
-                <label>Título</label>
-
-                <input
-                    type="text"
-                    id="noticeTitle"
-                    placeholder="Ex: Estudar matemática"
-                    required
-                >
+const newNoticeButton =
+    document.getElementById(
+        "newNoticeButton"
+    );
 
 
-                <label>Mensagem</label>
+if (newNoticeButton) {
 
-                <textarea
-                    id="noticeMessage"
-                    rows="4"
-                    placeholder="Digite seu aviso..."
-                    required
-                ></textarea>
+    newNoticeButton.addEventListener(
+        "click",
+        () => {
+
+            openModal(
+
+                "Novo Aviso",
+
+                `
+
+                <form
+                    class="modal-form"
+                    id="noticeForm">
+
+                    <label>
+                        Título
+                    </label>
+
+                    <input
+                        type="text"
+                        id="noticeTitle"
+                        placeholder="Ex: Estudar matemática"
+                        required
+                    >
 
 
-                <button
-                    type="submit"
-                    class="btn-primary">
+                    <label>
+                        Mensagem
+                    </label>
 
-                    <i class="ph ph-bell"></i>
-
-                    Criar Aviso
-
-                </button>
-
-            </form>
-
-            `
-
-        );
+                    <textarea
+                        id="noticeMessage"
+                        rows="4"
+                        placeholder="Digite seu aviso..."
+                        required
+                    ></textarea>
 
 
-        document
-            .getElementById("noticeForm")
-            .addEventListener(
-                "submit",
-                function(event) {
+                    <button
+                        type="submit"
+                        class="btn-primary">
 
-                    event.preventDefault();
+                        <i class="ph ph-bell"></i>
 
-                    hideModal();
+                        Criar Aviso
 
-                    alert(
-                        "🔔 Aviso criado com sucesso!"
-                    );
+                    </button>
 
-                    renderNotices();
+                </form>
 
-                }
+                `
+
             );
 
-    });
+
+            const form =
+                document.getElementById(
+                    "noticeForm"
+                );
+
+
+            if (form) {
+
+                form.addEventListener(
+                    "submit",
+                    function(event) {
+
+                        event.preventDefault();
+
+                        hideModal();
+
+                        alert(
+                            "🔔 Aviso criado com sucesso!"
+                        );
+
+                        renderNotices();
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+}
 
 
 /* =====================================================
    NOVA MATÉRIA
    ===================================================== */
 
-document
-    .getElementById("newSubjectButton")
-    .addEventListener("click", () => {
-
-        openModal(
-
-            "Nova Matéria",
-
-            `
-
-            <form
-                class="modal-form"
-                id="subjectForm">
-
-                <label>Nome da matéria</label>
-
-                <input
-                    type="text"
-                    id="subjectName"
-                    placeholder="Ex: Biologia"
-                    required
-                >
+const newSubjectButton =
+    document.getElementById(
+        "newSubjectButton"
+    );
 
 
-                <label>Professor</label>
+if (newSubjectButton) {
 
-                <input
-                    type="text"
-                    id="teacherName"
-                    placeholder="Ex: Professor João"
-                >
+    newSubjectButton.addEventListener(
+        "click",
+        () => {
 
+            openModal(
 
-                <button
-                    type="submit"
-                    class="btn-primary">
+                "Nova Matéria",
 
-                    <i class="ph ph-plus"></i>
+                `
 
-                    Adicionar Matéria
+                <form
+                    class="modal-form"
+                    id="subjectForm">
 
-                </button>
+                    <label>
+                        Nome da matéria
+                    </label>
 
-            </form>
-
-            `
-
-        );
-
-
-        document
-            .getElementById("subjectForm")
-            .addEventListener(
-                "submit",
-                function(event) {
-
-                    event.preventDefault();
+                    <input
+                        type="text"
+                        id="subjectName"
+                        placeholder="Ex: Biologia"
+                        required
+                    >
 
 
-                    const name =
-                        document
-                        .getElementById("subjectName")
-                        .value;
+                    <label>
+                        Professor
+                    </label>
+
+                    <input
+                        type="text"
+                        id="teacherName"
+                        placeholder="Ex: Professor João"
+                    >
 
 
-                    const teacher =
-                        document
-                        .getElementById("teacherName")
-                        .value;
+                    <button
+                        type="submit"
+                        class="btn-primary">
 
+                        <i class="ph ph-plus"></i>
 
-                    const grid =
-                        document
-                        .getElementById("subjectsGrid");
+                        Adicionar Matéria
 
+                    </button>
 
-                    const card =
-                        document.createElement("div");
+                </form>
 
+                `
 
-                    card.className =
-                        "subject-card";
-
-
-                    card.innerHTML = `
-
-                        <div class="subject-color blue"></div>
-
-                        <h3>
-                            ${name}
-                        </h3>
-
-                        <p>
-                            ${teacher || "Professor não informado"}
-                        </p>
-
-                        <div class="progress-info">
-
-                            <span>
-                                Progresso
-                            </span>
-
-                            <strong>
-                                0%
-                            </strong>
-
-                        </div>
-
-                        <div class="progress">
-
-                            <span style="width:0%"></span>
-
-                        </div>
-
-                    `;
-
-
-                    grid.appendChild(card);
-
-
-                    hideModal();
-
-
-                    alert(
-                        "📚 Matéria adicionada!"
-                    );
-
-                }
             );
 
-    });
+
+            const form =
+                document.getElementById(
+                    "subjectForm"
+                );
+
+
+            if (form) {
+
+                form.addEventListener(
+                    "submit",
+                    function(event) {
+
+                        event.preventDefault();
+
+
+                        const name =
+                            document
+                                .getElementById(
+                                    "subjectName"
+                                )
+                                .value;
+
+
+                        const teacher =
+                            document
+                                .getElementById(
+                                    "teacherName"
+                                )
+                                .value;
+
+
+                        const grid =
+                            document
+                                .getElementById(
+                                    "subjectsGrid"
+                                );
+
+
+                        if (!grid) return;
+
+
+                        const card =
+                            document.createElement(
+                                "div"
+                            );
+
+
+                        card.className =
+                            "subject-card";
+
+
+                        card.innerHTML = `
+
+                            <div class="subject-color blue"></div>
+
+                            <h3>
+                                ${name}
+                            </h3>
+
+                            <p>
+                                ${
+                                    teacher ||
+                                    "Professor não informado"
+                                }
+                            </p>
+
+                            <div class="progress-info">
+
+                                <span>
+                                    Progresso
+                                </span>
+
+                                <strong>
+                                    0%
+                                </strong>
+
+                            </div>
+
+                            <div class="progress">
+
+                                <span style="width:0%"></span>
+
+                            </div>
+
+                        `;
+
+
+                        grid.appendChild(
+                            card
+                        );
+
+
+                        hideModal();
+
+
+                        alert(
+                            "📚 Matéria adicionada!"
+                        );
+
+                    }
+                );
+
+            }
+
+        }
+    );
+
+}
 
 
 /* =====================================================
    BOTÃO DE NOTIFICAÇÕES
    ===================================================== */
 
-document
-    .getElementById("notificationButton")
-    .addEventListener("click", () => {
+const notificationButton =
+    document.getElementById(
+        "notificationButton"
+    );
 
-        openPage("avisos");
 
-    });
+if (notificationButton) {
+
+    notificationButton.addEventListener(
+        "click",
+        () => {
+
+            openPage("avisos");
+
+        }
+    );
+
+}
 
 
 /* =====================================================

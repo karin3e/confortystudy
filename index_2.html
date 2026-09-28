@@ -22,13 +22,11 @@
 
         <div>
 
-            <!-- LOGO -->
             <div class="logo">
                 <i class="ph ph-graduation-cap"></i>
                 <span>ComfortStudy</span>
             </div>
 
-            <!-- MENU -->
             <nav class="menu">
 
                 <a href="#" class="active" data-page="dashboard">
@@ -75,9 +73,6 @@
 
         </div>
 
-
-        <!-- PARTE INFERIOR -->
-
         <div class="sidebar-bottom">
 
             <a href="#" data-page="premium">
@@ -89,8 +84,6 @@
                 <i class="ph ph-user-circle"></i>
                 <span>Meu Perfil</span>
             </a>
-
-            <!-- USUÁRIO -->
 
             <div class="user-profile">
 
@@ -121,7 +114,7 @@
 
     <main class="content">
 
-        <!-- TOPO -->
+        <!-- ================= TOPO ================= -->
 
         <header class="topbar">
 
@@ -137,10 +130,7 @@
 
             </div>
 
-
             <div class="top-actions">
-
-                <!-- AVISOS -->
 
                 <button
                     class="notification-button"
@@ -149,21 +139,21 @@
 
                     <i class="ph ph-bell"></i>
 
-                    <span class="notification-count">
+                    <span
+                        class="notification-count"
+                        id="notificationCount">
+
                         2
+
                     </span>
 
                 </button>
-
-
-                <!-- NOVA TAREFA -->
 
                 <button
                     class="btn-primary"
                     id="newTaskButton">
 
                     <i class="ph ph-plus"></i>
-
                     Nova Tarefa
 
                 </button>
@@ -181,20 +171,14 @@
             class="page-section active-page"
             id="page-dashboard">
 
-
-            <!-- CARDS -->
-
             <section class="cards-grid">
-
 
                 <!-- PRAZOS -->
 
                 <div class="card">
 
                     <div class="card-icon blue">
-
                         <i class="ph ph-clock-afternoon"></i>
-
                     </div>
 
                     <div class="card-info">
@@ -207,7 +191,7 @@
                             class="number"
                             id="dashboard-prazos">
 
-                            3 Atividades
+                            0 Atividades
 
                         </p>
 
@@ -221,9 +205,7 @@
                 <div class="card">
 
                     <div class="card-icon green">
-
                         <i class="ph ph-check-circle"></i>
-
                     </div>
 
                     <div class="card-info">
@@ -236,7 +218,7 @@
                             class="number"
                             id="dashboard-concluidas">
 
-                            12 Tarefas
+                            0 Tarefas
 
                         </p>
 
@@ -250,9 +232,7 @@
                 <div class="card">
 
                     <div class="card-icon purple">
-
                         <i class="ph ph-book-open"></i>
-
                     </div>
 
                     <div class="card-info">
@@ -265,7 +245,7 @@
                             class="number"
                             id="dashboard-materias">
 
-                            6 Disciplinas
+                            0 Disciplinas
 
                         </p>
 
@@ -280,19 +260,13 @@
 
             <div class="dashboard-grid">
 
-
-                <!-- TAREFAS -->
-
                 <section class="tasks-section">
 
                     <div class="section-header">
 
                         <h2>
-
                             <i class="ph ph-list-checks"></i>
-
                             Minhas Tarefas
-
                         </h2>
 
                         <button
@@ -306,67 +280,14 @@
                     </div>
 
 
+                    <!--
+                        O JAVASCRIPT VAI PREENCHER
+                        ESSA ÁREA AUTOMATICAMENTE
+                    -->
+
                     <div
                         class="task-list"
                         id="dashboardTaskList">
-
-
-                        <!-- TAREFA 1 -->
-
-                        <div class="task-item">
-
-                            <div class="task-subject math">
-                                Matemática
-                            </div>
-
-                            <div class="task-title">
-                                Exercícios de Álgebra Linear
-                            </div>
-
-                            <div class="task-date">
-                                Amanhã
-                            </div>
-
-                        </div>
-
-
-                        <!-- TAREFA 2 -->
-
-                        <div class="task-item">
-
-                            <div class="task-subject history">
-                                História
-                            </div>
-
-                            <div class="task-title">
-                                Resumo sobre a Revolução Industrial
-                            </div>
-
-                            <div class="task-date">
-                                15/09
-                            </div>
-
-                        </div>
-
-
-                        <!-- TAREFA CONCLUÍDA -->
-
-                        <div class="task-item completed">
-
-                            <div class="task-subject portuguese">
-                                Português
-                            </div>
-
-                            <div class="task-title">
-                                Análise Sintática — Capítulo 4
-                            </div>
-
-                            <div class="task-date">
-                                Concluído
-                            </div>
-
-                        </div>
-
 
                     </div>
 
@@ -410,7 +331,6 @@
 
             <div class="dashboard-bottom-grid">
 
-
                 <!-- PRÓXIMA PROVA -->
 
                 <section class="info-card">
@@ -418,11 +338,8 @@
                     <div class="section-header">
 
                         <h2>
-
                             <i class="ph ph-exam"></i>
-
                             Próxima Prova
-
                         </h2>
 
                         <button
@@ -436,7 +353,14 @@
                     </div>
 
 
-                    <div class="exam-preview">
+                    <!--
+                        O JAVASCRIPT VAI ATUALIZAR
+                        ESSA ÁREA
+                    -->
+
+                    <div
+                        class="exam-preview"
+                        id="dashboardExamPreview">
 
                         <div class="exam-icon">
                             <i class="ph ph-book-open-text"></i>
@@ -445,11 +369,11 @@
                         <div>
 
                             <strong>
-                                Avaliação de Matemática
+                                Nenhuma prova cadastrada
                             </strong>
 
                             <p>
-                                Funções e Equações
+                                Cadastre uma prova para aparecer aqui.
                             </p>
 
                         </div>
@@ -457,7 +381,7 @@
                         <div class="days-left">
 
                             <strong>
-                                12
+                                —
                             </strong>
 
                             <span>
@@ -478,11 +402,8 @@
                     <div class="section-header">
 
                         <h2>
-
                             <i class="ph ph-bell"></i>
-
                             Avisos
-
                         </h2>
 
                         <button
@@ -496,40 +417,13 @@
                     </div>
 
 
-                    <div class="notice">
+                    <!--
+                        O JAVASCRIPT VAI ATUALIZAR
+                        OS AVISOS AQUI
+                    -->
 
-                        <i class="ph ph-warning-circle"></i>
-
-                        <div>
-
-                            <strong>
-                                Não esqueça de estudar!
-                            </strong>
-
-                            <p>
-                                Matemática hoje às 18:00.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="notice">
-
-                        <i class="ph ph-clock"></i>
-
-                        <div>
-
-                            <strong>
-                                Trabalho próximo
-                            </strong>
-
-                            <p>
-                                História vence amanhã.
-                            </p>
-
-                        </div>
+                    <div
+                        id="dashboardNoticeList">
 
                     </div>
 
@@ -567,7 +461,6 @@
                     id="newSubjectButton">
 
                     <i class="ph ph-plus"></i>
-
                     Nova Matéria
 
                 </button>
@@ -578,131 +471,6 @@
             <div
                 class="subjects-grid"
                 id="subjectsGrid">
-
-
-                <div class="subject-card">
-
-                    <div class="subject-color red"></div>
-
-                    <h3>Matemática</h3>
-
-                    <p>
-                        Prof. João
-                    </p>
-
-                    <div class="progress-info">
-
-                        <span>
-                            Progresso
-                        </span>
-
-                        <strong>
-                            80%
-                        </strong>
-
-                    </div>
-
-                    <div class="progress">
-
-                        <span style="width:80%"></span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="subject-card">
-
-                    <div class="subject-color blue"></div>
-
-                    <h3>Português</h3>
-
-                    <p>
-                        Prof. Maria
-                    </p>
-
-                    <div class="progress-info">
-
-                        <span>
-                            Progresso
-                        </span>
-
-                        <strong>
-                            65%
-                        </strong>
-
-                    </div>
-
-                    <div class="progress">
-
-                        <span style="width:65%"></span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="subject-card">
-
-                    <div class="subject-color yellow"></div>
-
-                    <h3>História</h3>
-
-                    <p>
-                        Prof. Ana
-                    </p>
-
-                    <div class="progress-info">
-
-                        <span>
-                            Progresso
-                        </span>
-
-                        <strong>
-                            72%
-                        </strong>
-
-                    </div>
-
-                    <div class="progress">
-
-                        <span style="width:72%"></span>
-
-                    </div>
-
-                </div>
-
-
-                <div class="subject-card">
-
-                    <div class="subject-color green"></div>
-
-                    <h3>Física</h3>
-
-                    <p>
-                        Prof. Carlos
-                    </p>
-
-                    <div class="progress-info">
-
-                        <span>
-                            Progresso
-                        </span>
-
-                        <strong>
-                            55%
-                        </strong>
-
-                    </div>
-
-                    <div class="progress">
-
-                        <span style="width:55%"></span>
-
-                    </div>
-
-                </div>
-
 
             </div>
 
@@ -736,7 +504,6 @@
                     id="calendarAddButton">
 
                     <i class="ph ph-plus"></i>
-
                     Adicionar
 
                 </button>
@@ -748,16 +515,24 @@
 
                 <div class="calendar-top">
 
-                    <button class="calendar-arrow">
+                    <button
+                        class="calendar-arrow"
+                        id="calendarPrev">
+
                         <i class="ph ph-caret-left"></i>
+
                     </button>
 
                     <h3 id="calendarMonth">
                         Setembro 2026
                     </h3>
 
-                    <button class="calendar-arrow">
+                    <button
+                        class="calendar-arrow"
+                        id="calendarNext">
+
                         <i class="ph ph-caret-right"></i>
+
                     </button>
 
                 </div>
@@ -814,7 +589,6 @@
                     id="newTaskPageButton">
 
                     <i class="ph ph-plus"></i>
-
                     Nova Tarefa
 
                 </button>
@@ -829,16 +603,28 @@
                     id="taskSearch"
                     placeholder="🔎  Pesquisar tarefa...">
 
-                <button class="filter active">
+                <button
+                    class="filter active"
+                    data-filter="all">
+
                     Todas
+
                 </button>
 
-                <button class="filter">
+                <button
+                    class="filter"
+                    data-filter="pending">
+
                     Pendentes
+
                 </button>
 
-                <button class="filter">
+                <button
+                    class="filter"
+                    data-filter="completed">
+
                     Concluídas
+
                 </button>
 
             </div>
@@ -880,7 +666,6 @@
                     id="newExamButton">
 
                     <i class="ph ph-plus"></i>
-
                     Nova Prova
 
                 </button>
@@ -937,7 +722,6 @@
                         id="startTimer">
 
                         <i class="ph ph-play"></i>
-
                         Iniciar
 
                     </button>
@@ -947,7 +731,6 @@
                         id="pauseTimer">
 
                         <i class="ph ph-pause"></i>
-
                         Pausar
 
                     </button>
@@ -957,7 +740,6 @@
                         id="resetTimer">
 
                         <i class="ph ph-arrow-counter-clockwise"></i>
-
                         Reiniciar
 
                     </button>
@@ -1013,7 +795,6 @@
                     id="newNoticeButton">
 
                     <i class="ph ph-plus"></i>
-
                     Novo Aviso
 
                 </button>
@@ -1066,7 +847,7 @@
                     </span>
 
                     <strong id="performanceTasks">
-                        80%
+                        0%
                     </strong>
 
                 </div>
@@ -1207,33 +988,47 @@
             <div class="premium-features">
 
                 <div>
+
                     <i class="ph ph-chart-line-up"></i>
+
                     <h3>
                         Relatórios avançados
                     </h3>
+
                     <p>
                         Acompanhe sua evolução.
                     </p>
+
                 </div>
 
+
                 <div>
+
                     <i class="ph ph-target"></i>
+
                     <h3>
                         Metas de estudo
                     </h3>
+
                     <p>
                         Crie objetivos para sua rotina.
                     </p>
+
                 </div>
 
+
                 <div>
+
                     <i class="ph ph-palette"></i>
+
                     <h3>
                         Personalização
                     </h3>
+
                     <p>
                         Deixe o ComfortStudy com sua cara.
                     </p>
+
                 </div>
 
             </div>
@@ -1317,8 +1112,7 @@
 
             <div id="modalBody">
 
-                <!-- O JavaScript vai colocar
-                     os formulários aqui -->
+                <!-- Formulários inseridos pelo JavaScript -->
 
             </div>
 

@@ -1882,3 +1882,84 @@ body {
         gap: 8px;
     }
 }
+/* =====================================================
+   ATUALIZAÇÕES DINÂMICAS — COMFORTSTUDY
+   ===================================================== */
+
+/* Eventos do calendário */
+.calendar-event {
+    display: block;
+    margin-top: 5px;
+    padding: 4px 5px;
+    border-radius: 6px;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-event.task {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.calendar-event.exam {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* Dia que possui tarefa */
+.calendar-days .has-task {
+    border-color: #93c5fd;
+    background: #f8fbff;
+}
+
+/* Dia que possui prova */
+.calendar-days .has-exam {
+    border-color: #fca5a5;
+    background: #fff8f8;
+}
+
+/* Dia com tarefa e prova */
+.calendar-days .has-task.has-exam {
+    border-color: #a78bfa;
+    background: #faf5ff;
+}
+
+/* Indicadores */
+.calendar-indicators {
+    display: flex;
+    gap: 4px;
+    margin-top: 5px;
+}
+
+.calendar-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.calendar-dot.task {
+    background: #3b82f6;
+}
+
+.calendar-dot.exam {
+    background: #ef4444;
+}
+
+/* Lista atualizada */
+.full-task-list .task-item,
+.exam-list > div,
+.notice-list > div {
+    transition: 0.2s ease;
+}
+
+.full-task-list .task-item:hover,
+.exam-list > div:hover,
+.notice-list > div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(20, 35, 70, 0.08);
+}
