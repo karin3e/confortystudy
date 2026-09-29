@@ -1,1906 +1,2449 @@
-/* =====================================================
-   COMFORTSTUDY — SCRIPT PRINCIPAL
-   ===================================================== */
-
-
-/* =====================================================
-   NAVEGAÇÃO ENTRE TELAS
-   ===================================================== */
-
-const menuLinks = document.querySelectorAll("[data-page]");
-const pages = document.querySelectorAll(".page-section");
-const pageTitle = document.getElementById("page-title");
-
-
-const pageNames = {
-    dashboard: "Visão Geral",
-    materias: "Minhas Matérias",
-    calendario: "Meu Calendário",
-    tarefas: "Minhas Tarefas",
-    provas: "Próximas Provas",
-    cronometro: "Cronômetro de Estudos",
-    avisos: "Meus Avisos",
-    desempenho: "Meu Desempenho",
-    premium: "ComfortStudy Premium",
-    perfil: "Meu Perfil"
-};
-
-
-menuLinks.forEach(link => {
-
-    link.addEventListener("click", function(event) {
-
-        event.preventDefault();
-
-        const page = this.dataset.page;
-
-        openPage(page);
-
-    });
-
-});
-
-
-function openPage(page) {
-
-    pages.forEach(section => {
-        section.classList.remove("active-page");
-    });
-
-
-    const selectedPage =
-        document.getElementById(`page-${page}`);
-
-
-    if (selectedPage) {
-        selectedPage.classList.add("active-page");
-    }
-
-
-    if (pageTitle && pageNames[page]) {
-        pageTitle.textContent = pageNames[page];
-    }
-
-
-    menuLinks.forEach(link => {
-
-        link.classList.remove("active");
-
-        if (link.dataset.page === page) {
-            link.classList.add("active");
-        }
-
-    });
-
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
-}
-
-
-/* =====================================================
-   MODAL
-   ===================================================== */
-
-const modal = document.getElementById("modal");
-const modalTitle = document.getElementById("modalTitle");
-const modalBody = document.getElementById("modalBody");
-const closeModal = document.getElementById("closeModal");
-
-
-function openModal(title, content) {
-
-    if (!modal) return;
-
-    modalTitle.textContent = title;
-
-    modalBody.innerHTML = content;
-
-    modal.classList.add("show");
-
-}
-
-
-function hideModal() {
-
-    if (!modal) return;
-
-    modal.classList.remove("show");
-
-}
-
-
-if (closeModal) {
-    closeModal.addEventListener("click", hideModal);
-}
-
-
-if (modal) {
-
-    modal.addEventListener("click", function(event) {
-
-        if (event.target === modal) {
-            hideModal();
-        }
-
-    });
-
-}
-
-
-/* =====================================================
-   NOVA TAREFA
-   ===================================================== */
-
-function taskForm() {
-
-    return `
-
-        <form class="modal-form" id="taskForm">
-
-            <label>Nome da tarefa</label>
-
-            <input
-                type="text"
-                id="taskName"
-                placeholder="Ex: Fazer exercícios de matemática"
-                required
-            >
-
-
-            <label>Matéria</label>
-
-            <select id="taskSubject">
-
-                <option value="Matemática">
-                    Matemática
-                </option>
-
-                <option value="Português">
-                    Português
-                </option>
-
-                <option value="História">
-                    História
-                </option>
-
-                <option value="Física">
-                    Física
-                </option>
-
-                <option value="Química">
-                    Química
-                </option>
-
-                <option value="Inglês">
-                    Inglês
-                </option>
-
-            </select>
-
-
-            <label>Data de entrega</label>
-
-            <input
-                type="date"
-                id="taskDate"
-                required
-            >
-
-
-            <button
-                type="submit"
-                class="btn-primary">
-
-                <i class="ph ph-plus"></i>
-
-                Adicionar Tarefa
-
-            </button>
-
-        </form>
-
-    `;
-}
-
-
-function showTaskModal() {
-
-    openModal(
-        "Nova Tarefa",
-        taskForm()
-    );
-
-
-    const form =
-        document.getElementById("taskForm");
-
-
-    if (form) {
-
-        form.addEventListener(
-            "submit",
-            addTask
-        );
-
-    }
-
-}
-
-
-function addTask(event) {
-
-    event.preventDefault();
-
-
-    const name =
-        document.getElementById("taskName").value.trim();
-
-    const subject =
-        document.getElementById("taskSubject").value;
-
-    const date =
-        document.getElementById("taskDate").value;
-
-
-    const task = {
-
-        id: Date.now(),
-
-        name,
-
-        subject,
-
-        date,
-
-        completed: false
-
+document.addEventListener("DOMContentLoaded", () => {
+
+    /* =========================================================
+       CONFIGURAÇÕES
+    ========================================================= */
+
+    const STORAGE = {
+        tasks: "comfortTasks",
+        exams: "comfortExams",
+        notices: "comfortNotices",
+        studySeconds: "comfortStudySeconds"
+    };
+
+    const FIXED_SUBJECTS = [
+        { name: "Matemática", icon: "📐", className: "math" },
+        { name: "Português", icon: "📚", className: "portuguese" },
+        { name: "História", icon: "🏛️", className: "history" },
+        { name: "Geografia", icon: "🌎", className: "geography" },
+        { name: "Física", icon: "⚡", className: "physics" },
+        { name: "Química", icon: "🧪", className: "chemistry" },
+        { name: "Biologia", icon: "🧬", className: "biology" },
+        { name: "Inglês", icon: "🇺🇸", className: "english" }
+    ];
+
+    const pageNames = {
+        dashboard: "Visão Geral",
+        materias: "Minhas Matérias",
+        calendario: "Meu Calendário",
+        tarefas: "Minhas Tarefas",
+        provas: "Próximas Provas",
+        cronometro: "Cronômetro de Estudos",
+        avisos: "Avisos",
+        desempenho: "Meu Desempenho",
+        premium: "Premium",
+        perfil: "Meu Perfil"
     };
 
 
-    const tasks =
-        JSON.parse(
-            localStorage.getItem("comfortTasks")
-        ) || [];
+    /* =========================================================
+       LOCAL STORAGE
+    ========================================================= */
 
+    function getStorage(key, fallback = []) {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            return data ?? fallback;
+        } catch {
+            return fallback;
+        }
+    }
 
-    tasks.push(task);
+    function setStorage(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
 
+    function getTasks() {
+        const tasks = getStorage(STORAGE.tasks, []);
+        return Array.isArray(tasks) ? tasks : [];
+    }
 
-    localStorage.setItem(
-        "comfortTasks",
-        JSON.stringify(tasks)
-    );
+    function saveTasks(tasks) {
+        setStorage(STORAGE.tasks, tasks);
+    }
 
+    function getExams() {
+        const exams = getStorage(STORAGE.exams, []);
+        return Array.isArray(exams) ? exams : [];
+    }
 
-    hideModal();
+    function saveExams(exams) {
+        setStorage(STORAGE.exams, exams);
+    }
 
+    function getNotices() {
+        const notices = getStorage(STORAGE.notices, []);
+        return Array.isArray(notices) ? notices : [];
+    }
 
-    renderTasks();
+    function saveNotices(notices) {
+        setStorage(STORAGE.notices, notices);
+    }
 
-    updateDashboard();
+    function getStudySeconds() {
+        return Number(localStorage.getItem(STORAGE.studySeconds)) || 0;
+    }
 
-    createCalendar();
-
-
-    alert(
-        "✅ Tarefa adicionada com sucesso!"
-    );
-
-}
-
-
-/* =====================================================
-   BOTÕES DE NOVA TAREFA
-   ===================================================== */
-
-const newTaskButton =
-    document.getElementById("newTaskButton");
-
-if (newTaskButton) {
-
-    newTaskButton.addEventListener(
-        "click",
-        showTaskModal
-    );
-
-}
-
-
-const dashboardAddTask =
-    document.getElementById("dashboardAddTask");
-
-if (dashboardAddTask) {
-
-    dashboardAddTask.addEventListener(
-        "click",
-        showTaskModal
-    );
-
-}
-
-
-const newTaskPageButton =
-    document.getElementById("newTaskPageButton");
-
-if (newTaskPageButton) {
-
-    newTaskPageButton.addEventListener(
-        "click",
-        showTaskModal
-    );
-
-}
-
-
-/* =====================================================
-   RENDERIZAR TAREFAS
-   ===================================================== */
-
-function renderTasks() {
-
-    const container =
-        document.getElementById("fullTaskList");
-
-
-    if (!container) return;
-
-
-    const tasks =
-        JSON.parse(
-            localStorage.getItem("comfortTasks")
-        ) || [];
-
-
-    container.innerHTML = "";
-
-
-    if (tasks.length === 0) {
-
-        container.innerHTML = `
-
-            <div style="
-                text-align:center;
-                padding:40px;
-                color:#718096;
-            ">
-
-                <i
-                    class="ph ph-check-square"
-                    style="
-                        font-size:45px;
-                        color:#3b82f6;
-                    ">
-                </i>
-
-                <h3 style="margin-top:10px;">
-                    Nenhuma tarefa adicionada
-                </h3>
-
-                <p style="margin-top:5px;">
-                    Clique em "Nova Tarefa" para começar.
-                </p>
-
-            </div>
-
-        `;
-
-        return;
-
+    function saveStudySeconds(seconds) {
+        localStorage.setItem(
+            STORAGE.studySeconds,
+            String(Math.max(0, Number(seconds) || 0))
+        );
     }
 
 
-    tasks.forEach(task => {
+    /* =========================================================
+       SEGURANÇA / FORMATAÇÃO
+    ========================================================= */
 
-        const item =
-            document.createElement("div");
+    function escapeHTML(value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return "";
+
+        const date = new Date(`${dateString}T00:00:00`);
+
+        if (Number.isNaN(date.getTime())) {
+            return dateString;
+        }
+
+        return date.toLocaleDateString("pt-BR");
+    }
+
+    function getTodayString() {
+        const today = new Date();
+
+        return `${today.getFullYear()}-${String(
+            today.getMonth() + 1
+        ).padStart(2, "0")}-${String(
+            today.getDate()
+        ).padStart(2, "0")}`;
+    }
+
+    function getDaysUntil(dateString) {
+        if (!dateString) return 0;
+
+        const today = new Date(`${getTodayString()}T00:00:00`);
+        const date = new Date(`${dateString}T00:00:00`);
+
+        const difference = date.getTime() - today.getTime();
+
+        return Math.round(
+            difference / (1000 * 60 * 60 * 24)
+        );
+    }
+
+    function getDaysLabel(dateString) {
+        const days = getDaysUntil(dateString);
+
+        if (days < 0) return "Passada";
+        if (days === 0) return "Hoje";
+        if (days === 1) return "Amanhã";
+
+        return `Em ${days} dias`;
+    }
 
 
-        item.className =
-            "task-item";
+    /* =========================================================
+       NAVEGAÇÃO
+    ========================================================= */
 
+    function openPage(page) {
+
+        document.querySelectorAll(".page-section").forEach(section => {
+            section.classList.remove("active-page");
+            section.style.display = "none";
+        });
+
+        const selectedPage = document.getElementById(`page-${page}`);
+
+        if (selectedPage) {
+            selectedPage.classList.add("active-page");
+            selectedPage.style.display = "block";
+        }
+
+        document.querySelectorAll("[data-page]").forEach(item => {
+            item.classList.remove("active");
+        });
+
+        document
+            .querySelectorAll(`[data-page="${page}"]`)
+            .forEach(item => {
+                item.classList.add("active");
+            });
+
+        const title = document.getElementById("page-title");
+
+        if (title) {
+            title.textContent = pageNames[page] || "ComfortStudy";
+        }
+
+        if (page === "desempenho") {
+            updatePerformance();
+        }
+
+        if (page === "materias") {
+            renderSubjects();
+        }
+
+        if (page === "tarefas") {
+            renderTasks();
+        }
+
+        if (page === "provas") {
+            renderExams();
+        }
+
+        if (page === "avisos") {
+            renderNotices();
+        }
+
+        if (page === "calendario") {
+            createCalendar();
+        }
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+
+    window.openPage = openPage;
+
+    document.querySelectorAll("[data-page]").forEach(button => {
+
+        button.addEventListener("click", event => {
+            event.preventDefault();
+
+            const page = button.getAttribute("data-page");
+
+            if (page) {
+                openPage(page);
+            }
+        });
+
+    });
+
+
+    /* =========================================================
+       MODAL
+    ========================================================= */
+
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const closeModalButton = document.getElementById("closeModal");
+
+    function openModal(title, content) {
+
+        if (!modal) return;
+
+        if (modalTitle) {
+            modalTitle.textContent = title;
+        }
+
+        if (modalBody) {
+            modalBody.innerHTML = content;
+        }
+
+        modal.classList.add("show");
+        modal.classList.add("active");
+        modal.style.display = "flex";
+    }
+
+    function closeModal() {
+
+        if (!modal) return;
+
+        modal.classList.remove("show");
+        modal.classList.remove("active");
+        modal.style.display = "none";
+    }
+
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+
+    if (closeModalButton) {
+        closeModalButton.addEventListener("click", closeModal);
+    }
+
+    if (modal) {
+        modal.addEventListener("click", event => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeModal();
+        }
+    });
+
+
+    /* =========================================================
+       TAREFAS
+    ========================================================= */
+
+    function taskForm() {
+
+        return `
+            <form id="taskForm" class="modal-form">
+
+                <label for="taskName">
+                    Nome da tarefa
+                </label>
+
+                <input
+                    type="text"
+                    id="taskName"
+                    placeholder="Ex: Fazer exercícios de matemática"
+                    required
+                >
+
+                <label for="taskSubject">
+                    Matéria
+                </label>
+
+                <select id="taskSubject" required>
+
+                    <option value="">
+                        Selecione a matéria
+                    </option>
+
+                    ${FIXED_SUBJECTS.map(subject => `
+                        <option value="${escapeHTML(subject.name)}">
+                            ${escapeHTML(subject.name)}
+                        </option>
+                    `).join("")}
+
+                </select>
+
+                <label for="taskDate">
+                    Data
+                </label>
+
+                <input
+                    type="date"
+                    id="taskDate"
+                    min="${getTodayString()}"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="btn-primary">
+
+                    Adicionar tarefa
+
+                </button>
+
+            </form>
+        `;
+    }
+
+    function showTaskModal() {
+
+        openModal("Nova Tarefa", taskForm());
+
+        const form = document.getElementById("taskForm");
+
+        if (form) {
+            form.addEventListener("submit", event => {
+                event.preventDefault();
+                addTask();
+            });
+        }
+    }
+
+    function addTask() {
+
+        const nameInput = document.getElementById("taskName");
+        const subjectInput = document.getElementById("taskSubject");
+        const dateInput = document.getElementById("taskDate");
+
+        if (!nameInput || !subjectInput || !dateInput) {
+            return;
+        }
+
+        const name = nameInput.value.trim();
+        const subject = subjectInput.value;
+        const date = dateInput.value;
+
+        if (!name || !subject || !date) {
+            alert("Preencha todos os campos.");
+            return;
+        }
+
+        const tasks = getTasks();
+
+        tasks.push({
+            id: Date.now(),
+            name,
+            subject,
+            date,
+            completed: false,
+            createdAt: new Date().toISOString()
+        });
+
+        saveTasks(tasks);
+
+        closeModal();
+        updateEverything();
+
+        alert("Tarefa adicionada com sucesso! ✅");
+    }
+
+    window.addTask = addTask;
+
+
+    [
+        "newTaskButton",
+        "dashboardAddTask",
+        "newTaskPageButton"
+    ].forEach(id => {
+
+        const button = document.getElementById(id);
+
+        if (button) {
+            button.addEventListener("click", showTaskModal);
+        }
+
+    });
+
+
+    let currentTaskFilter = "all";
+
+    function renderTasks() {
+
+        const list = document.getElementById("fullTaskList");
+
+        if (!list) return;
+
+        const searchInput = document.getElementById("taskSearch");
+
+        const search = searchInput
+            ? searchInput.value.trim().toLowerCase()
+            : "";
+
+        let tasks = getTasks();
+
+        if (search) {
+            tasks = tasks.filter(task =>
+                String(task.name)
+                    .toLowerCase()
+                    .includes(search) ||
+                String(task.subject)
+                    .toLowerCase()
+                    .includes(search)
+            );
+        }
+
+        if (currentTaskFilter === "pending") {
+            tasks = tasks.filter(task => !task.completed);
+        }
+
+        if (currentTaskFilter === "completed") {
+            tasks = tasks.filter(task => task.completed);
+        }
+
+        tasks.sort((a, b) => {
+
+            if (a.completed !== b.completed) {
+                return a.completed ? 1 : -1;
+            }
+
+            return String(a.date).localeCompare(
+                String(b.date)
+            );
+        });
+
+        if (tasks.length === 0) {
+
+            list.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📝</div>
+
+                    <h3>
+                        Nenhuma tarefa encontrada
+                    </h3>
+
+                    <p>
+                        ${
+                            search
+                                ? "Tente pesquisar outro termo."
+                                : "Adicione uma nova tarefa para começar."
+                        }
+                    </p>
+                </div>
+            `;
+
+            return;
+        }
+
+        list.innerHTML = tasks.map(task => {
+
+            const safeId = Number(task.id);
+
+            return `
+                <div class="task-item ${task.completed ? "completed" : ""}">
+
+                    <div class="task-check">
+
+                        <button
+                            type="button"
+                            class="task-check-button"
+                            onclick="toggleTask(${safeId})"
+                            aria-label="Concluir tarefa">
+
+                            ${task.completed ? "✓" : ""}
+
+                        </button>
+
+                    </div>
+
+                    <div class="task-info">
+
+                        <strong>
+                            ${escapeHTML(task.name)}
+                        </strong>
+
+                        <span>
+                            ${escapeHTML(task.subject)}
+                        </span>
+
+                    </div>
+
+                    <div class="task-date">
+                        ${formatDate(task.date)}
+                    </div>
+
+                    <button
+                        type="button"
+                        class="delete-button"
+                        onclick="deleteTask(${safeId})"
+                        title="Excluir tarefa">
+
+                        🗑️
+
+                    </button>
+
+                </div>
+            `;
+
+        }).join("");
+    }
+
+    function toggleTask(id) {
+
+        const tasks = getTasks();
+
+        const task = tasks.find(
+            item => Number(item.id) === Number(id)
+        );
+
+        if (!task) return;
+
+        task.completed = !task.completed;
 
         if (task.completed) {
-            item.classList.add("completed");
+            task.completedAt = new Date().toISOString();
+        } else {
+            delete task.completedAt;
         }
 
+        saveTasks(tasks);
 
-        item.innerHTML = `
+        updateEverything();
+    }
 
-            <div class="task-subject ${getSubjectClass(task.subject)}">
-                ${task.subject}
-            </div>
-
-            <div class="task-title">
-                ${task.name}
-            </div>
-
-            <div class="task-date">
-                ${formatDate(task.date)}
-            </div>
-
-            <button
-                class="small-button"
-                onclick="toggleTask(${task.id})">
-
-                ${task.completed ? "Desfazer" : "Concluir"}
-
-            </button>
-
-        `;
+    window.toggleTask = toggleTask;
 
 
-        container.appendChild(item);
+    function deleteTask(id) {
+
+        if (!confirm("Deseja realmente excluir esta tarefa?")) {
+            return;
+        }
+
+        const tasks = getTasks().filter(
+            task => Number(task.id) !== Number(id)
+        );
+
+        saveTasks(tasks);
+
+        updateEverything();
+    }
+
+    window.deleteTask = deleteTask;
+
+
+    const taskSearch = document.getElementById("taskSearch");
+
+    if (taskSearch) {
+        taskSearch.addEventListener("input", renderTasks);
+    }
+
+    document.querySelectorAll(".filter").forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            document
+                .querySelectorAll(".filter")
+                .forEach(item => item.classList.remove("active"));
+
+            button.classList.add("active");
+
+            currentTaskFilter =
+                button.dataset.filter || "all";
+
+            renderTasks();
+        });
 
     });
 
-}
 
+    /* =========================================================
+       DASHBOARD
+    ========================================================= */
 
-/* =====================================================
-   CONCLUIR TAREFA
-   ===================================================== */
+    function updateDashboard() {
 
-function toggleTask(id) {
+        const tasks = getTasks();
+        const exams = getExams();
+        const notices = getNotices();
 
-    const tasks =
-        JSON.parse(
-            localStorage.getItem("comfortTasks")
-        ) || [];
+        const pending = tasks.filter(
+            task => !task.completed
+        ).length;
 
-
-    const task =
-        tasks.find(
-            item => item.id === id
-        );
-
-
-    if (!task) return;
-
-
-    task.completed =
-        !task.completed;
-
-
-    localStorage.setItem(
-        "comfortTasks",
-        JSON.stringify(tasks)
-    );
-
-
-    renderTasks();
-
-    updateDashboard();
-
-    createCalendar();
-
-}
-
-
-/* =====================================================
-   MATÉRIA — CORES
-   ===================================================== */
-
-function getSubjectClass(subject) {
-
-    const classes = {
-
-        "Matemática": "math",
-
-        "Português": "portuguese",
-
-        "História": "history",
-
-        "Física": "math",
-
-        "Química": "history",
-
-        "Inglês": "portuguese"
-
-    };
-
-
-    return classes[subject] || "portuguese";
-
-}
-
-
-/* =====================================================
-   FORMATAR DATA
-   ===================================================== */
-
-function formatDate(date) {
-
-    if (!date) {
-        return "";
-    }
-
-
-    const parts =
-        date.split("-");
-
-
-    if (parts.length !== 3) {
-        return date;
-    }
-
-
-    return `${parts[2]}/${parts[1]}/${parts[0]}`;
-
-}
-
-
-/* =====================================================
-   ATUALIZAR DASHBOARD
-   ===================================================== */
-
-function updateDashboard() {
-
-    const tasks =
-        JSON.parse(
-            localStorage.getItem("comfortTasks")
-        ) || [];
-
-
-    const completed =
-        tasks.filter(
+        const completed = tasks.filter(
             task => task.completed
         ).length;
 
 
-    const pending =
-        tasks.filter(
-            task => !task.completed
-        ).length;
-
-
-    const completedElement =
-        document.getElementById(
-            "dashboard-concluidas"
-        );
-
-
-    const pendingElement =
-        document.getElementById(
+        const prazo = document.getElementById(
             "dashboard-prazos"
         );
 
-
-    if (completedElement) {
-
-        completedElement.textContent =
-            `${completed} Tarefas`;
-
-    }
-
-
-    if (pendingElement) {
-
-        pendingElement.textContent =
-            `${pending} Atividades`;
-
-    }
-
-}
+        if (prazo) {
+            prazo.textContent =
+                `${pending} ${
+                    pending === 1
+                        ? "Atividade"
+                        : "Atividades"
+                }`;
+        }
 
 
-/* =====================================================
-   NOVA PROVA
-   ===================================================== */
-
-const newExamButton =
-    document.getElementById("newExamButton");
-
-
-if (newExamButton) {
-
-    newExamButton.addEventListener(
-        "click",
-        showExamModal
-    );
-
-}
-
-
-function showExamModal() {
-
-    openModal(
-
-        "Nova Prova",
-
-        `
-
-        <form
-            class="modal-form"
-            id="examForm">
-
-            <label>Nome da prova</label>
-
-            <input
-                type="text"
-                id="examName"
-                placeholder="Ex: Prova de Matemática"
-                required
-            >
-
-
-            <label>Matéria</label>
-
-            <select id="examSubject">
-
-                <option>Matemática</option>
-                <option>Português</option>
-                <option>História</option>
-                <option>Física</option>
-                <option>Química</option>
-
-            </select>
-
-
-            <label>Data</label>
-
-            <input
-                type="date"
-                id="examDate"
-                required
-            >
-
-
-            <button
-                type="submit"
-                class="btn-primary">
-
-                <i class="ph ph-calendar-plus"></i>
-
-                Adicionar Prova
-
-            </button>
-
-        </form>
-
-        `
-
-    );
-
-
-    const form =
-        document.getElementById("examForm");
-
-
-    if (form) {
-
-        form.addEventListener(
-            "submit",
-            addExam
+        const concluidas = document.getElementById(
+            "dashboard-concluidas"
         );
 
+        if (concluidas) {
+            concluidas.textContent =
+                `${completed} ${
+                    completed === 1
+                        ? "Tarefa"
+                        : "Tarefas"
+                }`;
+        }
+
+
+        const materias = document.getElementById(
+            "dashboard-materias"
+        );
+
+        if (materias) {
+            materias.textContent =
+                `${FIXED_SUBJECTS.length} Disciplinas`;
+        }
+
+
+        /* TAREFAS DO DASHBOARD */
+
+        const dashboardTaskList =
+            document.getElementById("dashboardTaskList");
+
+        if (dashboardTaskList) {
+
+            const pendingTasks = tasks
+                .filter(task => !task.completed)
+                .sort((a, b) =>
+                    String(a.date).localeCompare(
+                        String(b.date)
+                    )
+                )
+                .slice(0, 5);
+
+            if (pendingTasks.length === 0) {
+
+                dashboardTaskList.innerHTML = `
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            ✓
+                        </div>
+
+                        <h3>
+                            Nenhuma tarefa pendente
+                        </h3>
+
+                        <p>
+                            Você está em dia!
+                        </p>
+
+                    </div>
+                `;
+
+            } else {
+
+                dashboardTaskList.innerHTML =
+                    pendingTasks.map(task => `
+
+                        <div class="task-item">
+
+                            <div class="task-check">
+
+                                <button
+                                    type="button"
+                                    class="task-check-button"
+                                    onclick="toggleTask(${Number(task.id)})">
+
+                                </button>
+
+                            </div>
+
+                            <div class="task-info">
+
+                                <strong>
+                                    ${escapeHTML(task.name)}
+                                </strong>
+
+                                <span>
+                                    ${escapeHTML(task.subject)}
+                                </span>
+
+                            </div>
+
+                            <div class="task-date">
+                                ${formatDate(task.date)}
+                            </div>
+
+                        </div>
+
+                    `).join("");
+            }
+        }
+
+
+        /* PROVAS DO DASHBOARD */
+
+        const dashboardExamList =
+            document.getElementById("dashboardExamList");
+
+        if (dashboardExamList) {
+
+            const today = getTodayString();
+
+            const upcomingExams = exams
+                .filter(exam =>
+                    exam.date &&
+                    exam.date >= today
+                )
+                .sort((a, b) =>
+                    String(a.date).localeCompare(
+                        String(b.date)
+                    )
+                )
+                .slice(0, 5);
+
+            if (upcomingExams.length === 0) {
+
+                dashboardExamList.innerHTML = `
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            📅
+                        </div>
+
+                        <h3>
+                            Nenhuma prova cadastrada
+                        </h3>
+
+                        <p>
+                            Cadastre uma prova para acompanhar.
+                        </p>
+
+                    </div>
+                `;
+
+            } else {
+
+                dashboardExamList.innerHTML =
+                    upcomingExams.map(exam => `
+
+                        <div class="exam-preview">
+
+                            <div class="exam-icon">
+                                📝
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    ${escapeHTML(exam.name)}
+                                </strong>
+
+                                <p>
+                                    ${escapeHTML(exam.subject)}
+                                    • ${formatDate(exam.date)}
+                                </p>
+
+                            </div>
+
+                            <div class="days-left">
+
+                                <strong>
+                                    ${
+                                        getDaysUntil(exam.date) < 0
+                                            ? "-"
+                                            : getDaysUntil(exam.date)
+                                    }
+                                </strong>
+
+                                <span>
+                                    ${
+                                        getDaysUntil(exam.date) === 0
+                                            ? "hoje"
+                                            : "dias"
+                                    }
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    `).join("");
+            }
+        }
+
+
+        /* AVISOS DO DASHBOARD */
+
+        const dashboardNoticeList =
+            document.getElementById("dashboardNoticeList");
+
+        if (dashboardNoticeList) {
+
+            const latestNotices = notices.slice(0, 3);
+
+            if (latestNotices.length === 0) {
+
+                dashboardNoticeList.innerHTML = `
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            🔔
+                        </div>
+
+                        <h3>
+                            Nenhum aviso
+                        </h3>
+
+                        <p>
+                            Você não possui avisos no momento.
+                        </p>
+
+                    </div>
+                `;
+
+            } else {
+
+                dashboardNoticeList.innerHTML =
+                    latestNotices.map(notice => `
+
+                        <div class="notice">
+
+                            <i class="ph ph-bell"></i>
+
+                            <div>
+
+                                <strong>
+                                    ${escapeHTML(notice.title)}
+                                </strong>
+
+                                <p>
+                                    ${escapeHTML(notice.message)}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    `).join("");
+            }
+        }
+
+
+        updateNotificationCount();
     }
 
-}
 
+    /* =========================================================
+       PROVAS
+    ========================================================= */
 
-function addExam(event) {
+    function examForm() {
 
-    event.preventDefault();
+        return `
+            <form id="examForm" class="modal-form">
 
+                <label for="examName">
+                    Nome da prova
+                </label>
 
-    const name =
-        document
-            .getElementById("examName")
-            .value
-            .trim();
+                <input
+                    type="text"
+                    id="examName"
+                    placeholder="Ex: Prova de Matemática"
+                    required
+                >
 
+                <label for="examSubject">
+                    Matéria
+                </label>
 
-    const subject =
-        document
-            .getElementById("examSubject")
-            .value;
+                <select id="examSubject" required>
 
+                    <option value="">
+                        Selecione a matéria
+                    </option>
 
-    const date =
-        document
-            .getElementById("examDate")
-            .value;
+                    ${FIXED_SUBJECTS.map(subject => `
+                        <option value="${escapeHTML(subject.name)}">
+                            ${escapeHTML(subject.name)}
+                        </option>
+                    `).join("")}
 
+                </select>
 
-    const exams =
-        JSON.parse(
-            localStorage.getItem("comfortExams")
-        ) || [];
+                <label for="examDate">
+                    Data da prova
+                </label>
 
+                <input
+                    type="date"
+                    id="examDate"
+                    min="${getTodayString()}"
+                    required
+                >
 
-    exams.push({
+                <button
+                    type="submit"
+                    class="btn-primary">
 
-        id: Date.now(),
+                    Adicionar prova
 
-        name,
+                </button>
 
-        subject,
-
-        date
-
-    });
-
-
-    localStorage.setItem(
-        "comfortExams",
-        JSON.stringify(exams)
-    );
-
-
-    hideModal();
-
-
-    renderExams();
-
-    createCalendar();
-
-
-    alert(
-        "📚 Prova adicionada!"
-    );
-
-}
-
-
-/* =====================================================
-   RENDERIZAR PROVAS
-   ===================================================== */
-
-function renderExams() {
-
-    const container =
-        document.getElementById("examList");
-
-
-    if (!container) return;
-
-
-    const exams =
-        JSON.parse(
-            localStorage.getItem("comfortExams")
-        ) || [];
-
-
-    container.innerHTML = "";
-
-
-    if (exams.length === 0) {
-
-        container.innerHTML = `
-
-            <div style="
-                text-align:center;
-                padding:40px;
-                color:#718096;
-            ">
-
-                <i
-                    class="ph ph-exam"
-                    style="
-                        font-size:45px;
-                        color:#7c3aed;
-                    ">
-                </i>
-
-                <h3>
-                    Nenhuma prova cadastrada
-                </h3>
-
-                <p>
-                    Adicione suas próximas avaliações.
-                </p>
-
-            </div>
-
+            </form>
         `;
+    }
 
-        return;
+    function showExamModal() {
 
+        openModal("Nova Prova", examForm());
+
+        const form = document.getElementById("examForm");
+
+        if (form) {
+
+            form.addEventListener("submit", event => {
+
+                event.preventDefault();
+
+                addExam();
+
+            });
+
+        }
+    }
+
+    function addExam() {
+
+        const nameInput =
+            document.getElementById("examName");
+
+        const subjectInput =
+            document.getElementById("examSubject");
+
+        const dateInput =
+            document.getElementById("examDate");
+
+        if (!nameInput || !subjectInput || !dateInput) {
+            return;
+        }
+
+        const name = nameInput.value.trim();
+        const subject = subjectInput.value;
+        const date = dateInput.value;
+
+        if (!name || !subject || !date) {
+
+            alert("Preencha todos os campos.");
+
+            return;
+        }
+
+        const exams = getExams();
+
+        exams.push({
+            id: Date.now(),
+            name,
+            subject,
+            date,
+            createdAt: new Date().toISOString()
+        });
+
+        saveExams(exams);
+
+        closeModal();
+        updateEverything();
+
+        alert("Prova adicionada com sucesso! 📚");
+    }
+
+    window.addExam = addExam;
+
+
+    const newExamButton =
+        document.getElementById("newExamButton");
+
+    if (newExamButton) {
+        newExamButton.addEventListener(
+            "click",
+            showExamModal
+        );
     }
 
 
-    exams.forEach(exam => {
+    function renderExams() {
 
-        const item =
-            document.createElement("div");
+        const list =
+            document.getElementById("examList");
 
+        if (!list) return;
 
-        item.innerHTML = `
+        const exams = [...getExams()].sort((a, b) =>
+            String(a.date).localeCompare(
+                String(b.date)
+            )
+        );
 
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:15px;
-            ">
+        if (exams.length === 0) {
 
-                <div class="exam-icon">
+            list.innerHTML = `
+                <div class="empty-state">
 
-                    <i class="ph ph-exam"></i>
+                    <div class="empty-icon">
+                        📝
+                    </div>
 
-                </div>
+                    <h3>
+                        Nenhuma prova cadastrada
+                    </h3>
 
-
-                <div style="flex:1;">
-
-                    <strong>
-                        ${exam.name}
-                    </strong>
-
-                    <p style="
-                        color:#718096;
-                        font-size:12px;
-                        margin-top:4px;
-                    ">
-
-                        ${exam.subject}
-                        •
-                        ${formatDate(exam.date)}
-
+                    <p>
+                        Adicione uma prova para começar.
                     </p>
 
                 </div>
+            `;
 
+            return;
+        }
 
-                <i
-                    class="ph ph-warning-circle"
-                    style="
-                        color:#f59e0b;
-                        font-size:23px;
-                    ">
-                </i>
+        list.innerHTML =
+            exams.map(exam => `
 
-            </div>
+                <div class="exam-preview">
 
-        `;
+                    <div class="exam-icon">
+                        📝
+                    </div>
 
+                    <div>
 
-        container.appendChild(item);
+                        <strong>
+                            ${escapeHTML(exam.name)}
+                        </strong>
 
-    });
+                        <p>
+                            ${escapeHTML(exam.subject)}
+                            • ${formatDate(exam.date)}
+                        </p>
 
-}
+                        <small>
+                            ${getDaysLabel(exam.date)}
+                        </small>
 
+                    </div>
 
-/* =====================================================
-   CRONÔMETRO
-   ===================================================== */
+                    <button
+                        type="button"
+                        class="delete-button"
+                        onclick="deleteExam(${Number(exam.id)})"
+                        title="Excluir prova">
 
-let timerSeconds = 1500;
+                        🗑️
 
-let timerInterval = null;
+                    </button>
 
-let timerRunning = false;
+                </div>
 
+            `).join("");
+    }
 
-const timerDisplay =
-    document.getElementById(
-        "timerDisplay"
-    );
+    function deleteExam(id) {
 
+        if (!confirm("Deseja realmente excluir esta prova?")) {
+            return;
+        }
 
-function updateTimerDisplay() {
-
-    if (!timerDisplay) return;
-
-
-    const minutes =
-        Math.floor(
-            timerSeconds / 60
+        const exams = getExams().filter(
+            exam => Number(exam.id) !== Number(id)
         );
 
+        saveExams(exams);
 
-    const seconds =
-        timerSeconds % 60;
+        updateEverything();
+    }
 
-
-    timerDisplay.textContent =
-        `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
-}
+    window.deleteExam = deleteExam;
 
 
-const startTimer =
-    document.getElementById(
-        "startTimer"
-    );
+    /* =========================================================
+       MATÉRIAS
+    ========================================================= */
+
+    function getSubjectProgress(subjectName) {
+
+        const subjectTasks = getTasks().filter(task =>
+            String(task.subject).toLowerCase() ===
+            String(subjectName).toLowerCase()
+        );
+
+        if (subjectTasks.length === 0) {
+            return 0;
+        }
+
+        const completed = subjectTasks.filter(
+            task => task.completed
+        ).length;
+
+        return Math.round(
+            (completed / subjectTasks.length) * 100
+        );
+    }
 
 
-if (startTimer) {
+    function renderSubjects() {
 
-    startTimer.addEventListener(
-        "click",
-        startTimerFunction
-    );
+        const grid =
+            document.getElementById("subjectsGrid");
 
-}
+        if (!grid) return;
+
+        grid.innerHTML =
+            FIXED_SUBJECTS.map(subject => {
+
+                const progress =
+                    getSubjectProgress(subject.name);
+
+                return `
+                    <div class="subject-card">
+
+                        <div
+                            class="subject-color ${subject.className}">
+                        </div>
+
+                        <div class="subject-icon">
+                            ${subject.icon}
+                        </div>
+
+                        <h3>
+                            ${escapeHTML(subject.name)}
+                        </h3>
+
+                        <p>
+                            Progresso baseado nas tarefas concluídas
+                        </p>
+
+                        <div class="progress-info">
+
+                            <span>
+                                Progresso
+                            </span>
+
+                            <strong>
+                                ${progress}%
+                            </strong>
+
+                        </div>
+
+                        <div class="progress">
+
+                            <span
+                                style="width:${progress}%">
+                            </span>
+
+                        </div>
+
+                    </div>
+                `;
+
+            }).join("");
+    }
 
 
-const pauseTimerButton =
-    document.getElementById(
-        "pauseTimer"
-    );
+    /* =========================================================
+       DESEMPENHO
+    ========================================================= */
+
+    function formatStudyTime(seconds) {
+
+        seconds = Number(seconds) || 0;
+
+        const hours = Math.floor(seconds / 3600);
+
+        const minutes = Math.floor(
+            (seconds % 3600) / 60
+        );
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}min`;
+        }
+
+        return `${minutes}min`;
+    }
 
 
-if (pauseTimerButton) {
+    function getPerformanceData() {
 
-    pauseTimerButton.addEventListener(
-        "click",
-        pauseTimer
-    );
+        const tasks = getTasks();
 
-}
+        const totalTasks = tasks.length;
 
+        const completedTasks = tasks.filter(
+            task => task.completed
+        ).length;
 
-const resetTimerButton =
-    document.getElementById(
-        "resetTimer"
-    );
+        const percentage =
+            totalTasks === 0
+                ? 0
+                : Math.round(
+                    (completedTasks / totalTasks) * 100
+                );
 
-
-if (resetTimerButton) {
-
-    resetTimerButton.addEventListener(
-        "click",
-        resetTimer
-    );
-
-}
-
-
-function startTimerFunction() {
-
-    if (timerRunning) return;
+        return {
+            totalTasks,
+            completedTasks,
+            percentage,
+            studySeconds: getStudySeconds()
+        };
+    }
 
 
-    timerRunning = true;
+    function getEvolution() {
+
+        const tasks = getTasks();
+
+        if (tasks.length === 0) {
+            return 0;
+        }
+
+        const completedTasks = tasks.filter(
+            task => task.completed
+        );
+
+        if (completedTasks.length === 0) {
+            return 0;
+        }
+
+        const now = Date.now();
+
+        const sevenDays =
+            7 * 24 * 60 * 60 * 1000;
+
+        const recentCompleted =
+            completedTasks.filter(task => {
+
+                if (!task.completedAt) {
+                    return false;
+                }
+
+                const completedAt =
+                    new Date(task.completedAt).getTime();
+
+                return (
+                    now - completedAt >= 0 &&
+                    now - completedAt <= sevenDays
+                );
+
+            }).length;
+
+        return Math.round(
+            (recentCompleted / completedTasks.length) * 100
+        );
+    }
 
 
-    timerInterval =
-        setInterval(() => {
+    function updatePerformance() {
+
+        const data = getPerformanceData();
+
+        const performanceTasks =
+            document.getElementById("performanceTasks");
+
+        if (performanceTasks) {
+            performanceTasks.textContent =
+                data.completedTasks;
+        }
+
+
+        const performanceCards =
+            document.querySelectorAll(".performance-card");
+
+
+        /* CARD 1 */
+
+        if (performanceCards[0]) {
+
+            const strong =
+                performanceCards[0]
+                    .querySelector("strong");
+
+            if (strong) {
+                strong.textContent =
+                    data.completedTasks;
+            }
+        }
+
+
+        /* CARD 2 */
+
+        if (performanceCards[1]) {
+
+            const strong =
+                performanceCards[1]
+                    .querySelector("strong");
+
+            if (strong) {
+
+                strong.textContent =
+                    formatStudyTime(
+                        data.studySeconds
+                    );
+            }
+        }
+
+
+        /* CARD 3 */
+
+        if (performanceCards[2]) {
+
+            const strong =
+                performanceCards[2]
+                    .querySelector("strong");
+
+            if (strong) {
+
+                strong.textContent =
+                    `+${getEvolution()}%`;
+            }
+        }
+
+
+        /* DESEMPENHO POR MATÉRIA */
+
+        const subjectList =
+            document.getElementById(
+                "performanceSubjectList"
+            );
+
+        if (!subjectList) return;
+
+        subjectList.innerHTML =
+            FIXED_SUBJECTS.map(subject => {
+
+                const progress =
+                    getSubjectProgress(
+                        subject.name
+                    );
+
+                return `
+                    <div class="performance-row">
+
+                        <span>
+                            ${escapeHTML(subject.name)}
+                        </span>
+
+                        <div class="performance-bar">
+
+                            <span
+                                style="width:${progress}%">
+                            </span>
+
+                        </div>
+
+                        <strong>
+                            ${progress}%
+                        </strong>
+
+                    </div>
+                `;
+
+            }).join("");
+    }
+
+
+    /* =========================================================
+       CRONÔMETRO
+    ========================================================= */
+
+    let timerSeconds = 25 * 60;
+    let timerInterval = null;
+    let timerRunning = false;
+
+
+    function updateTimerDisplay() {
+
+        const display =
+            document.getElementById("timerDisplay");
+
+        if (!display) return;
+
+        const minutes =
+            Math.floor(timerSeconds / 60);
+
+        const seconds =
+            timerSeconds % 60;
+
+        display.textContent =
+            `${String(minutes).padStart(2, "0")}:${String(
+                seconds
+            ).padStart(2, "0")}`;
+    }
+
+
+    function startTimer() {
+
+        if (timerRunning) return;
+
+        if (timerSeconds <= 0) {
+            timerSeconds = 25 * 60;
+        }
+
+        timerRunning = true;
+
+        timerInterval = setInterval(() => {
 
             if (timerSeconds <= 0) {
-
-                clearInterval(
-                    timerInterval
-                );
-
-                timerRunning = false;
-
-                alert(
-                    "🎉 Tempo encerrado! Hora de descansar."
-                );
-
+                pauseTimer();
                 return;
-
             }
-
 
             timerSeconds--;
 
+            saveStudySeconds(
+                getStudySeconds() + 1
+            );
+
             updateTimerDisplay();
+            updatePerformance();
+
+            if (timerSeconds <= 0) {
+
+                pauseTimer();
+
+                alert(
+                    "Tempo de estudo concluído! 🎉"
+                );
+            }
 
         }, 1000);
-
-}
-
-
-function pauseTimer() {
-
-    clearInterval(
-        timerInterval
-    );
-
-    timerRunning = false;
-
-}
+    }
 
 
-function resetTimer() {
+    function pauseTimer() {
 
-    clearInterval(
-        timerInterval
-    );
+        timerRunning = false;
 
-    timerRunning = false;
+        if (timerInterval !== null) {
 
-    timerSeconds = 1500;
+            clearInterval(timerInterval);
 
-    updateTimerDisplay();
-
-}
+            timerInterval = null;
+        }
+    }
 
 
-/* =====================================================
-   PRESETS DO CRONÔMETRO
-   ===================================================== */
+    function resetTimer() {
 
-document
-    .querySelectorAll(
-        ".timer-presets button"
-    )
-    .forEach(button => {
+        pauseTimer();
 
-        button.addEventListener(
+        timerSeconds = 25 * 60;
+
+        updateTimerDisplay();
+    }
+
+
+    const startTimerButton =
+        document.getElementById("startTimer");
+
+    const pauseTimerButton =
+        document.getElementById("pauseTimer");
+
+    const resetTimerButton =
+        document.getElementById("resetTimer");
+
+
+    if (startTimerButton) {
+        startTimerButton.addEventListener(
             "click",
-            function() {
+            startTimer
+        );
+    }
+
+    if (pauseTimerButton) {
+        pauseTimerButton.addEventListener(
+            "click",
+            pauseTimer
+        );
+    }
+
+    if (resetTimerButton) {
+        resetTimerButton.addEventListener(
+            "click",
+            resetTimer
+        );
+    }
+
+
+    document
+        .querySelectorAll(".timer-presets button")
+        .forEach(button => {
+
+            button.addEventListener("click", () => {
+
+                const time =
+                    Number(button.dataset.time);
+
+                if (!Number.isFinite(time) || time <= 0) {
+                    return;
+                }
 
                 pauseTimer();
 
                 timerSeconds =
-                    Number(
-                        this.dataset.time
-                    );
+                    time * 60;
 
                 updateTimerDisplay();
+            });
 
-            }
-        );
-
-    });
+        });
 
 
-/* =====================================================
-   CALENDÁRIO
-   ===================================================== */
+    /* =========================================================
+       CALENDÁRIO
+    ========================================================= */
 
-let currentCalendarYear = 2026;
+    const calendarNow = new Date();
 
-let currentCalendarMonth = 8;
+    let currentCalendarYear =
+        calendarNow.getFullYear();
 
-
-/* =====================================================
-   CRIAR CALENDÁRIO
-   ===================================================== */
-
-function createCalendar() {
-
-    const container =
-        document.getElementById(
-            "calendarDays"
-        );
+    let currentCalendarMonth =
+        calendarNow.getMonth();
 
 
-    if (!container) return;
+    function createCalendar() {
+
+        const calendar =
+            document.getElementById("calendarDays");
+
+        if (!calendar) return;
+
+        const monthTitle =
+            document.getElementById("calendarMonth");
+
+        const firstDay =
+            new Date(
+                currentCalendarYear,
+                currentCalendarMonth,
+                1
+            );
+
+        const lastDay =
+            new Date(
+                currentCalendarYear,
+                currentCalendarMonth + 1,
+                0
+            );
+
+        const daysInMonth =
+            lastDay.getDate();
 
 
-    container.innerHTML = "";
+        /*
+            JavaScript:
+            Domingo = 0
+            Segunda = 1
+            ...
+
+            Como o calendário começa na SEGUNDA,
+            transformamos para:
+            Segunda = 0
+            Domingo = 6
+        */
+
+        const firstWeekday =
+            (firstDay.getDay() + 6) % 7;
 
 
-    const year =
-        currentCalendarYear;
+        if (monthTitle) {
+
+            let monthName =
+                firstDay.toLocaleDateString(
+                    "pt-BR",
+                    {
+                        month: "long",
+                        year: "numeric"
+                    }
+                );
+
+            monthName =
+                monthName.charAt(0).toUpperCase() +
+                monthName.slice(1);
+
+            monthTitle.textContent =
+                monthName;
+        }
 
 
-    const month =
-        currentCalendarMonth;
+        const tasks = getTasks();
+        const exams = getExams();
+
+        let html = "";
 
 
-    const firstDay =
-        new Date(
-            year,
-            month,
-            1
-        ).getDay();
+        /* DIAS DO MÊS ANTERIOR */
+
+        const previousLastDay =
+            new Date(
+                currentCalendarYear,
+                currentCalendarMonth,
+                0
+            ).getDate();
+
+        for (
+            let i = firstWeekday - 1;
+            i >= 0;
+            i--
+        ) {
+
+            const day =
+                previousLastDay - i;
+
+            html += `
+                <div class="calendar-day other-month">
+                    <span>${day}</span>
+                </div>
+            `;
+        }
 
 
-    const totalDays =
-        new Date(
-            year,
-            month + 1,
-            0
-        ).getDate();
+        /* DIAS DO MÊS ATUAL */
+
+        for (
+            let day = 1;
+            day <= daysInMonth;
+            day++
+        ) {
+
+            const dateString =
+                `${currentCalendarYear}-${String(
+                    currentCalendarMonth + 1
+                ).padStart(2, "0")}-${String(
+                    day
+                ).padStart(2, "0")}`;
 
 
-    let startDay =
-        firstDay === 0
-            ? 6
-            : firstDay - 1;
+            const dayTasks =
+                tasks.filter(
+                    task => task.date === dateString
+                );
 
 
-    /* =================================================
-       PEGAR TAREFAS SALVAS
-       ================================================= */
+            const dayExams =
+                exams.filter(
+                    exam => exam.date === dateString
+                );
 
-    const tasks =
-        JSON.parse(
-            localStorage.getItem(
-                "comfortTasks"
+
+            const hasTask =
+                dayTasks.length > 0;
+
+            const hasExam =
+                dayExams.length > 0;
+
+            const isToday =
+                dateString === getTodayString();
+
+
+            html += `
+                <div
+                    class="calendar-day
+                    ${isToday ? "today" : ""}
+                    ${hasTask ? "has-task" : ""}
+                    ${hasExam ? "has-exam" : ""}"
+                    data-date="${dateString}">
+
+                    <span class="calendar-number">
+                        ${day}
+                    </span>
+
+                    ${
+                        hasTask || hasExam
+                            ? `
+                                <div class="calendar-indicators">
+
+                                    ${
+                                        hasTask
+                                            ? `
+                                                <span
+                                                    class="calendar-dot task"
+                                                    title="${dayTasks.length} tarefa(s)">
+                                                </span>
+                                            `
+                                            : ""
+                                    }
+
+                                    ${
+                                        hasExam
+                                            ? `
+                                                <span
+                                                    class="calendar-dot exam"
+                                                    title="${dayExams.length} prova(s)">
+                                                </span>
+                                            `
+                                            : ""
+                                    }
+
+                                </div>
+                            `
+                            : ""
+                    }
+
+                    <div class="calendar-events">
+
+                        ${dayTasks
+                            .slice(0, 3)
+                            .map(task => `
+                                <div
+                                    class="calendar-event task"
+                                    title="${escapeHTML(task.name)}">
+
+                                    ${escapeHTML(task.name)}
+
+                                </div>
+                            `)
+                            .join("")}
+
+                        ${dayExams
+                            .slice(0, 3)
+                            .map(exam => `
+                                <div
+                                    class="calendar-event exam"
+                                    title="${escapeHTML(exam.name)}">
+
+                                    ${escapeHTML(exam.name)}
+
+                                </div>
+                            `)
+                            .join("")}
+
+                    </div>
+
+                </div>
+            `;
+        }
+
+
+        /* DIAS DO PRÓXIMO MÊS */
+
+        const totalCells =
+            firstWeekday + daysInMonth;
+
+        const remaining =
+            (7 - (totalCells % 7)) % 7;
+
+        for (
+            let day = 1;
+            day <= remaining;
+            day++
+        ) {
+
+            html += `
+                <div class="calendar-day other-month">
+                    <span>${day}</span>
+                </div>
+            `;
+        }
+
+
+        calendar.innerHTML = html;
+
+
+        calendar
+            .querySelectorAll(
+                ".calendar-day:not(.other-month)"
             )
-        ) || [];
+            .forEach(dayElement => {
 
+                dayElement.addEventListener(
+                    "click",
+                    () => {
 
-    /* =================================================
-       PEGAR PROVAS SALVAS
-       ================================================= */
+                        const date =
+                            dayElement.dataset.date;
 
-    const exams =
-        JSON.parse(
-            localStorage.getItem(
-                "comfortExams"
-            )
-        ) || [];
+                        if (date) {
+                            showCalendarDay(date);
+                        }
 
+                    }
+                );
 
-    /* =================================================
-       DIAS VAZIOS
-       ================================================= */
-
-    for (
-        let i = 0;
-        i < startDay;
-        i++
-    ) {
-
-        const empty =
-            document.createElement("div");
-
-        empty.className =
-            "calendar-empty";
-
-        container.appendChild(
-            empty
-        );
-
+            });
     }
 
 
-    /* =================================================
-       CRIAR CADA DIA
-       ================================================= */
+    function showCalendarDay(date) {
 
-    for (
-        let day = 1;
-        day <= totalDays;
-        day++
-    ) {
+        const tasks =
+            getTasks().filter(
+                task => task.date === date
+            );
 
-        const dayElement =
-            document.createElement("div");
-
-
-        dayElement.className =
-            "calendar-day";
-
-
-        /* DATA */
-
-        const dateString =
-            `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-
-        /* =================================================
-           TAREFAS DESTE DIA
-           ================================================= */
-
-        const dayTasks =
-            tasks.filter(
-                task =>
-                    task.date === dateString
+        const exams =
+            getExams().filter(
+                exam => exam.date === date
             );
 
 
-        /* =================================================
-           PROVAS DESTE DIA
-           ================================================= */
+        let content = `
+            <div class="calendar-day-details">
 
-        const dayExams =
-            exams.filter(
-                exam =>
-                    exam.date === dateString
-            );
-
-
-        /* =================================================
-           NÚMERO DO DIA
-           ================================================= */
-
-        const number =
-            document.createElement("div");
-
-
-        number.className =
-            "calendar-number";
-
-
-        number.textContent =
-            day;
-
-
-        dayElement.appendChild(
-            number
-        );
-
-
-        /* =================================================
-           MOSTRAR TAREFAS
-           ================================================= */
-
-        dayTasks.forEach(task => {
-
-            const event =
-                document.createElement("div");
-
-
-            event.className =
-                "calendar-event task-event";
-
-
-            event.innerHTML = `
-                <span>✓</span>
-                ${task.name}
-            `;
-
-
-            dayElement.appendChild(
-                event
-            );
-
-        });
-
-
-        /* =================================================
-           MOSTRAR PROVAS
-           ================================================= */
-
-        dayExams.forEach(exam => {
-
-            const event =
-                document.createElement("div");
-
-
-            event.className =
-                "calendar-event exam-event";
-
-
-            event.innerHTML = `
-                <span>📚</span>
-                ${exam.name}
-            `;
-
-
-            dayElement.appendChild(
-                event
-            );
-
-        });
-
-
-        /* =================================================
-           DESTACAR HOJE
-           ================================================= */
-
-        const today =
-            new Date();
+                <h3>
+                    ${formatDate(date)}
+                </h3>
+        `;
 
 
         if (
-
-            day === today.getDate() &&
-
-            month === today.getMonth() &&
-
-            year === today.getFullYear()
-
+            tasks.length === 0 &&
+            exams.length === 0
         ) {
 
-            dayElement.classList.add(
-                "today"
-            );
+            content += `
+                <p>
+                    Nenhuma tarefa ou prova
+                    cadastrada para este dia.
+                </p>
+            `;
 
+        } else {
+
+            if (tasks.length > 0) {
+
+                content += `
+                    <h4>
+                        📝 Tarefas
+                    </h4>
+
+                    <div class="day-list">
+                `;
+
+                tasks.forEach(task => {
+
+                    content += `
+                        <div class="day-event task">
+
+                            <strong>
+                                ${escapeHTML(task.name)}
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(task.subject)}
+                            </span>
+
+                            <small>
+                                ${
+                                    task.completed
+                                        ? "✓ Concluída"
+                                        : "Pendente"
+                                }
+                            </small>
+
+                        </div>
+                    `;
+
+                });
+
+                content += `</div>`;
+            }
+
+
+            if (exams.length > 0) {
+
+                content += `
+                    <h4>
+                        📚 Provas
+                    </h4>
+
+                    <div class="day-list">
+                `;
+
+                exams.forEach(exam => {
+
+                    content += `
+                        <div class="day-event exam">
+
+                            <strong>
+                                ${escapeHTML(exam.name)}
+                            </strong>
+
+                            <span>
+                                ${escapeHTML(exam.subject)}
+                            </span>
+
+                        </div>
+                    `;
+
+                });
+
+                content += `</div>`;
+            }
         }
 
 
-        /* =================================================
-           CLICAR NO DIA
-           ================================================= */
+        content += `</div>`;
 
-        dayElement.addEventListener(
+
+        openModal(
+            `Agenda — ${formatDate(date)}`,
+            content
+        );
+    }
+
+
+    const previousMonth =
+        document.getElementById("previousMonth");
+
+    if (previousMonth) {
+
+        previousMonth.addEventListener(
             "click",
             () => {
 
-                showCalendarDay(
-                    dateString,
-                    dayTasks,
-                    dayExams
-                );
+                currentCalendarMonth--;
 
+                if (currentCalendarMonth < 0) {
+
+                    currentCalendarMonth = 11;
+                    currentCalendarYear--;
+                }
+
+                createCalendar();
             }
         );
-
-
-        container.appendChild(
-            dayElement
-        );
-
-    }
-
-}
-
-
-/* =====================================================
-   MOSTRAR ATIVIDADES DO DIA
-   ===================================================== */
-
-function showCalendarDay(
-    date,
-    tasks,
-    exams
-) {
-
-    let content = "";
-
-
-    content += `
-
-        <h3 style="
-            margin-bottom:20px;
-        ">
-
-            📅 ${formatDate(date)}
-
-        </h3>
-
-    `;
-
-
-    /* =================================================
-       TAREFAS
-       ================================================= */
-
-    if (tasks.length > 0) {
-
-        content += `
-
-            <h4 style="
-                margin-bottom:10px;
-            ">
-
-                📝 Tarefas
-
-            </h4>
-
-        `;
-
-
-        tasks.forEach(task => {
-
-            content += `
-
-                <div style="
-                    padding:12px;
-                    margin-bottom:8px;
-                    background:#f1f5f9;
-                    border-radius:10px;
-                ">
-
-                    <strong>
-                        ${task.name}
-                    </strong>
-
-                    <p style="
-                        margin-top:4px;
-                        color:#718096;
-                        font-size:13px;
-                    ">
-
-                        ${task.subject}
-
-                    </p>
-
-                </div>
-
-            `;
-
-        });
-
     }
 
 
-    /* =================================================
-       PROVAS
-       ================================================= */
+    const nextMonth =
+        document.getElementById("nextMonth");
 
-    if (exams.length > 0) {
+    if (nextMonth) {
 
-        content += `
+        nextMonth.addEventListener(
+            "click",
+            () => {
 
-            <h4 style="
-                margin-top:20px;
-                margin-bottom:10px;
-            ">
+                currentCalendarMonth++;
 
-                📚 Provas
+                if (currentCalendarMonth > 11) {
 
-            </h4>
+                    currentCalendarMonth = 0;
+                    currentCalendarYear++;
+                }
 
-        `;
-
-
-        exams.forEach(exam => {
-
-            content += `
-
-                <div style="
-                    padding:12px;
-                    margin-bottom:8px;
-                    background:#f3e8ff;
-                    border-radius:10px;
-                ">
-
-                    <strong>
-                        ${exam.name}
-                    </strong>
-
-                    <p style="
-                        margin-top:4px;
-                        color:#718096;
-                        font-size:13px;
-                    ">
-
-                        ${exam.subject}
-
-                    </p>
-
-                </div>
-
-            `;
-
-        });
-
-    }
-
-
-    /* =================================================
-       NENHUMA ATIVIDADE
-       ================================================= */
-
-    if (
-
-        tasks.length === 0 &&
-        exams.length === 0
-
-    ) {
-
-        content += `
-
-            <div style="
-                text-align:center;
-                padding:20px;
-                color:#718096;
-            ">
-
-                Nenhuma atividade neste dia.
-
-            </div>
-
-        `;
-
-    }
-
-
-    openModal(
-        "Atividades do dia",
-        content
-    );
-
-}
-
-
-/* =====================================================
-   AVISOS
-   ===================================================== */
-
-function renderNotices() {
-
-    const container =
-        document.getElementById(
-            "noticeList"
-        );
-
-
-    if (!container) return;
-
-
-    const notices = [
-
-        {
-            icon: "ph-warning",
-            title: "Prova de Matemática",
-            text: "Sua prova está se aproximando."
-        },
-
-        {
-            icon: "ph-clock",
-            title: "Hora de estudar",
-            text: "Você programou estudos para hoje."
-        },
-
-        {
-            icon: "ph-check-circle",
-            title: "Tarefa concluída",
-            text: "Você está mantendo sua rotina."
-        }
-
-    ];
-
-
-    container.innerHTML = "";
-
-
-    notices.forEach(notice => {
-
-        const item =
-            document.createElement("div");
-
-
-        item.innerHTML = `
-
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:15px;
-            ">
-
-                <i
-                    class="ph ${notice.icon}"
-                    style="
-                        font-size:25px;
-                        color:#3b82f6;
-                    ">
-                </i>
-
-                <div>
-
-                    <strong>
-                        ${notice.title}
-                    </strong>
-
-                    <p style="
-                        color:#718096;
-                        font-size:12px;
-                        margin-top:4px;
-                    ">
-
-                        ${notice.text}
-
-                    </p>
-
-                </div>
-
-            </div>
-
-        `;
-
-
-        container.appendChild(
-            item
-        );
-
-    });
-
-}
-
-
-/* =====================================================
-   BOTÃO DE NOVO AVISO
-   ===================================================== */
-
-const newNoticeButton =
-    document.getElementById(
-        "newNoticeButton"
-    );
-
-
-if (newNoticeButton) {
-
-    newNoticeButton.addEventListener(
-        "click",
-        () => {
-
-            openModal(
-
-                "Novo Aviso",
-
-                `
-
-                <form
-                    class="modal-form"
-                    id="noticeForm">
-
-                    <label>
-                        Título
-                    </label>
-
-                    <input
-                        type="text"
-                        id="noticeTitle"
-                        placeholder="Ex: Estudar matemática"
-                        required
-                    >
-
-
-                    <label>
-                        Mensagem
-                    </label>
-
-                    <textarea
-                        id="noticeMessage"
-                        rows="4"
-                        placeholder="Digite seu aviso..."
-                        required
-                    ></textarea>
-
-
-                    <button
-                        type="submit"
-                        class="btn-primary">
-
-                        <i class="ph ph-bell"></i>
-
-                        Criar Aviso
-
-                    </button>
-
-                </form>
-
-                `
-
-            );
-
-
-            const form =
-                document.getElementById(
-                    "noticeForm"
-                );
-
-
-            if (form) {
-
-                form.addEventListener(
-                    "submit",
-                    function(event) {
-
-                        event.preventDefault();
-
-                        hideModal();
-
-                        alert(
-                            "🔔 Aviso criado com sucesso!"
-                        );
-
-                        renderNotices();
-
-                    }
-                );
-
+                createCalendar();
             }
-
-        }
-    );
-
-}
+        );
+    }
 
 
-/* =====================================================
-   NOVA MATÉRIA
-   ===================================================== */
+    /* =========================================================
+       ADICIONAR PELO CALENDÁRIO
+    ========================================================= */
 
-const newSubjectButton =
-    document.getElementById(
-        "newSubjectButton"
-    );
+    const calendarAddButton =
+        document.getElementById("calendarAddButton");
 
+    if (calendarAddButton) {
 
-if (newSubjectButton) {
+        calendarAddButton.addEventListener(
+            "click",
+            () => {
 
-    newSubjectButton.addEventListener(
-        "click",
-        () => {
+                openModal(
+                    "Adicionar ao calendário",
 
-            openModal(
+                    `
+                        <div
+                            style="
+                                display:flex;
+                                flex-direction:column;
+                                gap:12px;
+                            ">
 
-                "Nova Matéria",
+                            <button
+                                type="button"
+                                class="btn-primary"
+                                id="calendarAddTask">
 
-                `
+                                📝 Adicionar tarefa
 
-                <form
-                    class="modal-form"
-                    id="subjectForm">
+                            </button>
 
-                    <label>
-                        Nome da matéria
-                    </label>
+                            <button
+                                type="button"
+                                class="btn-secondary"
+                                id="calendarAddExam">
 
-                    <input
-                        type="text"
-                        id="subjectName"
-                        placeholder="Ex: Biologia"
-                        required
-                    >
+                                📚 Adicionar prova
 
+                            </button>
 
-                    <label>
-                        Professor
-                    </label>
-
-                    <input
-                        type="text"
-                        id="teacherName"
-                        placeholder="Ex: Professor João"
-                    >
-
-
-                    <button
-                        type="submit"
-                        class="btn-primary">
-
-                        <i class="ph ph-plus"></i>
-
-                        Adicionar Matéria
-
-                    </button>
-
-                </form>
-
-                `
-
-            );
-
-
-            const form =
-                document.getElementById(
-                    "subjectForm"
+                        </div>
+                    `
                 );
 
 
-            if (form) {
+                const addTaskButton =
+                    document.getElementById(
+                        "calendarAddTask"
+                    );
 
-                form.addEventListener(
-                    "submit",
-                    function(event) {
-
-                        event.preventDefault();
-
-
-                        const name =
-                            document
-                                .getElementById(
-                                    "subjectName"
-                                )
-                                .value;
+                const addExamButton =
+                    document.getElementById(
+                        "calendarAddExam"
+                    );
 
 
-                        const teacher =
-                            document
-                                .getElementById(
-                                    "teacherName"
-                                )
-                                .value;
+                if (addTaskButton) {
 
+                    addTaskButton.addEventListener(
+                        "click",
+                        () => {
 
-                        const grid =
-                            document
-                                .getElementById(
-                                    "subjectsGrid"
-                                );
+                            closeModal();
 
-
-                        if (!grid) return;
-
-
-                        const card =
-                            document.createElement(
-                                "div"
+                            setTimeout(
+                                showTaskModal,
+                                100
                             );
 
-
-                        card.className =
-                            "subject-card";
-
-
-                        card.innerHTML = `
-
-                            <div class="subject-color blue"></div>
-
-                            <h3>
-                                ${name}
-                            </h3>
-
-                            <p>
-                                ${
-                                    teacher ||
-                                    "Professor não informado"
-                                }
-                            </p>
-
-                            <div class="progress-info">
-
-                                <span>
-                                    Progresso
-                                </span>
-
-                                <strong>
-                                    0%
-                                </strong>
-
-                            </div>
-
-                            <div class="progress">
-
-                                <span style="width:0%"></span>
-
-                            </div>
-
-                        `;
+                        }
+                    );
+                }
 
 
-                        grid.appendChild(
-                            card
-                        );
+                if (addExamButton) {
 
+                    addExamButton.addEventListener(
+                        "click",
+                        () => {
 
-                        hideModal();
+                            closeModal();
 
+                            setTimeout(
+                                showExamModal,
+                                100
+                            );
 
-                        alert(
-                            "📚 Matéria adicionada!"
-                        );
-
-                    }
-                );
+                        }
+                    );
+                }
 
             }
+        );
+    }
 
+
+    /* =========================================================
+       AVISOS
+    ========================================================= */
+
+    function updateNotificationCount() {
+
+        const count =
+            document.getElementById(
+                "notificationCount"
+            );
+
+        if (!count) return;
+
+        const total =
+            getNotices().length;
+
+        count.textContent = total;
+
+        count.style.display =
+            total > 0
+                ? "flex"
+                : "none";
+    }
+
+
+    function renderNotices() {
+
+        const container =
+            document.getElementById("noticeList");
+
+        const dashboardContainer =
+            document.getElementById(
+                "dashboardNoticeList"
+            );
+
+        const notices =
+            getNotices();
+
+
+        /* PÁGINA DE AVISOS */
+
+        if (container) {
+
+            if (notices.length === 0) {
+
+                container.innerHTML = `
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            🔔
+                        </div>
+
+                        <h3>
+                            Nenhum aviso
+                        </h3>
+
+                        <p>
+                            Você não possui avisos no momento.
+                        </p>
+
+                    </div>
+                `;
+
+            } else {
+
+                container.innerHTML =
+                    notices.map(notice => `
+
+                        <div class="notice">
+
+                            <i class="ph ph-bell"></i>
+
+                            <div>
+
+                                <strong>
+                                    ${escapeHTML(notice.title)}
+                                </strong>
+
+                                <p>
+                                    ${escapeHTML(notice.message)}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    `).join("");
+            }
         }
-    );
-
-}
 
 
-/* =====================================================
-   BOTÃO DE NOTIFICAÇÕES
-   ===================================================== */
+        /* AVISOS DO DASHBOARD */
 
-const notificationButton =
-    document.getElementById(
-        "notificationButton"
-    );
+        if (dashboardContainer) {
 
+            const latest =
+                notices.slice(0, 3);
 
-if (notificationButton) {
+            if (latest.length === 0) {
 
-    notificationButton.addEventListener(
-        "click",
-        () => {
+                dashboardContainer.innerHTML = `
+                    <div class="empty-state">
 
-            openPage("avisos");
+                        <div class="empty-icon">
+                            🔔
+                        </div>
 
+                        <h3>
+                            Nenhum aviso
+                        </h3>
+
+                        <p>
+                            Você não possui avisos no momento.
+                        </p>
+
+                    </div>
+                `;
+
+            } else {
+
+                dashboardContainer.innerHTML =
+                    latest.map(notice => `
+
+                        <div class="notice">
+
+                            <i class="ph ph-bell"></i>
+
+                            <div>
+
+                                <strong>
+                                    ${escapeHTML(notice.title)}
+                                </strong>
+
+                                <p>
+                                    ${escapeHTML(notice.message)}
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    `).join("");
+            }
         }
-    );
-
-}
 
 
-/* =====================================================
-   INICIALIZAÇÃO
-   ===================================================== */
-
-renderTasks();
-
-renderExams();
-
-renderNotices();
-
-createCalendar();
-
-updateDashboard();
-
-updateTimerDisplay();
+        updateNotificationCount();
+    }
 
 
-console.log(
-    "ComfortStudy carregado com sucesso! 🚀"
-);
+    /* NOVO AVISO */
+
+    const newNoticeButton =
+        document.getElementById("newNoticeButton");
+
+    if (newNoticeButton) {
+
+        newNoticeButton.addEventListener(
+            "click",
+            () => {
+
+                openModal(
+                    "Novo Aviso",
+
+                    `
+                        <form
+                            id="noticeForm"
+                            class="modal-form">
+
+                            <label for="noticeTitle">
+                                Título
+                            </label>
+
+                            <input
+                                type="text"
+                                id="noticeTitle"
+                                placeholder="Título do aviso"
+                                required
+                            >
+
+                            <label for="noticeMessage">
+                                Aviso
+                            </label>
+
+                            <textarea
+                                id="noticeMessage"
+                                placeholder="Digite o aviso..."
+                                rows="5"
+                                required></textarea>
+
+                            <button
+                                type="submit"
+                                class="btn-primary">
+
+                                Publicar aviso
+
+                            </button>
+
+                        </form>
+                    `
+                );
+
+
+                const form =
+                    document.getElementById(
+                        "noticeForm"
+                    );
+
+                if (form) {
+
+                    form.addEventListener(
+                        "submit",
+                        event => {
+
+                            event.preventDefault();
+
+                            const title =
+                                document
+                                    .getElementById(
+                                        "noticeTitle"
+                                    )
+                                    .value
+                                    .trim();
+
+                            const message =
+                                document
+                                    .getElementById(
+                                        "noticeMessage"
+                                    )
+                                    .value
+                                    .trim();
+
+
+                            if (!title || !message) {
+
+                                alert(
+                                    "Preencha todos os campos."
+                                );
+
+                                return;
+                            }
+
+
+                            const notices =
+                                getNotices();
+
+
+                            notices.unshift({
+
+                                id: Date.now(),
+
+                                title,
+
+                                message,
+
+                                date:
+                                    new Date()
+                                        .toISOString()
+
+                            });
+
+
+                            saveNotices(notices);
+
+                            closeModal();
+
+                            updateEverything();
+
+                            alert(
+                                "Aviso publicado com sucesso! 🔔"
+                            );
+
+                        }
+                    );
+                }
+
+            }
+        );
+    }
+
+
+    /* BOTÃO DE NOTIFICAÇÃO */
+
+    const notificationButton =
+        document.getElementById(
+            "notificationButton"
+        );
+
+    if (notificationButton) {
+
+        notificationButton.addEventListener(
+            "click",
+            () => {
+
+                openPage("avisos");
+
+            }
+        );
+    }
+
+
+    /* =========================================================
+       ATUALIZA TUDO
+    ========================================================= */
+
+    function updateEverything() {
+
+        renderTasks();
+
+        renderExams();
+
+        renderSubjects();
+
+        renderNotices();
+
+        createCalendar();
+
+        updateDashboard();
+
+        updatePerformance();
+
+        updateTimerDisplay();
+    }
+
+
+    /* =========================================================
+       INICIALIZAÇÃO
+    ========================================================= */
+
+    renderTasks();
+
+    renderExams();
+
+    renderSubjects();
+
+    renderNotices();
+
+    createCalendar();
+
+    updateDashboard();
+
+    updatePerformance();
+
+    updateTimerDisplay();
+
+});

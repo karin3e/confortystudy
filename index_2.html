@@ -7,17 +7,14 @@
 
     <title>ComfortStudy - Painel do Estudante</title>
 
-    <!-- Ícones -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- CSS -->
     <link rel="stylesheet" href="style_dashboard.css">
 </head>
 
 <body>
 
-    <!-- ================= SIDEBAR ================= -->
-
+    
     <aside class="sidebar">
 
         <div>
@@ -110,11 +107,11 @@
     </aside>
 
 
-    <!-- ================= CONTEÚDO ================= -->
+    
 
     <main class="content">
 
-        <!-- ================= TOPO ================= -->
+        
 
         <header class="topbar">
 
@@ -142,9 +139,7 @@
                     <span
                         class="notification-count"
                         id="notificationCount">
-
-                        2
-
+                        0
                     </span>
 
                 </button>
@@ -163,17 +158,14 @@
         </header>
 
 
-        <!-- ================================================= -->
-        <!-- DASHBOARD -->
-        <!-- ================================================= -->
-
+        
         <section
             class="page-section active-page"
             id="page-dashboard">
 
-            <section class="cards-grid">
+            <!-- CARDS -->
 
-                <!-- PRAZOS -->
+            <section class="cards-grid">
 
                 <div class="card">
 
@@ -190,17 +182,13 @@
                         <p
                             class="number"
                             id="dashboard-prazos">
-
                             0 Atividades
-
                         </p>
 
                     </div>
 
                 </div>
 
-
-                <!-- CONCLUÍDAS -->
 
                 <div class="card">
 
@@ -217,17 +205,13 @@
                         <p
                             class="number"
                             id="dashboard-concluidas">
-
                             0 Tarefas
-
                         </p>
 
                     </div>
 
                 </div>
 
-
-                <!-- MATÉRIAS -->
 
                 <div class="card">
 
@@ -244,9 +228,7 @@
                         <p
                             class="number"
                             id="dashboard-materias">
-
-                            0 Disciplinas
-
+                            8 Disciplinas
                         </p>
 
                     </div>
@@ -256,7 +238,7 @@
             </section>
 
 
-            <!-- TAREFAS + PREMIUM -->
+            
 
             <div class="dashboard-grid">
 
@@ -279,22 +261,16 @@
 
                     </div>
 
-
-                    <!--
-                        O JAVASCRIPT VAI PREENCHER
-                        ESSA ÁREA AUTOMATICAMENTE
-                    -->
-
                     <div
                         class="task-list"
                         id="dashboardTaskList">
+
+                       
 
                     </div>
 
                 </section>
 
-
-                <!-- PREMIUM -->
 
                 <section class="premium-card">
 
@@ -327,11 +303,11 @@
             </div>
 
 
-            <!-- PARTE INFERIOR -->
+            
 
             <div class="dashboard-bottom-grid">
 
-                <!-- PRÓXIMA PROVA -->
+               
 
                 <section class="info-card">
 
@@ -339,7 +315,7 @@
 
                         <h2>
                             <i class="ph ph-exam"></i>
-                            Próxima Prova
+                            Próximas Provas
                         </h2>
 
                         <button
@@ -353,49 +329,18 @@
                     </div>
 
 
-                    <!--
-                        O JAVASCRIPT VAI ATUALIZAR
-                        ESSA ÁREA
-                    -->
-
                     <div
                         class="exam-preview"
-                        id="dashboardExamPreview">
+                        id="dashboardExamList">
 
-                        <div class="exam-icon">
-                            <i class="ph ph-book-open-text"></i>
-                        </div>
-
-                        <div>
-
-                            <strong>
-                                Nenhuma prova cadastrada
-                            </strong>
-
-                            <p>
-                                Cadastre uma prova para aparecer aqui.
-                            </p>
-
-                        </div>
-
-                        <div class="days-left">
-
-                            <strong>
-                                —
-                            </strong>
-
-                            <span>
-                                dias
-                            </span>
-
-                        </div>
+                        
 
                     </div>
 
                 </section>
 
 
-                <!-- AVISOS -->
+                
 
                 <section class="info-card">
 
@@ -417,14 +362,10 @@
                     </div>
 
 
-                    <!--
-                        O JAVASCRIPT VAI ATUALIZAR
-                        OS AVISOS AQUI
-                    -->
-
                     <div
                         id="dashboardNoticeList">
 
+                        
                     </div>
 
                 </section>
@@ -434,9 +375,7 @@
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- MATÉRIAS -->
-        <!-- ================================================= -->
+        
 
         <section
             class="page-section"
@@ -456,15 +395,6 @@
 
                 </div>
 
-                <button
-                    class="btn-primary"
-                    id="newSubjectButton">
-
-                    <i class="ph ph-plus"></i>
-                    Nova Matéria
-
-                </button>
-
             </div>
 
 
@@ -472,14 +402,13 @@
                 class="subjects-grid"
                 id="subjectsGrid">
 
+               
             </div>
 
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- CALENDÁRIO -->
-        <!-- ================================================= -->
+        
 
         <section
             class="page-section"
@@ -517,19 +446,21 @@
 
                     <button
                         class="calendar-arrow"
-                        id="calendarPrev">
+                        id="previousMonth">
 
                         <i class="ph ph-caret-left"></i>
 
                     </button>
 
+
                     <h3 id="calendarMonth">
                         Setembro 2026
                     </h3>
 
+
                     <button
                         class="calendar-arrow"
-                        id="calendarNext">
+                        id="nextMonth">
 
                         <i class="ph ph-caret-right"></i>
 
@@ -555,6 +486,8 @@
                     class="calendar-days"
                     id="calendarDays">
 
+                    
+
                 </div>
 
             </div>
@@ -562,10 +495,7 @@
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- TAREFAS -->
-        <!-- ================================================= -->
-
+        
         <section
             class="page-section"
             id="page-tarefas">
@@ -601,30 +531,25 @@
                 <input
                     type="text"
                     id="taskSearch"
-                    placeholder="🔎  Pesquisar tarefa...">
+                    placeholder="🔎  Pesquisar tarefa..."
+                >
 
                 <button
                     class="filter active"
                     data-filter="all">
-
                     Todas
-
                 </button>
 
                 <button
                     class="filter"
                     data-filter="pending">
-
                     Pendentes
-
                 </button>
 
                 <button
                     class="filter"
                     data-filter="completed">
-
                     Concluídas
-
                 </button>
 
             </div>
@@ -634,14 +559,14 @@
                 class="full-task-list"
                 id="fullTaskList">
 
+                
+
             </div>
 
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- PROVAS -->
-        <!-- ================================================= -->
+        
 
         <section
             class="page-section"
@@ -677,15 +602,14 @@
                 class="exam-list"
                 id="examList">
 
+                
+
             </div>
 
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- CRONÔMETRO -->
-        <!-- ================================================= -->
-
+       
         <section
             class="page-section"
             id="page-cronometro">
@@ -726,6 +650,7 @@
 
                     </button>
 
+
                     <button
                         class="btn-secondary"
                         id="pauseTimer">
@@ -734,6 +659,7 @@
                         Pausar
 
                     </button>
+
 
                     <button
                         class="btn-secondary"
@@ -749,15 +675,15 @@
 
                 <div class="timer-presets">
 
-                    <button data-time="1500">
+                    <button data-time="25">
                         25 min
                     </button>
 
-                    <button data-time="3000">
+                    <button data-time="50">
                         50 min
                     </button>
 
-                    <button data-time="3600">
+                    <button data-time="60">
                         60 min
                     </button>
 
@@ -768,9 +694,7 @@
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- AVISOS -->
-        <!-- ================================================= -->
+       
 
         <section
             class="page-section"
@@ -806,15 +730,14 @@
                 class="notice-list"
                 id="noticeList">
 
+               
+
             </div>
 
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- DESEMPENHO -->
-        <!-- ================================================= -->
-
+        
         <section
             class="page-section"
             id="page-desempenho">
@@ -847,7 +770,7 @@
                     </span>
 
                     <strong id="performanceTasks">
-                        0%
+                        0
                     </strong>
 
                 </div>
@@ -862,7 +785,7 @@
                     </span>
 
                     <strong>
-                        6h 35min
+                        0min
                     </strong>
 
                 </div>
@@ -877,7 +800,7 @@
                     </span>
 
                     <strong>
-                        +18%
+                        +0%
                     </strong>
 
                 </div>
@@ -892,53 +815,11 @@
                 </h3>
 
 
-                <div class="performance-row">
+                <div
+                    class="performance-rows"
+                    id="performanceSubjectList">
 
-                    <div>
-                        Matemática
-                    </div>
-
-                    <div class="performance-bar">
-                        <span style="width:80%"></span>
-                    </div>
-
-                    <strong>
-                        80%
-                    </strong>
-
-                </div>
-
-
-                <div class="performance-row">
-
-                    <div>
-                        Português
-                    </div>
-
-                    <div class="performance-bar">
-                        <span style="width:65%"></span>
-                    </div>
-
-                    <strong>
-                        65%
-                    </strong>
-
-                </div>
-
-
-                <div class="performance-row">
-
-                    <div>
-                        História
-                    </div>
-
-                    <div class="performance-bar">
-                        <span style="width:72%"></span>
-                    </div>
-
-                    <strong>
-                        72%
-                    </strong>
+                   
 
                 </div>
 
@@ -947,9 +828,7 @@
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- PREMIUM -->
-        <!-- ================================================= -->
+       
 
         <section
             class="page-section"
@@ -1036,10 +915,7 @@
         </section>
 
 
-        <!-- ================================================= -->
-        <!-- PERFIL -->
-        <!-- ================================================= -->
-
+       
         <section
             class="page-section"
             id="page-perfil">
@@ -1090,8 +966,7 @@
     </main>
 
 
-    <!-- ================= MODAL ================= -->
-
+   
     <div
         class="modal"
         id="modal">
@@ -1112,8 +987,6 @@
 
             <div id="modalBody">
 
-                <!-- Formulários inseridos pelo JavaScript -->
-
             </div>
 
         </div>
@@ -1121,7 +994,7 @@
     </div>
 
 
-    <!-- JAVASCRIPT -->
+    
 
     <script src="script.js"></script>
 
