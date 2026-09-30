@@ -1,0 +1,18 @@
+COMFORTSTUDY - PWA
+
+1. Copie TODOS os arquivos desta pasta para a pasta do seu projeto no VS Code.
+2. Faça commit e push para o GitHub.
+3. Publique/abra pelo GitHub Pages (HTTPS).
+4. No iPhone, abra o endereço pelo Safari.
+5. Toque em Compartilhar -> Adicionar à Tela de Início.
+6. Abra o ícone ComfortStudy pela Tela de Início.
+
+NOTIFICAÇÕES:
+- O projeto já mantém o sistema de Notification API que verifica tarefas e provas para HOJE e AMANHÃ.
+- O Service Worker agora deixa o projeto preparado como PWA e para futuras notificações push.
+- Para notificações realmente agendadas com o app totalmente fechado, ainda é necessário Web Push com um servidor/backend. O PWA sozinho não cria agendamento remoto.
+
+TESTE:
+- Use GitHub Pages ou localhost/HTTPS.
+- Não abra por file://, porque Service Worker não funciona nesse modo.
+- Ao tocar no sino do ComfortStudy, o navegador deve pedir permissão para notificações.
