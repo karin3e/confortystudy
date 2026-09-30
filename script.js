@@ -978,6 +978,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         updateEverything();
 
+        /*
+         * Se a permissão já estiver ativa, a nova tarefa
+         * passa a participar imediatamente das verificações.
+         */
+        checkDueDateNotifications();
+
 
         alert(
             "Tarefa adicionada com sucesso! ✅"
@@ -1706,6 +1712,12 @@ document.addEventListener("DOMContentLoaded", () => {
         closeModal();
 
         updateEverything();
+
+        /*
+         * Se a permissão já estiver ativa, a nova prova
+         * passa a participar imediatamente das verificações.
+         */
+        checkDueDateNotifications();
 
 
         alert(
@@ -3919,6 +3931,300 @@ document.addEventListener("DOMContentLoaded", () => {
 
    
 
+
+    /* =========================================================
+       NOTIFICAÇÕES DE TAREFAS E PROVAS
+       - Pede permissão quando o usuário toca no sino.
+       - Avisa 1 dia antes e no dia do vencimento.
+       - Evita notificações repetidas usando localStorage.
+       - Verifica ao abrir a página, ao voltar para a aba
+         e a cada 60 segundos enquanto o site estiver aberto.
+    ========================================================= */
+
+    const NOTIFICATION_STORAGE_KEY =
+        "comfortSentNotifications";
+
+    function getSentNotifications() {
+        const data = getStorage(
+            NOTIFICATION_STORAGE_KEY,
+            []
+        );
+
+        return Array.isArray(data)
+            ? data
+            : [];
+    }
+
+
+    function saveSentNotifications(list) {
+        setStorage(
+            NOTIFICATION_STORAGE_KEY,
+            list.slice(-300)
+        );
+    }
+
+
+    function notificationSupported() {
+        return (
+            "Notification" in window
+        );
+    }
+
+
+    async function requestNotificationPermission() {
+        if (!notificationSupported()) {
+            alert(
+                "Seu navegador não oferece suporte a notificações."
+            );
+            return false;
+        }
+
+        if (
+            Notification.permission ===
+            "granted"
+        ) {
+            return true;
+        }
+
+        if (
+            Notification.permission ===
+            "denied"
+        ) {
+            alert(
+                "As notificações estão bloqueadas no navegador. Ative-as nas configurações do navegador para receber lembretes."
+            );
+            return false;
+        }
+
+        try {
+            const permission =
+                await Notification.requestPermission();
+
+            if (
+                permission ===
+                "granted"
+            ) {
+                alert(
+                    "Notificações ativadas! 🔔 Você receberá lembretes de tarefas e provas."
+                );
+
+                checkDueDateNotifications();
+
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error(
+                "Não foi possível solicitar permissão para notificações:",
+                error
+            );
+
+            return false;
+        }
+    }
+
+
+    function sendBrowserNotification(
+        title,
+        body,
+        notificationId
+    ) {
+        if (
+            !notificationSupported() ||
+            Notification.permission !==
+                "granted"
+        ) {
+            return false;
+        }
+
+        const sent =
+            getSentNotifications();
+
+        if (
+            sent.includes(
+                notificationId
+            )
+        ) {
+            return false;
+        }
+
+        try {
+            const notification =
+                new Notification(
+                    title,
+                    {
+                        body,
+                        icon:
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236c63ff'/%3E%3Ctext x='50' y='65' text-anchor='middle' font-size='55'%3E📚%3C/text%3E%3C/svg%3E",
+                        tag:
+                            notificationId,
+                        renotify: false
+                    }
+                );
+
+            notification.onclick =
+                () => {
+                    window.focus();
+
+                    if (
+                        notification.close
+                    ) {
+                        notification.close();
+                    }
+
+                    openPage(
+                        "calendario"
+                    );
+                };
+
+            sent.push(
+                notificationId
+            );
+
+            saveSentNotifications(
+                sent
+            );
+
+            return true;
+        } catch (error) {
+            console.error(
+                "Erro ao mostrar notificação:",
+                error
+            );
+
+            return false;
+        }
+    }
+
+
+    function checkDueDateNotifications() {
+        if (
+            !notificationSupported() ||
+            Notification.permission !==
+                "granted"
+        ) {
+            return;
+        }
+
+        const today =
+            getTodayString();
+
+        const tasks =
+            getTasks().filter(
+                task =>
+                    task &&
+                    task.id != null &&
+                    task.date &&
+                    !task.completed
+            );
+
+        const exams =
+            getExams().filter(
+                exam =>
+                    exam &&
+                    exam.id != null &&
+                    exam.date &&
+                    !exam.completed
+            );
+
+
+        const items = [
+            ...tasks.map(
+                task => ({
+                    ...task,
+                    notificationType:
+                        "tarefa"
+                })
+            ),
+            ...exams.map(
+                exam => ({
+                    ...exam,
+                    notificationType:
+                        "prova"
+                })
+            )
+        ];
+
+
+        items.forEach(
+            item => {
+                const days =
+                    getDaysUntil(
+                        item.date
+                    );
+
+                if (
+                    days !== 0 &&
+                    days !== 1
+                ) {
+                    return;
+                }
+
+                const prefix =
+                    item.notificationType ===
+                    "prova"
+                        ? "📚 Prova"
+                        : "📝 Tarefa";
+
+                const when =
+                    days === 0
+                        ? "É hoje!"
+                        : "É amanhã!";
+
+                const title =
+                    `${prefix}: ${item.name}`;
+
+                const body =
+                    `${when} ${item.subject ? `Matéria: ${item.subject}. ` : ""}Data: ${formatDate(item.date)}.`;
+
+                const notificationId =
+                    `comfort-${item.notificationType}-${item.id}-${days}`;
+
+                sendBrowserNotification(
+                    title,
+                    body,
+                    notificationId
+                );
+            }
+        );
+    }
+
+
+    window.enableComfortNotifications =
+        requestNotificationPermission;
+
+    window.checkComfortNotifications =
+        checkDueDateNotifications;
+
+
+    /* Verifica ao abrir/voltar para o site. */
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+            if (
+                document.visibilityState ===
+                "visible"
+            ) {
+                checkDueDateNotifications();
+            }
+        }
+    );
+
+
+    window.addEventListener(
+        "focus",
+        checkDueDateNotifications
+    );
+
+
+    /* Verificação periódica enquanto o site estiver aberto. */
+    setInterval(
+        checkDueDateNotifications,
+        60 * 1000
+    );
+
+
     const notificationButton =
         document.getElementById(
             "notificationButton"
@@ -3929,7 +4235,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         notificationButton.addEventListener(
             "click",
-            () => {
+            async () => {
+
+                await requestNotificationPermission();
+
+                checkDueDateNotifications();
 
                 openPage(
                     "avisos"
@@ -4035,5 +4345,11 @@ document.addEventListener("DOMContentLoaded", () => {
     updateTimerDisplay();
 
     renderProfile();
+
+    /*
+     * Faz uma verificação inicial. Se a permissão ainda
+     * não foi concedida, nenhuma janela será aberta.
+     */
+    checkDueDateNotifications();
 
 });
