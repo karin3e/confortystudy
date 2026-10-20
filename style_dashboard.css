@@ -1895,3 +1895,72 @@ body {
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(20, 35, 70, 0.08);
 }
+/* ===== ComfortStudy: ajustes extras para celulares ===== */
+@media (max-width: 800px) {
+  html { -webkit-text-size-adjust: 100%; }
+  body { overflow-x: hidden; }
+  .sidebar {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 88px;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+    display: block !important;
+    overflow: hidden;
+    border-top: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 -8px 24px rgba(0,0,0,.22);
+  }
+  .sidebar .logo, .sidebar .sidebar-bottom, .sidebar .user-profile { display: none !important; }
+  .sidebar .menu {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 5px !important;
+    margin: 0 !important;
+    padding: 0 0 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sidebar .menu::-webkit-scrollbar { display: none; }
+  .sidebar .menu a {
+    flex: 0 0 56px;
+    min-width: 56px;
+    min-height: 50px;
+    padding: 8px 3px !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px !important;
+    border-radius: 10px;
+    font-size: 9px !important;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .sidebar .menu a i { font-size: 20px !important; }
+  .sidebar .menu a span { display: block !important; max-width: 54px; overflow: hidden; text-overflow: ellipsis; font-size: 9px; }
+  .content { margin-left: 0 !important; width: 100%; padding: 18px 14px calc(105px + env(safe-area-inset-bottom)) !important; }
+  .topbar { flex-wrap: wrap; align-items: center; gap: 12px; }
+  .topbar > * { min-width: 0; }
+  .topbar h1 { overflow-wrap: anywhere; }
+  .top-actions { flex-direction: row !important; flex-wrap: wrap; gap: 8px; }
+  .cards-grid, .dashboard-grid, .dashboard-bottom-grid, .subjects-grid, .performance-cards, .premium-features { grid-template-columns: minmax(0, 1fr) !important; }
+  .card, .dashboard-card, .calendar-card, .timer-card, .premium-card { max-width: 100%; min-width: 0; }
+  .task-item { gap: 8px; }
+  input, select, textarea, button { max-width: 100%; }
+  button, a { touch-action: manipulation; }
+  .modal { padding: 12px; align-items: center; }
+  .modal-content { width: 100%; max-width: 520px; max-height: calc(100dvh - 24px); overflow-y: auto; }
+}
+@media (max-width: 420px) {
+  .content { padding-left: 11px !important; padding-right: 11px !important; }
+  .topbar h1 { font-size: 21px !important; }
+  .btn-primary { min-height: 42px; font-size: 12px !important; }
+  .calendar-week span { font-size: 10px; }
+  .calendar-days div { min-height: 39px !important; padding: 3px !important; }
+  .performance-row { grid-template-columns: 75px minmax(0,1fr) 32px !important; }
+}
