@@ -1,4 +1,4 @@
-const CACHE_NAME = "comfortstudy-v4";
+const CACHE_NAME = "comfortstudy-v5";
 const APP_SHELL = [
   "./",
   "./index.html",

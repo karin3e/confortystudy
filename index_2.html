@@ -69,10 +69,15 @@
                     <span>Avisos</span>
                 </a>
 
-                <a href="#" data-page="desempenho">
+                <a href="#" data-page="desempenho" class="mobile-hidden-link">
                     <i class="ph ph-chart-line-up"></i>
                     <span>Desempenho</span>
                 </a>
+
+                <button type="button" class="mobile-more-button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu">
+                    <i class="ph ph-dots-three-circle"></i>
+                    <span>Mais</span>
+                </button>
 
             </nav>
 
@@ -136,6 +141,11 @@
             </div>
 
             <div class="top-actions">
+
+                <button type="button" class="mobile-profile-shortcut" data-page="perfil" aria-label="Abrir Meu Perfil" title="Meu Perfil">
+                    <i class="ph ph-user-circle"></i>
+                    <span>Perfil</span>
+                </button>
 
                 <button
                     class="notification-button"
@@ -1003,6 +1013,20 @@
 
 
     
+
+    <div class="mobile-more-backdrop" id="mobileMoreBackdrop" hidden></div>
+    <nav class="mobile-more-menu" id="mobileMoreMenu" aria-label="Mais opções" hidden>
+        <div class="mobile-more-heading">
+            <strong>Mais opções</strong>
+            <button type="button" id="closeMobileMore" aria-label="Fechar menu"><i class="ph ph-x"></i></button>
+        </div>
+        <a href="#" data-page="calendario"><i class="ph ph-calendar-blank"></i><span>Calendário</span></a>
+        <a href="#" data-page="cronometro"><i class="ph ph-timer"></i><span>Cronômetro</span></a>
+        <a href="#" data-page="avisos"><i class="ph ph-bell"></i><span>Avisos</span></a>
+        <a href="#" data-page="desempenho"><i class="ph ph-chart-line-up"></i><span>Desempenho</span></a>
+        <a href="#" data-page="premium"><i class="ph ph-crown"></i><span>Plano Premium</span></a>
+        <a href="#" data-page="perfil"><i class="ph ph-user-circle"></i><span>Meu Perfil</span></a>
+    </nav>
 
     <script src="script.js"></script>
 

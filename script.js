@@ -690,6 +690,27 @@ document.addEventListener("DOMContentLoaded", () => {
         openPage;
 
 
+    const mobileMoreButton = document.getElementById("mobileMoreButton");
+    const mobileMoreMenu = document.getElementById("mobileMoreMenu");
+    const mobileMoreBackdrop = document.getElementById("mobileMoreBackdrop");
+    const closeMobileMore = document.getElementById("closeMobileMore");
+
+    function setMobileMoreOpen(isOpen) {
+        if (!mobileMoreMenu || !mobileMoreBackdrop || !mobileMoreButton) return;
+        mobileMoreMenu.hidden = !isOpen;
+        mobileMoreBackdrop.hidden = !isOpen;
+        mobileMoreButton.setAttribute("aria-expanded", String(isOpen));
+        document.body.classList.toggle("mobile-more-open", isOpen);
+    }
+
+    if (mobileMoreButton) {
+        mobileMoreButton.addEventListener("click", () => {
+            setMobileMoreOpen(mobileMoreMenu.hidden);
+        });
+    }
+    if (closeMobileMore) closeMobileMore.addEventListener("click", () => setMobileMoreOpen(false));
+    if (mobileMoreBackdrop) mobileMoreBackdrop.addEventListener("click", () => setMobileMoreOpen(false));
+
     document
         .querySelectorAll("[data-page]")
         .forEach(button => {
@@ -700,13 +721,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     event.preventDefault();
 
-                    const page =
-                        button.getAttribute(
-                            "data-page"
-                        );
-
+                    const page = button.getAttribute("data-page");
                     if (page) {
                         openPage(page);
+                        setMobileMoreOpen(false);
                     }
                 }
             );

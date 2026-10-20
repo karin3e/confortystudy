@@ -1964,3 +1964,218 @@ body {
   .calendar-days div { min-height: 39px !important; padding: 3px !important; }
   .performance-row { grid-template-columns: 75px minmax(0,1fr) 32px !important; }
 }
+
+/* ===== Mobile navigation redesign: iPhone + small screens ===== */
+.mobile-more-button,
+.mobile-more-menu,
+.mobile-more-backdrop { display: none; }
+
+@media (max-width: 800px) {
+  :root { scroll-padding-top: 12px; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { overflow-x: clip; padding-bottom: env(safe-area-inset-bottom); }
+  .sidebar {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 6px 5px calc(7px + env(safe-area-inset-bottom)) !important;
+    display: block !important;
+    overflow: visible !important;
+    background: #0b1224 !important;
+    border-top: 1px solid rgba(255,255,255,.13);
+    box-shadow: 0 -5px 22px rgba(0,0,0,.22);
+    z-index: 1000;
+  }
+  .sidebar > div:first-child { width: 100%; }
+  .sidebar .logo, .sidebar .sidebar-bottom, .sidebar .user-profile { display: none !important; }
+  .sidebar .menu {
+    width: 100%; margin: 0 !important; padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: stretch; gap: 2px !important;
+    overflow: visible !important;
+  }
+  .sidebar .menu > a[data-page="dashboard"],
+  .sidebar .menu > a[data-page="materias"],
+  .sidebar .menu > a[data-page="tarefas"],
+  .sidebar .menu > a[data-page="provas"],
+  .sidebar .menu > .mobile-more-button { display: flex !important; }
+  .sidebar .menu > a[data-page="calendario"],
+  .sidebar .menu > a[data-page="cronometro"],
+  .sidebar .menu > a[data-page="avisos"],
+  .sidebar .menu > a[data-page="desempenho"] { display: none !important; }
+  .sidebar .menu > a,
+  .sidebar .menu > .mobile-more-button {
+    appearance: none; border: 0; color: #c6cede; background: transparent;
+    min-width: 0; width: 100%; min-height: 54px; margin: 0 !important;
+    padding: 6px 2px !important; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px !important; text-align: center; text-decoration: none;
+    font: inherit; font-size: 10px !important; line-height: 1.1;
+    white-space: normal; transform: none !important; box-shadow: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sidebar .menu > a i,
+  .sidebar .menu > .mobile-more-button i { display: block; font-size: 22px !important; line-height: 1; }
+  .sidebar .menu > a span,
+  .sidebar .menu > .mobile-more-button span {
+    display: block !important; max-width: 100%; overflow: visible;
+    text-overflow: clip; font-size: 10px !important; line-height: 1.1;
+  }
+  .sidebar .menu > a.active { background: #2563eb !important; color: #fff !important; }
+  .sidebar .menu > .mobile-more-button { cursor: pointer; }
+  .sidebar .menu > .mobile-more-button:active { background: rgba(255,255,255,.1); }
+
+  .content {
+    margin-left: 0 !important; width: 100% !important; min-width: 0 !important;
+    padding: max(16px, env(safe-area-inset-top)) 14px calc(88px + env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box;
+  }
+  .topbar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
+  .topbar > * { min-width: 0; max-width: 100%; }
+  .topbar h1 { font-size: clamp(21px, 5.5vw, 27px) !important; line-height: 1.2; overflow-wrap: anywhere; }
+  .top-actions { display: flex; flex-direction: row !important; flex-wrap: wrap; gap: 8px; }
+  .cards-grid, .dashboard-grid, .dashboard-bottom-grid, .subjects-grid, .performance-cards, .premium-features { grid-template-columns: minmax(0, 1fr) !important; }
+  .card, .dashboard-card, .calendar-card, .timer-card, .premium-card, .page-section { min-width: 0; max-width: 100%; }
+  .page-section { overflow-wrap: anywhere; }
+  button, input, select, textarea { font-size: 16px; }
+  button, .btn-primary, .menu a, .sidebar-bottom a { touch-action: manipulation; }
+  button, .btn-primary { min-height: 44px; }
+  input, select, textarea { width: 100%; min-height: 44px; box-sizing: border-box; }
+  .task-item { align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+  .task-title { min-width: 0; overflow-wrap: anywhere; }
+  .modal { padding: 12px !important; align-items: center; }
+  .modal-content { width: 100% !important; max-width: 520px; max-height: calc(100dvh - 24px - env(safe-area-inset-top)); overflow-y: auto; overscroll-behavior: contain; }
+
+  .mobile-more-backdrop:not([hidden]) {
+    display: block; position: fixed; inset: 0; z-index: 1001;
+    background: rgba(4, 9, 20, .48); backdrop-filter: blur(2px);
+  }
+  .mobile-more-menu:not([hidden]) {
+    display: flex; flex-direction: column; gap: 4px;
+    position: fixed; z-index: 1002; left: 12px; right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    max-height: min(70dvh, 520px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 12px; border-radius: 18px;
+    background: #101a31; color: #f8fafc;
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 16px 48px rgba(0,0,0,.32);
+  }
+  .mobile-more-heading { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 8px; font-size: 16px; }
+  .mobile-more-heading button { width: 40px; min-height: 40px; border: 0; border-radius: 10px; color: white; background: rgba(255,255,255,.1); }
+  .mobile-more-menu > a {
+    display: flex; align-items: center; gap: 12px; min-height: 48px;
+    padding: 10px 12px; border-radius: 12px; color: #e5eaf5;
+    text-decoration: none; font-size: 15px; font-weight: 600;
+  }
+  .mobile-more-menu > a i { font-size: 22px; width: 26px; text-align: center; }
+  .mobile-more-menu > a.active { background: #2563eb; color: #fff; }
+  body.mobile-more-open { overflow: hidden; }
+}
+
+@media (max-width: 390px) {
+  .content { padding-left: 11px !important; padding-right: 11px !important; }
+  .sidebar .menu > a, .sidebar .menu > .mobile-more-button { min-height: 52px; font-size: 9px !important; }
+  .sidebar .menu > a span, .sidebar .menu > .mobile-more-button span { font-size: 9px !important; }
+}
+
+
+/* Mobile navigation refinements: consistent on iPhone and Android */
+.mobile-profile-shortcut { display: none; }
+@media (max-width: 800px) {
+  .sidebar {
+    position: fixed !important;
+    left: 0 !important; right: 0 !important; top: auto !important;
+    bottom: 0 !important; width: 100% !important; height: auto !important;
+    min-height: 0 !important; max-height: none !important;
+    padding: 5px 5px calc(6px + env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+  .sidebar .menu {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+  .sidebar .menu > a,
+  .sidebar .menu > button.mobile-more-button {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    max-width: 100% !important;
+    padding: 7px 1px !important;
+    margin: 0 !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 5px !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+  .sidebar .menu > a i,
+  .sidebar .menu > button.mobile-more-button i {
+    position: static !important;
+    display: block !important;
+    flex: 0 0 auto !important;
+    width: auto !important; height: auto !important;
+    margin: 0 !important; padding: 0 !important;
+    font-size: 22px !important; line-height: 1 !important;
+    transform: none !important;
+  }
+  .sidebar .menu > a span,
+  .sidebar .menu > button.mobile-more-button span {
+    display: block !important;
+    position: static !important;
+    width: 100% !important; max-width: 100% !important;
+    margin: 0 !important; padding: 0 !important;
+    font-size: clamp(9px, 2.5vw, 11px) !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+    text-align: center !important;
+    transform: none !important;
+  }
+  .sidebar .menu > a[data-page="dashboard"],
+  .sidebar .menu > a[data-page="materias"],
+  .sidebar .menu > a[data-page="tarefas"],
+  .sidebar .menu > a[data-page="provas"],
+  .sidebar .menu > button.mobile-more-button { display: flex !important; }
+  .sidebar .menu > a[data-page="calendario"],
+  .sidebar .menu > a[data-page="cronometro"],
+  .sidebar .menu > a[data-page="avisos"],
+  .sidebar .menu > a[data-page="desempenho"] { display: none !important; }
+
+  .mobile-profile-shortcut {
+    display: inline-flex !important;
+    align-items: center !important; justify-content: center !important;
+    flex-direction: column !important; gap: 2px !important;
+    min-width: 48px !important; min-height: 44px !important;
+    padding: 3px 6px !important;
+    border: 1px solid rgba(100,116,139,.28) !important;
+    border-radius: 12px !important;
+    background: var(--card-bg, #fff) !important;
+    color: var(--text-color, #243047) !important;
+    font-size: 10px !important; line-height: 1.1 !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-profile-shortcut i { font-size: 22px !important; line-height: 1 !important; }
+  .mobile-profile-shortcut span { display: block !important; }
+  .topbar { align-items: flex-start !important; }
+  .top-actions { align-items: center !important; justify-content: flex-end !important; gap: 7px !important; }
+  .content { padding-bottom: calc(94px + env(safe-area-inset-bottom)) !important; }
+  .mobile-more-menu > a { min-height: 50px !important; }
+}
+@media (max-width: 380px) {
+  .sidebar { padding-left: 3px !important; padding-right: 3px !important; }
+  .sidebar .menu { gap: 1px !important; }
+  .sidebar .menu > a, .sidebar .menu > button.mobile-more-button { min-height: 54px !important; }
+  .sidebar .menu > a i, .sidebar .menu > button.mobile-more-button i { font-size: 20px !important; }
+  .sidebar .menu > a span, .sidebar .menu > button.mobile-more-button span { font-size: 9px !important; }
+  .mobile-profile-shortcut { min-width: 44px !important; }
+}
