@@ -1,18 +1,18 @@
-COMFORTSTUDY - PWA
+COMFORTSTUDY — VERSÃO PWA COM LOGIN
 
-1. Copie TODOS os arquivos desta pasta para a pasta do seu projeto no VS Code.
-2. Faça commit e push para o GitHub.
-3. Publique/abra pelo GitHub Pages (HTTPS).
-4. No iPhone, abra o endereço pelo Safari.
-5. Toque em Compartilhar -> Adicionar à Tela de Início.
-6. Abra o ícone ComfortStudy pela Tela de Início.
+1. Substitua no seu projeto os arquivos: index.html, index_2.html, script.js e style_dashboard.css.
+2. Adicione manifest.json, service-worker.js, cadastro.html, recuperar-senha.html e a pasta icons.
+3. Faça git add ., git commit e git push.
+4. Abra o GitHub Pages pelo endereço HTTPS.
+5. No iPhone: Safari > Compartilhar > Adicionar à Tela de Início.
 
-NOTIFICAÇÕES:
-- O projeto já mantém o sistema de Notification API que verifica tarefas e provas para HOJE e AMANHÃ.
-- O Service Worker agora deixa o projeto preparado como PWA e para futuras notificações push.
-- Para notificações realmente agendadas com o app totalmente fechado, ainda é necessário Web Push com um servidor/backend. O PWA sozinho não cria agendamento remoto.
+LOGIN:
+- Cadastre uma conta em "Cadastre-se".
+- O login normal é local neste protótipo (os dados ficam no navegador).
+- O login Google usa o Google Identity Services e precisa que o domínio do GitHub Pages esteja autorizado no Google Cloud.
+- O cadastro/login local NÃO é autenticação de produção: para segurança real é necessário um backend.
 
-TESTE:
-- Use GitHub Pages ou localhost/HTTPS.
-- Não abra por file://, porque Service Worker não funciona nesse modo.
-- Ao tocar no sino do ComfortStudy, o navegador deve pedir permissão para notificações.
+PWA:
+- O Service Worker funciona em HTTPS/GitHub Pages.
+- As notificações atuais do ComfortStudy verificam tarefas/provas enquanto o app/site estiver em execução ou voltar ao foco.
+- Notificações programadas com o app completamente fechado exigem Web Push + backend.

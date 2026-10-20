@@ -1,3 +1,13 @@
+/* =========================================================
+   COMFORTSTUDY - AUTENTICAÇÃO LOCAL
+   ========================================================= */
+(function protectDashboard() {
+    const loggedIn = localStorage.getItem("comfortSession") === "1";
+    if (!loggedIn && !location.pathname.endsWith("index.html")) {
+        location.replace("index.html");
+    }
+})();
+
 document.addEventListener("DOMContentLoaded", () => {
 
     const STORAGE = {
@@ -4352,45 +4362,55 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     checkDueDateNotifications();
 
-});
 
-/* =========================================================
-   COMFORTSTUDY - REGISTRO PWA
-   ========================================================= */
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", async () => {
+    /* =========================================================
+       CONTA / SESSÃO
+       ========================================================= */
+    function getSessionUser() {
         try {
-            const registration = await navigator.serviceWorker.register(
-                "./service-worker.js",
-                { scope: "./" }
-            );
-
-            console.log(
-                "ComfortStudy PWA ativo:",
-                registration.scope
-            );
-
-            registration.addEventListener("updatefound", () => {
-                const worker = registration.installing;
-
-                if (!worker) return;
-
-                worker.addEventListener("statechange", () => {
-                    if (
-                        worker.state === "installed" &&
-                        navigator.serviceWorker.controller
-                    ) {
-                        console.log(
-                            "Nova versão do ComfortStudy disponível."
-                        );
-                    }
-                });
-            });
-        } catch (error) {
-            console.error(
-                "Erro ao registrar o PWA do ComfortStudy:",
-                error
-            );
+            return JSON.parse(localStorage.getItem("comfortAuthUser")) || { name: "Estudante", email: "" };
+        } catch {
+            return { name: "Estudante", email: "" };
         }
-    });
-}
+    }
+
+    function updateLoggedUser() {
+        const user = getSessionUser();
+        document.querySelectorAll(".user-info .name, .profile-info h2").forEach(el => {
+            if (el.classList.contains("name") || el.closest(".user-info")) el.textContent = user.name || "Estudante";
+        });
+        const profileEmail = document.querySelector(".profile-info p");
+        if (profileEmail && user.email) profileEmail.textContent = user.email;
+
+        const profileArea = document.querySelector(".profile-info");
+        if (profileArea && !document.getElementById("logoutButton")) {
+            const btn = document.createElement("button");
+            btn.id = "logoutButton";
+            btn.className = "btn-secondary";
+            btn.style.marginLeft = "8px";
+            btn.textContent = "Sair";
+            btn.addEventListener("click", () => {
+                localStorage.removeItem("comfortSession");
+                location.replace("index.html");
+            });
+            profileArea.appendChild(btn);
+        }
+    }
+
+    updateLoggedUser();
+
+    /* =========================================================
+       REGISTRO PWA
+       ========================================================= */
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", async () => {
+            try {
+                const registration = await navigator.serviceWorker.register("./service-worker.js", { scope: "./" });
+                console.log("ComfortStudy PWA ativo:", registration.scope);
+            } catch (error) {
+                console.error("Erro ao registrar o PWA:", error);
+            }
+        });
+    }
+
+});
