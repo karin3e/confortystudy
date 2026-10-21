@@ -1,7 +1,20 @@
 
 (function () {
-  try {
+  function iniciarFirebase() {
     const config = window.COMFORT_FIREBASE_CONFIG;
+
+    if (!config) {
+      console.error(
+        'ComfortStudy: firebase-config.js não disponibilizou a configuração.'
+      );
+      return;
+    }
+
+    if (!window.firebase) {
+      console.error('ComfortStudy: biblioteca Firebase não carregada.');
+      return;
+    }
+
     const required = [
       'apiKey',
       'authDomain',
@@ -10,41 +23,37 @@
       'appId'
     ];
 
-    const valid = Boolean(
-      config &&
-      required.every(key =>
-        typeof config[key] === 'string' &&
-        config[key].trim() !== '' &&
-        !config[key].startsWith('COLOQUE_')
-      )
+    const valid = required.every(key =>
+      typeof config[key] === 'string' &&
+      config[key].trim() !== ''
     );
 
     if (!valid) {
-      window.comfortFirebaseConfigured = false;
-      console.error(
-        'ConfortStudy: configuração do Firebase ausente ou inválida.',
-        config
-      );
+      console.error('ComfortStudy: configuração Firebase inválida.');
       return;
     }
 
-    if (!window.firebase) {
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(config);
+      }
+
+      window.comfortAuth = firebase.auth();
+      window.comfortDb = firebase.firestore();
+      window.comfortFirebaseConfigured = true;
+
+      console.log('ComfortStudy: Firebase inicializado com sucesso.');
+    } catch (error) {
       window.comfortFirebaseConfigured = false;
-      console.error('ConfortStudy: biblioteca Firebase não carregada.');
-      return;
+      console.error('ComfortStudy: falha ao inicializar Firebase:', error);
     }
+  }
 
-    if (!firebase.apps.length) {
-      firebase.initializeApp(config);
-    }
-
-    window.comfortAuth = firebase.auth();
-    window.comfortDb = firebase.firestore();
-    window.comfortFirebaseConfigured = true;
-
-    console.log('ConfortStudy: Firebase inicializado com sucesso.');
-  } catch (error) {
-    window.comfortFirebaseConfigured = false;
-    console.error('ConfortStudy: erro ao inicializar Firebase:', error);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarFirebase, {
+      once: true
+    });
+  } else {
+    iniciarFirebase();
   }
 })();
