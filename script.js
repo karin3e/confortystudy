@@ -2,11 +2,32 @@
    COMFORTSTUDY - AUTENTICAÇÃO LOCAL
    ========================================================= */
 document.addEventListener("DOMContentLoaded", async () => {
-    // Aguarda a autenticação e a hidratação do Firestore antes de renderizar dados pessoais.
-    if (window.comfortCloudReady) await window.comfortCloudReady;
-    if (!window.comfortFirebaseConfigured || !window.comfortAuth || !window.comfortAuth.currentUser) {
+    // Aguarda o Firebase restaurar a sessão antes de decidir redirecionar.
+    if (!window.comfortFirebaseConfigured || !window.comfortAuth) {
+        console.error("ComfortStudy: Firebase Auth não foi inicializado.");
         location.replace("index.html");
         return;
+    }
+
+    const user = await new Promise((resolve) => {
+        if (window.comfortAuth.currentUser) {
+            resolve(window.comfortAuth.currentUser);
+            return;
+        }
+
+        const unsubscribe = window.comfortAuth.onAuthStateChanged((user) => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
+
+    if (!user) {
+        location.replace("index.html");
+        return;
+    }
+
+    if (window.comfortCloudReady) {
+        await window.comfortCloudReady;
     }
 
     const STORAGE = {
