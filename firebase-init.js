@@ -1,17 +1,17 @@
-
+﻿
 (function () {
   function iniciarFirebase() {
     const config = window.COMFORT_FIREBASE_CONFIG;
 
     if (!config) {
       console.error(
-        'ComfortStudy: firebase-config.js não disponibilizou a configuração.'
+        'ComfortStudy: firebase-config-v2.js nÃ£o disponibilizou a configuraÃ§Ã£o.'
       );
       return;
     }
 
     if (!window.firebase) {
-      console.error('ComfortStudy: biblioteca Firebase não carregada.');
+      console.error('ComfortStudy: biblioteca Firebase nÃ£o carregada.');
       return;
     }
 
@@ -29,7 +29,7 @@
     );
 
     if (!valid) {
-      console.error('ComfortStudy: configuração Firebase inválida.');
+      console.error('ComfortStudy: configuraÃ§Ã£o Firebase invÃ¡lida.');
       return;
     }
 
@@ -57,3 +57,4 @@
     iniciarFirebase();
   }
 })();
+

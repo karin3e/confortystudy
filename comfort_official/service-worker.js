@@ -1,8 +1,8 @@
-const CACHE_NAME = "comfortstudy-v7";
+﻿const CACHE_NAME = "comfortstudy-v7";
 const APP_SHELL = [
   "./", "./index.html", "./index_2.html", "./cadastro.html",
   "./recuperar-senha.html", "./style_dashboard.css", "./script.js",
-  "./auth.js", "./firebase-config.js", "./firebase-init.js", "./cloud-sync.js",
+  "./auth.js", "./firebase-config-v2.js", "./firebase-init.js", "./cloud-sync.js",
   "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"
 ];
 self.addEventListener("install", event => {
@@ -16,7 +16,7 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // Navegações tentam a versão publicada primeiro para evitar HTML antigo preso no cache.
+  // NavegaÃ§Ãµes tentam a versÃ£o publicada primeiro para evitar HTML antigo preso no cache.
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(response => {
       const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)).catch(() => {}); return response;
@@ -35,3 +35,4 @@ self.addEventListener("notificationclick", event => {
     return clients.openWindow("./index.html");
   }));
 });
+
