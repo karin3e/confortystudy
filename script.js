@@ -1,14 +1,13 @@
 /* =========================================================
    COMFORTSTUDY - AUTENTICAÇÃO LOCAL
    ========================================================= */
-(function protectDashboard() {
-    const loggedIn = localStorage.getItem("comfortSession") === "1";
-    if (!loggedIn && !location.pathname.endsWith("index.html")) {
+document.addEventListener("DOMContentLoaded", async () => {
+    // Aguarda a autenticação e a hidratação do Firestore antes de renderizar dados pessoais.
+    if (window.comfortCloudReady) await window.comfortCloudReady;
+    if (!window.comfortFirebaseConfigured || !window.comfortAuth || !window.comfortAuth.currentUser) {
         location.replace("index.html");
+        return;
     }
-})();
-
-document.addEventListener("DOMContentLoaded", () => {
 
     const STORAGE = {
         tasks: "comfortTasks",
@@ -4407,9 +4406,17 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.className = "btn-secondary";
             btn.style.marginLeft = "8px";
             btn.textContent = "Sair";
-            btn.addEventListener("click", () => {
-                localStorage.removeItem("comfortSession");
-                location.replace("index.html");
+            btn.addEventListener("click", async () => {
+                btn.disabled = true;
+                try {
+                    if (window.comfortAuth && window.comfortAuth.currentUser) await window.comfortAuth.signOut();
+                } catch (error) {
+                    console.error("ComfortStudy: erro ao sair", error);
+                } finally {
+                    localStorage.removeItem("comfortSession");
+                    localStorage.removeItem("comfortAuthUser");
+                    location.replace("index.html");
+                }
             });
             profileArea.appendChild(btn);
         }

@@ -9,8 +9,6 @@
     <!-- Ícones -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         :root {
@@ -352,6 +350,8 @@
             </p>
 
 
+            <div id="loginMessage" class="login-message" role="status" aria-live="polite"></div>
+
             <!-- LOGIN NORMAL -->
 
             <form id="loginForm">
@@ -456,107 +456,16 @@
     </div>
 
 
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="auth.js"></script>
     <script>
-        const AUTH_KEY = "comfortAuthUser";
-
-        function showLoginMessage(message, type = "error") {
-            const box = document.getElementById("loginMessage");
-            if (!box) return;
-            box.textContent = message;
-            box.className = "login-message " + type;
-        }
-
-        function setSession(user) {
-            localStorage.setItem("comfortSession", "1");
-            localStorage.setItem(AUTH_KEY, JSON.stringify(user));
-            localStorage.setItem("comfortProfile", JSON.stringify({
-                name: user.name || "Estudante",
-                email: user.email || "",
-                school: user.school || "",
-                course: user.course || "",
-                bio: user.bio || ""
-            }));
-        }
-
-        function getAccount() {
-            try { return JSON.parse(localStorage.getItem(AUTH_KEY)) || null; }
-            catch { return null; }
-        }
-
-        document.getElementById("loginForm").addEventListener("submit", function (event) {
-            event.preventDefault();
-            const email = document.getElementById("loginEmail").value.trim().toLowerCase();
-            const password = document.getElementById("loginPassword").value;
-            const account = getAccount();
-
-            if (!account) {
-                showLoginMessage("Nenhuma conta foi cadastrada neste dispositivo. Clique em Cadastre-se primeiro.");
-                return;
-            }
-
-            if (account.email !== email || account.password !== password) {
-                showLoginMessage("E-mail ou senha incorretos.");
-                return;
-            }
-
-            setSession(account);
-            window.location.href = "index_2.html";
-        });
-
-        function handleCredentialResponse(response) {
-            if (!response || !response.credential) {
-                showLoginMessage("Não foi possível concluir o login do Google.");
-                return;
-            }
-
-            try {
-                const payload = JSON.parse(atob(response.credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-                setSession({
-                    name: payload.name || "Estudante",
-                    email: payload.email || "",
-                    password: "",
-                    picture: payload.picture || ""
-                });
-                window.location.href = "index_2.html";
-            } catch (error) {
-                showLoginMessage("Não foi possível ler a conta do Google.");
-            }
-        }
-
-        function iniciarGoogleLogin() {
-            if (typeof google === "undefined" || !google.accounts || !google.accounts.id) {
-                const error = document.getElementById("googleError");
-                if (error) error.style.display = "block";
-                return;
-            }
-
-            google.accounts.id.initialize({
-                client_id: "220214441909-s31fingnai04ghtbomjp26kai7mi2vnm.apps.googleusercontent.com",
-                callback: handleCredentialResponse,
-                auto_select: false,
-                cancel_on_tap_outside: true
-            });
-
-            google.accounts.id.renderButton(document.getElementById("googleBtn"), {
-                theme: "filled_blue",
-                size: "large",
-                width: 360,
-                text: "continue_with",
-                shape: "rectangular",
-                logo_alignment: "left"
-            });
-        }
-
-        window.addEventListener("load", function () {
-            setTimeout(iniciarGoogleLogin, 500);
-        });
-
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("./service-worker.js", { scope: "./" })
-                    .catch(error => console.error("Erro ao registrar PWA:", error));
-            });
-        }
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js', {scope:'./'}).catch(err => console.error('PWA:', err)));
+      }
     </script>
 
 </body>
