@@ -1,8 +1,12 @@
-window.COMFORT_FIREBASE_CONFIG = {
-  apiKey: "SUA_API_KEY",
+
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyC_6hsTPW8Qci-TiomgRdotH8mCZC8sj_0",
   authDomain: "confortstudy-9ab7d.firebaseapp.com",
   projectId: "confortstudy-9ab7d",
   storageBucket: "confortstudy-9ab7d.firebasestorage.app",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  messagingSenderId: "244422896752",
+  appId: "1:244422896752:web:225917a55e4617091ad8b5",
+  measurementId: "G-HYGZH21M65"
 };
+;
