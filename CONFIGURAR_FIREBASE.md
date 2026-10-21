@@ -39,6 +39,6 @@ Os dados do protótipo ficam no navegador. Na primeira entrada no Firebase, `clo
 - Testar notificações. Avisos programados com o site completamente fechado ainda exigem Web Push e um serviço de envio no servidor; notificações locais não garantem entrega fechadas.
 
 ## Limitações conhecidas
-- O app continua sendo um frontend estático; não há painel administrativo, cobrança Premium, envio de Web Push no servidor ou política de privacidade/termos publicados incluídos nesta entrega.
+- O app  sendo um frontend estático; não há painel administrativo, cobrança Premium, envio de Web Push no servidor ou política de privacidade/termos publicados incluídos necontinuasta entrega.
 - Os dados de estudo são sincronizados como documentos por usuário, mas é necessário validar com testes reais e dados representativos antes de anunciar disponibilidade pública.
 - Configure limites/alertas de orçamento e monitore uso no Firebase. Nunca coloque credenciais administrativas no repositório.
