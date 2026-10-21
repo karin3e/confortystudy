@@ -1,4 +1,5 @@
 
+
 window.COMFORT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyC_6hsTPW8Qci-TiomgRdotH8mCZC8sj_0",
   authDomain: "confortstudy-9ab7d.firebaseapp.com",
