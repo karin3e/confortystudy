@@ -1,0 +1,18 @@
+COMFORTSTUDY — MELHORIAS EM MATÉRIAS E CADERNO DIGITAL
+
+Arquivos incluídos:
+- index_2.html: página do painel original, mantida.
+- script.js: caderno digital, edição de anotações, marcação de conteúdo importante, anexos PDF/imagem e revisão local baseada no texto.
+- style_dashboard.css: estilos adicionais para as novas funções.
+
+COMO APLICAR
+1. Faça uma cópia de segurança da pasta completa do projeto.
+2. Copie estes três arquivos para a pasta principal do projeto, substituindo os equivalentes.
+3. Não substitua firebase-config-v2.js, firebase-init.js, cloud-sync.js, regras do Firebase ou outros arquivos.
+4. Abra index_2.html pelo site publicado e teste.
+
+LIMITAÇÕES IMPORTANTES
+- O anexo é limitado a 1,5 MB e fica como data URL no armazenamento do navegador. Para armazenar arquivos com segurança e sincronizá-los entre dispositivos, configure Firebase Storage e ajuste cloud-sync.js/regras.
+- A revisão atual usa as anotações textuais para organizar resumo e perguntas. Ela NÃO é uma IA e não lê o conteúdo interno de PDFs/fotos. Para interpretação real do material, é necessário integrar uma IA por um backend seguro.
+- Matérias personalizadas são guardadas na chave localStorage comfortCustomSubjects. Para sincronizá-las entre dispositivos, a chave também precisa ser incluída no mecanismo cloud-sync.js.
+- Os arquivos foram verificados quanto à sintaxe do JavaScript, mas é necessário testar no navegador com a configuração real do Firebase.
