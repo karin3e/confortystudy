@@ -52,7 +52,14 @@
       if (button) button.disabled = true;
       try {
         preserveLegacyEmail();
-        const credential = await comfortAuth.signInWithEmailAndPassword(email, password);
+       await comfortAuth.setPersistence(
+  firebase.auth.Auth.Persistence.LOCAL
+);
+
+const credential = await comfortAuth.signInWithEmailAndPassword(
+  email,
+  password
+);
         localStorage.setItem('comfortSession', '1');
         localStorage.setItem('comfortAuthUser', JSON.stringify({
           uid: credential.user.uid, name: credential.user.displayName || 'Estudante',
@@ -71,7 +78,11 @@
         try {
           preserveLegacyEmail();
           const provider = new firebase.auth.GoogleAuthProvider();
-          const credential = await comfortAuth.signInWithPopup(provider);
+          await comfortAuth.setPersistence(
+  firebase.auth.Auth.Persistence.LOCAL
+);
+
+const credential = await comfortAuth.signInWithPopup(provider);
           localStorage.setItem('comfortSession', '1');
           localStorage.setItem('comfortAuthUser', JSON.stringify({ uid: credential.user.uid, name: credential.user.displayName || 'Estudante', email: credential.user.email || '' }));
           location.href = 'index_2.html';
