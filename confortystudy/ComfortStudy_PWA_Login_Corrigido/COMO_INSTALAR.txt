@@ -1,0 +1,18 @@
+COMFORTSTUDY — VERSÃO PWA COM LOGIN
+
+1. Substitua no seu projeto os arquivos: index.html, index_2.html, script.js e style_dashboard.css.
+2. Adicione manifest.json, service-worker.js, cadastro.html, recuperar-senha.html e a pasta icons.
+3. Faça git add ., git commit e git push.
+4. Abra o GitHub Pages pelo endereço HTTPS.
+5. No iPhone: Safari > Compartilhar > Adicionar à Tela de Início.
+
+LOGIN:
+- Cadastre uma conta em "Cadastre-se".
+- O login normal é local neste protótipo (os dados ficam no navegador).
+- O login Google usa o Google Identity Services e precisa que o domínio do GitHub Pages esteja autorizado no Google Cloud.
+- O cadastro/login local NÃO é autenticação de produção: para segurança real é necessário um backend.
+
+PWA:
+- O Service Worker funciona em HTTPS/GitHub Pages.
+- As notificações atuais do ComfortStudy verificam tarefas/provas enquanto o app/site estiver em execução ou voltar ao foco.
+- Notificações programadas com o app completamente fechado exigem Web Push + backend.
