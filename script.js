@@ -9,17 +9,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    const user = await new Promise((resolve) => {
-        if (window.comfortAuth.currentUser) {
-            resolve(window.comfortAuth.currentUser);
-            return;
+    // Espera a restauração da sessão persistida antes de decidir se deve voltar ao login.
+    let user = null;
+    try {
+        if (typeof window.comfortAuth.authStateReady === "function") {
+            await window.comfortAuth.authStateReady();
+            user = window.comfortAuth.currentUser;
+        } else {
+            user = await new Promise((resolve) => {
+                let unsubscribe = () => {};
+                unsubscribe = window.comfortAuth.onAuthStateChanged((currentUser) => {
+                    unsubscribe();
+                    resolve(currentUser);
+                }, () => resolve(null));
+            });
         }
-
-        const unsubscribe = window.comfortAuth.onAuthStateChanged((user) => {
-            unsubscribe();
-            resolve(user);
-        });
-    });
+    } catch (error) {
+        console.error("ComfortStudy: erro ao restaurar a sessão Firebase.", error);
+        user = window.comfortAuth.currentUser || null;
+    }
 
     if (!user) {
         location.replace("index.html");

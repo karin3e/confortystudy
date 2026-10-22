@@ -83,8 +83,6 @@
   comfortAuth.onAuthStateChanged(async user => {
     if (!user) {
       activeUid = null;
-      localStorage.removeItem('comfortSession');
-      if (location.pathname.endsWith('index_2.html')) location.replace('index.html');
       resolveReady(false);
       return;
     }
