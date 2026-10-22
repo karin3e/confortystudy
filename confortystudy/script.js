@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         notices: "comfortNotices",
         studySeconds: "comfortStudySeconds",
         subjectContents: "comfortSubjectContents",
-        customSubjects: "comfortCustomSubjects",
         profile: "comfortProfile"
     };
 
@@ -58,26 +57,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         { name: "Biologia", icon: "🧬", className: "biology" },
         { name: "Inglês", icon: "🇺🇸", className: "english" }
     ];
-
-    function getCustomSubjects() {
-        const saved = getStorage(STORAGE.customSubjects, []);
-        return Array.isArray(saved) ? saved.filter(item => item && item.name) : [];
-    }
-
-    function getAllSubjects() {
-        const all = [...FIXED_SUBJECTS, ...getCustomSubjects()];
-        const seen = new Set();
-        return all.filter(subject => {
-            const key = String(subject.name).trim().toLocaleLowerCase('pt-BR');
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-    }
-
-    function saveCustomSubjects(subjects) {
-        setStorage(STORAGE.customSubjects, subjects);
-    }
 
     const pageNames = {
         dashboard: "Visão Geral",
@@ -197,24 +176,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveSubjectContents(allContents);
     }
 
-
-    function editSubjectContent(subjectName, contentId) {
-        const contents = getContentsForSubject(subjectName);
-        const item = contents.find(content => Number(content.id) === Number(contentId));
-        if (!item) return;
-        const updated = prompt("Edite o conteúdo:", item.text || "");
-        if (updated === null) return;
-        if (!updated.trim()) { alert("O conteúdo não pode ficar vazio."); return; }
-        item.text = updated.trim();
-        item.updatedAt = new Date().toISOString();
-        const allContents = getSubjectContents();
-        allContents[subjectName] = contents;
-        saveSubjectContents(allContents);
-        renderSubjects();
-        showSubjectModal(subjectName);
-    }
-
-    window.editSubjectContent = editSubjectContent;
 
     function deleteSubjectContent(subjectName, contentId) {
 
@@ -596,7 +557,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function getSubject(subjectName) {
 
-        return getAllSubjects().find(
+        return FIXED_SUBJECTS.find(
             subject =>
                 subject.name.toLowerCase() ===
                 String(subjectName).toLowerCase()
@@ -897,44 +858,81 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     
-    function taskForm(task = null) {
-        const editing = Boolean(task);
+    function taskForm() {
+
         return `
-            <form id="taskForm" class="modal-form">
-                <label for="taskName">Nome da atividade</label>
-                <input type="text" id="taskName" value="${escapeHTML(task?.name || "")}" placeholder="Ex.: Fazer exercícios de Matemática" maxlength="120" required>
+            <form
+                id="taskForm"
+                class="modal-form">
 
-                <label for="taskSubject">Matéria</label>
-                <select id="taskSubject" required>
-                    <option value="">Selecione a matéria</option>
-                    ${getAllSubjects().map(subject => `
-                        <option value="${escapeHTML(subject.name)}" ${task?.subject === subject.name ? "selected" : ""}>${subject.icon} ${escapeHTML(subject.name)}</option>
-                    `).join("")}
+                <label for="taskName">
+                    Nome da tarefa
+                </label>
+
+                <input
+                    type="text"
+                    id="taskName"
+                    placeholder="Ex: Fazer exercícios de matemática"
+                    required
+                >
+
+                <label for="taskSubject">
+                    Matéria
+                </label>
+
+                <select
+                    id="taskSubject"
+                    required>
+
+                    <option value="">
+                        Selecione a matéria
+                    </option>
+
+                    ${FIXED_SUBJECTS.map(
+                        subject => `
+                            <option
+                                value="${escapeHTML(subject.name)}">
+
+                                ${escapeHTML(
+                                    subject.name
+                                )}
+
+                            </option>
+                        `
+                    ).join("")}
+
                 </select>
 
-                <label for="taskDate">Data de entrega</label>
-                <input type="date" id="taskDate" ${editing ? "" : `min="${getTodayString()}"`} value="${escapeHTML(task?.date || "")}" required>
+                <label for="taskDate">
+                    Data
+                </label>
 
-                <label for="taskDescription">Instruções / observações (opcional)</label>
-                <textarea id="taskDescription" rows="3" maxlength="1000" placeholder="Anote o que o professor pediu...">${escapeHTML(task?.description || "")}</textarea>
+                <input
+                    type="date"
+                    id="taskDate"
+                    min="${getTodayString()}"
+                    required
+                >
 
-                <label for="taskPriority">Prioridade</label>
-                <select id="taskPriority">
-                    <option value="normal" ${!task?.priority || task.priority === "normal" ? "selected" : ""}>Normal</option>
-                    <option value="alta" ${task?.priority === "alta" ? "selected" : ""}>Alta</option>
-                    <option value="baixa" ${task?.priority === "baixa" ? "selected" : ""}>Baixa</option>
-                </select>
+                <button
+                    type="submit"
+                    class="btn-primary">
 
-                <button type="submit" class="btn-primary">${editing ? "Salvar alterações" : "+ Adicionar atividade"}</button>
+                    Adicionar tarefa
+
+                </button>
+
             </form>
         `;
     }
 
 
-    function showTaskModal(taskId = null) {
-        const task = taskId == null ? null : getTasks().find(item => Number(item.id) === Number(taskId));
-        if (taskId != null && !task) return;
-        openModal(task ? "Editar atividade" : "Nova atividade", taskForm(task));
+    function showTaskModal() {
+
+        openModal(
+            "Nova Tarefa",
+            taskForm()
+        );
 
         const form =
             document.getElementById(
@@ -943,11 +941,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         if (form) {
-            if (task) form.dataset.editingId = String(task.id);
+
             form.addEventListener(
                 "submit",
                 event => {
+
                     event.preventDefault();
+
                     addTask();
                 }
             );
@@ -967,12 +967,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "taskSubject"
             );
 
-        const dateInput = document.getElementById("taskDate");
-        const descriptionInput = document.getElementById("taskDescription");
-        const priorityInput = document.getElementById("taskPriority");
-        const editingId = document.getElementById("taskForm")?.dataset.editingId;
+        const dateInput =
+            document.getElementById(
+                "taskDate"
+            );
 
-        if (!nameInput || !subjectInput || !dateInput) {
+
+        if (
+            !nameInput ||
+            !subjectInput ||
+            !dateInput
+        ) {
             return;
         }
 
@@ -1001,21 +1006,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        const tasks = getTasks();
-        const description = descriptionInput ? descriptionInput.value.trim() : "";
-        const priority = priorityInput ? priorityInput.value : "normal";
-        const now = new Date().toISOString();
+        const tasks =
+            getTasks();
 
-        if (editingId) {
-            const existing = tasks.find(item => Number(item.id) === Number(editingId));
-            if (!existing) {
-                alert("Não foi possível localizar esta atividade. Atualize a lista e tente novamente.");
-                return;
-            }
-            Object.assign(existing, { name, subject, date, description, priority, updatedAt: now });
-        } else {
-            tasks.push({ id: Date.now(), name, subject, date, description, priority, completed: false, createdAt: now });
-        }
+
+        tasks.push({
+
+            id: Date.now(),
+
+            name,
+
+            subject,
+
+            date,
+
+            completed: false,
+
+            createdAt:
+                new Date().toISOString()
+
+        });
+
 
         saveTasks(tasks);
 
@@ -1030,12 +1041,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         checkDueDateNotifications();
 
 
-        alert(editingId ? "Atividade atualizada com sucesso! ✅" : "Atividade adicionada com sucesso! ✅");
+        alert(
+            "Tarefa adicionada com sucesso! ✅"
+        );
     }
 
 
-    window.addTask = addTask;
-    window.editTask = function (id) { showTaskModal(id); };
+    window.addTask =
+        addTask;
 
 
     [
@@ -1119,13 +1132,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ${formatDate(task.date)}
 
                 </span>
-                ${task.priority === "alta" ? '<span class="task-priority-high" title="Prioridade alta">🔴 Alta</span>' : ""}
-                ${task.description ? `<span class="task-description-preview" title="${escapeHTML(task.description)}">${escapeHTML(task.description)}</span>` : ""}
+
 
                 ${
                     showDelete
                         ? `
-                            <button type="button" class="small-button" onclick="editTask(${Number(task.id)})" title="Editar atividade" aria-label="Editar atividade">✏️</button>
                             <button
                                 type="button"
                                 class="small-button"
@@ -1457,7 +1468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (materias) {
 
             materias.textContent =
-                `${getAllSubjects().length} Disciplinas`;
+                `${FIXED_SUBJECTS.length} Disciplinas`;
         }
 
 
@@ -1611,7 +1622,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         Selecione a matéria
                     </option>
 
-                    ${getAllSubjects().map(
+                    ${FIXED_SUBJECTS.map(
                         subject => `
                             <option
                                 value="${escapeHTML(subject.name)}">
@@ -2067,9 +2078,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!grid) return;
 
 
-        grid.innerHTML = `
-            <button type="button" class="btn-primary" id="addSubjectButton" style="grid-column:1/-1; justify-self:start; margin-bottom:4px;">+ Adicionar matéria</button>
-            ${getAllSubjects().map(
+        grid.innerHTML =
+            FIXED_SUBJECTS
+                .map(
                     (subject, index) => {
 
                         const progress =
@@ -2151,99 +2162,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                             </div>
                         `;
                     }
-                ).join("")}
-        `;
-        const addSubjectButton = document.getElementById("addSubjectButton");
-        if (addSubjectButton) addSubjectButton.addEventListener("click", showAddSubjectModal);
+                )
+                .join("");
     }
 
-    function showAddSubjectModal() {
-        openModal("Adicionar matéria", `
-            <form id="customSubjectForm" class="modal-form">
-                <label for="customSubjectName">Nome da matéria</label>
-                <input id="customSubjectName" type="text" maxlength="50" placeholder="Ex.: Filosofia" required>
-                <label for="customSubjectIcon">Ícone (opcional)</label>
-                <input id="customSubjectIcon" type="text" maxlength="8" placeholder="📘">
-                <button type="submit" class="btn-primary">Salvar matéria</button>
-            </form>`);
-        const form = document.getElementById("customSubjectForm");
-        if (!form) return;
-        form.addEventListener("submit", event => {
-            event.preventDefault();
-            const name = document.getElementById("customSubjectName").value.trim();
-            const icon = document.getElementById("customSubjectIcon").value.trim() || "📘";
-            if (!name) return;
-            if (getAllSubjects().some(subject => subject.name.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"))) {
-                alert("Essa matéria já está cadastrada.");
-                return;
-            }
-            const subjects = getCustomSubjects();
-            subjects.push({ name, icon, className: "portuguese", custom: true, createdAt: new Date().toISOString() });
-            saveCustomSubjects(subjects);
-            closeModal();
-            renderSubjects();
-            updateEverything();
-            alert("Matéria adicionada com sucesso! 📚");
-        });
-    }
-
-    function editSubject(subjectName) {
-        const subject = getSubject(subjectName);
-        const newName = prompt("Nome da matéria:", subject.name);
-        if (newName === null) return;
-        const name = newName.trim();
-        if (!name) { alert("O nome da matéria não pode ficar vazio."); return; }
-        const duplicate = getAllSubjects().some(item => item.name.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR") && item.name !== subjectName);
-        if (duplicate) { alert("Já existe uma matéria com esse nome."); return; }
-        const newIcon = prompt("Ícone ou emoji da matéria:", subject.icon || "📘");
-        if (newIcon === null) return;
-        if (subject.custom) {
-            const custom = getCustomSubjects();
-            const item = custom.find(entry => entry.name === subjectName);
-            if (!item) return;
-            item.name = name;
-            item.icon = newIcon.trim() || "📘";
-            saveCustomSubjects(custom);
-        } else {
-            // As disciplinas padrão podem ser renomeadas sem removê-las da lista padrão.
-            const custom = getCustomSubjects();
-            custom.push({ name, icon: newIcon.trim() || subject.icon, className: subject.className || "portuguese", custom: true, createdAt: new Date().toISOString() });
-            saveCustomSubjects(custom);
-            alert("As matérias padrão continuam disponíveis. A nova versão foi adicionada como matéria personalizada para preservar os dados originais.");
-        }
-        const allContents = getSubjectContents();
-        if (name !== subjectName && Object.prototype.hasOwnProperty.call(allContents, subjectName)) {
-            allContents[name] = [...(allContents[name] || []), ...allContents[subjectName]];
-            delete allContents[subjectName];
-            saveSubjectContents(allContents);
-        }
-        // Atualiza o vínculo das atividades e provas sem apagar seus registros.
-        saveTasks(getTasks().map(item => item.subject === subjectName ? { ...item, subject: name } : item));
-        saveExams(getExams().map(item => item.subject === subjectName ? { ...item, subject: name } : item));
-        closeModal();
-        updateEverything();
-        if (getAllSubjects().some(item => item.name === name)) showSubjectModal(name);
-    }
-    window.editSubject = editSubject;
-
-    function deleteCustomSubject(subjectName) {
-        const subject = getCustomSubjects().find(item => item.name === subjectName);
-        if (!subject) { alert("As matérias padrão não podem ser excluídas."); return; }
-        const usedTasks = getTasks().filter(item => item.subject === subjectName).length;
-        const usedExams = getExams().filter(item => item.subject === subjectName).length;
-        const usedContents = getContentsForSubject(subjectName).length;
-        const message = `Excluir a matéria "${subjectName}"? ${usedTasks} atividade(s), ${usedExams} prova(s) e ${usedContents} conteúdo(s) estão vinculados. Os registros serão mantidos, mas ficarão sem essa matéria.`;
-        if (!confirm(message)) return;
-        saveCustomSubjects(getCustomSubjects().filter(item => item.name !== subjectName));
-        const allContents = getSubjectContents();
-        delete allContents[subjectName];
-        saveSubjectContents(allContents);
-        saveTasks(getTasks().map(item => item.subject === subjectName ? { ...item, subject: "Sem matéria" } : item));
-        saveExams(getExams().map(item => item.subject === subjectName ? { ...item, subject: "Sem matéria" } : item));
-        closeModal();
-        updateEverything();
-    }
-    window.deleteCustomSubject = deleteCustomSubject;
 
     window.showSubjectModal =
         showSubjectModal;
@@ -2311,12 +2233,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </div>
 
                         <h3>
-                            ${escapeHTML(subject.name)}
+                            ${escapeHTML(
+                                subject.name
+                            )}
                         </h3>
-                        <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                            <button type="button" class="btn-secondary" onclick="editSubject('${escapeHTML(subjectName)}')">✏️ Editar matéria</button>
-                            ${subject.custom ? `<button type="button" class="btn-secondary" onclick="deleteCustomSubject('${escapeHTML(subjectName)}')">🗑️ Excluir matéria</button>` : ""}
-                        </div>
 
                         <p>
                             Progresso:
@@ -2340,13 +2260,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </label>
 
 
-                        <textarea
+                        <input
+                            type="text"
                             id="subjectContentInput"
-                            rows="3"
-                            maxlength="3000"
-                            placeholder="Escreva o conteúdo, resumo ou anotação..."
+                            placeholder="Ex: Função do 2º grau"
                             required
-                        ></textarea>
+                        >
 
 
                         <button
@@ -2401,11 +2320,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                 </span>
 
 
-                                                <button type="button" class="small-button" title="Editar conteúdo" onclick="editSubjectContent('${escapeHTML(subjectName)}', ${Number(content.id)})">✏️</button>
                                                 <button
                                                     type="button"
                                                     class="small-button"
-                                                    title="Excluir conteúdo"
                                                     onclick="deleteSubjectContent(
                                                         '${escapeHTML(subjectName)}',
                                                         ${Number(content.id)}

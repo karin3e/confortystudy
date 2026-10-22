@@ -2179,10 +2179,3 @@ body {
   .sidebar .menu > a span, .sidebar .menu > button.mobile-more-button span { font-size: 9px !important; }
   .mobile-profile-shortcut { min-width: 44px !important; }
 }
-
-
-/* Melhorias funcionais: edição e detalhes de atividades */
-.task-description-preview { flex-basis: 100%; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-.task-priority-high { color: #b91c1c; font-size: 11px; font-weight: 700; }
-.subject-card { cursor: pointer; }
-.subject-card:focus-visible { outline: 3px solid var(--primary, #6d5dfc); outline-offset: 3px; }
