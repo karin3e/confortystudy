@@ -49,12 +49,6 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', iniciarFirebase, {
-      once: true
-    });
-  } else {
-    iniciarFirebase();
-  }
+  
+  iniciarFirebase();
 })();
-
