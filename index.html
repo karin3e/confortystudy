@@ -294,6 +294,22 @@
             color: #86efac;
         }
 
+        .google-link-panel {
+            margin: 0 0 18px;
+            padding: 16px;
+            border: 1px solid var(--input-border);
+            border-radius: 12px;
+            background: var(--input-bg);
+        }
+
+        .google-link-panel[hidden] { display: none !important; }
+        .google-link-panel h3 { margin: 0 0 6px; font-size: 15px; }
+        .google-link-panel p { margin: 0 0 14px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+        .google-link-panel .input-group { margin-bottom: 12px; }
+        .google-link-actions { display: flex; gap: 10px; }
+        .google-link-actions button { flex: 1; min-height: 44px; border-radius: 9px; cursor: pointer; }
+        .google-link-cancel { color: #fff; background: transparent; border: 1px solid var(--input-border); }
+
         .google-error {
             display: none;
 
@@ -437,6 +453,29 @@
             >
                 Não foi possi­vel carregar o login do Google.
             </div>
+
+            <section id="googleLinkPanel" class="google-link-panel" aria-labelledby="googleLinkTitle" hidden>
+                <h3 id="googleLinkTitle">Conectar à conta existente</h3>
+                <p>Esse e-mail já tem uma conta no ComfortStudy. Confirme a senha para conectar o Google e manter os dados na mesma conta.</p>
+                <form id="googleLinkForm">
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <i class="ph ph-envelope-simple" aria-hidden="true"></i>
+                            <input id="googleLinkEmail" type="email" autocomplete="username" aria-label="E-mail da conta" readonly required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-wrapper">
+                            <i class="ph ph-lock" aria-hidden="true"></i>
+                            <input id="googleLinkPassword" type="password" placeholder="Senha da conta existente" autocomplete="current-password" aria-label="Senha da conta existente" required>
+                        </div>
+                    </div>
+                    <div class="google-link-actions">
+                        <button id="googleLinkSubmit" type="submit" class="btn-primary">Conectar Google</button>
+                        <button id="cancelGoogleLink" type="button" class="google-link-cancel">Cancelar</button>
+                    </div>
+                </form>
+            </section>
 
 
             <!-- CADASTRO -->

@@ -19,11 +19,11 @@ Organizador de estudos para tarefas, provas, matérias e rotina semanal.
 - Busca geral por tarefas, provas, matérias e anotações; plano rápido conforme o tempo disponível.
 - Lembretes configuráveis para tarefas, provas e revisões; avisos lidos saem da caixa principal e ficam no histórico.
 - Fotos e PDFs sincronizados entre dispositivos pelo Firebase Storage depois de ativar o bucket e publicar `storage.rules`.
-- Exportação e restauração de backup. As marcações e observações do leitor de PDF continuam locais e entram no backup.
+- Exportação e restauração de backup. As marcações e observações do leitor de PDF também sincronizam com a conta.
 
 Consulte [PLANO_DE_EVOLUCAO.md](PLANO_DE_EVOLUCAO.md) para acompanhar as etapas de responsividade, estabilidade e melhorias do projeto.
 
 ## Publicação
 Use CONFIGURAR_FIREBASE.md e COMO_INSTALAR.txt. As páginas carregam firebase-config-v2.js. Inclua extras.js, extras.css e os ícones na publicação.
 
-Os cadastros permanecem abertos para que outras pessoas também possam usar o app. Cada conta tem seus próprios dados. O Premium está marcado como "Em breve"; os recursos atuais são gratuitos. Os avisos do navegador funcionam enquanto o app está aberto. Notificações com o app fechado exigem Web Push e um serviço de envio no servidor.
+Os cadastros permanecem abertos para que outras pessoas também possam usar o app. Cada conta acessa seus dados usando o UID autenticado; as regras do Firestore e do Storage negam acesso aos dados de outras contas. Ao sair, o app confirma a sincronização e limpa o cache de dados daquele usuário neste navegador. O Premium está marcado como "Em breve"; os recursos atuais são gratuitos. Os avisos do navegador funcionam enquanto o app está aberto. Notificações com o app fechado exigem Web Push e um serviço de envio no servidor.

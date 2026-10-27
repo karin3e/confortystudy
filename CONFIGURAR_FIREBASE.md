@@ -16,11 +16,12 @@ No Firebase Console → Authentication → Sign-in method:
 - Em Authentication → Templates, personalize o e-mail de redefinição de senha e o nome do remetente.
 
 O login Google usa o provedor Firebase. Não use o antigo fluxo de apenas decodificar um token Google no navegador como prova de autenticação.
+Se o e-mail Google já tiver uma conta de e-mail/senha, o app pede a senha existente para conectar os provedores ao mesmo UID e manter os dados naquela conta.
 
 ## 3. Configurar Firestore
 1. Firebase Console → Firestore Database → Create database.
 2. Publique o conteúdo de `firestore.rules` na aba Rules (ou use Firebase CLI).
-3. Regras previstas: cada conta só pode ler/gravar documentos dentro de `/users/{seu-uid}/data/`.
+3. Regras previstas: cada conta só pode ler/gravar documentos dentro de `/users/{seu-uid}/data/`. O app associa as informações ao UID do Firebase, não ao nome de exibição.
 4. Nunca publique regras abertas como `allow read, write: if true`.
 
 ## 4. Ativar sincronização de fotos e PDFs
@@ -30,11 +31,13 @@ O login Google usa o provedor Firebase. Não use o antigo fluxo de apenas decodi
 4. O app envia anexos novos ao Storage quando a conta está conectada e migra anexos locais pequenos ao sincronizar. Em aparelhos diferentes, a conta precisa ser a mesma. O modo local e os backups continuam disponíveis.
 5. Configure alertas de orçamento no Firebase e confira os custos do Storage antes de compartilhar o app amplamente.
 
+Ao sair do app, as alterações pendentes precisam ser sincronizadas antes de a sessão ser encerrada; em seguida, o cache local da conta é removido deste navegador. Se a sincronização falhar, o app mantém a sessão e os dados locais para evitar perda. As regras do Firebase são a proteção que impede uma conta de ler ou alterar dados de outra; nunca publique regras abertas.
+
 ## 5. Publicar no GitHub Pages
 Inclua todos os arquivos da pasta do projeto, inclusive firebase-config-v2.js, firebase-init.js, auth.js, cloud-sync.js, extras.js, extras.css, service-worker.js, firestore.rules, storage.rules e os ícones. Em Settings → Pages, selecione a branch e a pasta correta. Acesse sempre por HTTPS.
 
 ## 6. Dados locais existentes
-Os dados do protótipo ficam no navegador. Na primeira entrada no Firebase, `cloud-sync.js` tenta importar os dados locais apenas quando o e-mail da antiga conta local corresponde ao e-mail autenticado. Mesmo assim, faça backup antes de atualizar. Contas locais antigas precisam ser recriadas no Firebase; senhas antigas não são migradas.
+Os dados do protótipo ficam no navegador. Na primeira entrada no Firebase, `cloud-sync.js` tenta importar dados locais de uma conta Firebase existente somente quando o UID corresponde; para contas antigas sem UID, a migração exige o mesmo e-mail autenticado. Mesmo assim, faça backup antes de atualizar. Contas locais antigas precisam ser recriadas no Firebase; senhas antigas não são migradas.
 
 ## 7. Testes obrigatórios antes de divulgar
 - Criar conta com e-mail novo e verificar o tratamento de e-mail duplicado.

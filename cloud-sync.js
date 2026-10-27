@@ -4,10 +4,10 @@
     "comfortTasks", "comfortTaskFiles", "comfortExams", "comfortNotices", "comfortStudySeconds",
     "comfortStudyLog", "comfortSubjectContents", "comfortSubjects", "comfortProfile",
     "comfortWeeklyGoal", "comfortClassSchedule", "comfortStudyPlans", "comfortFlashcards", "comfortGrades",
-    "comfortStudyDiary", "comfortAppearance", "comfortQuizQuestions", "comfortQuizResults",
+    "comfortStudyDiary", "comfortAppearance", "comfortQuizQuestions", "comfortQuizResults", "comfortPdfAnnotations",
     "comfortDailyGoalMinutes", "comfortStudySubjectLog", "comfortReminderSettings", "comfortStudyReaderFiles"
   ];
-  const LOCAL_ONLY_KEYS = ["comfortPdfAnnotations", "comfortStudyNotifications", "comfortNotificationSent", "comfortSyncPendingKeys"];
+  const LOCAL_ONLY_KEYS = ["comfortStudyNotifications", "comfortNotificationSent", "comfortSyncPendingKeys"];
   const PENDING_KEY = "comfortSyncPendingKeys";
   let activeUid = null;
   let hydrating = false;
@@ -259,26 +259,41 @@
   };
   window.comfortCloudFlush = async function () {
     const uid = activeUid;
-    if (!uid || !dbReady()) return;
+    if (!uid || !dbReady()) return pendingKeys.size === 0;
     const pending = [];
     timers.forEach((timer, key) => {
       clearTimeout(timer);
       timers.delete(key);
       pending.push(writeKey(key, localStorage.getItem(key), uid));
     });
-    await Promise.all(pending);
+    const immediateResults = await Promise.all(pending);
     await flushOfflineChanges();
+    return immediateResults.every(Boolean) && pendingKeys.size === 0;
   };
 
   async function flushOfflineChanges() {
-    if (!activeUid || !dbReady() || hydrating || navigator.onLine === false || !pendingKeys.size) return;
+    if (!activeUid || !dbReady() || hydrating || navigator.onLine === false || !pendingKeys.size) return pendingKeys.size === 0;
     const uid = activeUid;
     for (const key of Array.from(pendingKeys)) {
       const raw = originalGet(key);
       if (raw === null) await deleteKey(key, uid);
       else await writeKey(key, raw, uid);
     }
+    return pendingKeys.size === 0;
   }
+
+  window.comfortClearLocalUserData = function () {
+    if (pendingKeys.size || timers.size) return false;
+    for (const key of KEYS) originalRemove(key);
+    for (const key of LOCAL_ONLY_KEYS) originalRemove(key);
+    originalRemove("comfortAuthUser");
+    originalRemove("comfortSession");
+    originalRemove("comfortLegacyEmail");
+    originalRemove("comfortLegacyUid");
+    pendingKeys.clear();
+    originalRemove(PENDING_KEY);
+    return true;
+  };
 
   window.addEventListener("online", flushOfflineChanges);
 
@@ -296,8 +311,19 @@
       const root = comfortDb.collection("users").doc(user.uid);
       let oldAccount = null;
       try { oldAccount = JSON.parse(localStorage.getItem("comfortAuthUser") || "null"); } catch (_) {}
-      const legacyEmail = localStorage.getItem("comfortLegacyEmail") || (oldAccount && oldAccount.email) || "";
-      const legacyMatches = String(legacyEmail).trim().toLowerCase() === String(user.email || "").trim().toLowerCase();
+      const savedLegacyEmail = originalGet("comfortLegacyEmail");
+      const legacyEmail = savedLegacyEmail !== null ? savedLegacyEmail : (oldAccount && oldAccount.email) || "";
+      const legacyUid = originalGet("comfortLegacyUid");
+      let legacyMatches;
+      if (legacyUid !== null) {
+        legacyMatches = legacyUid
+          ? String(legacyUid) === String(user.uid)
+          : String(legacyEmail).trim().toLowerCase() === String(user.email || "").trim().toLowerCase();
+      } else if (oldAccount && oldAccount.uid) {
+        legacyMatches = String(oldAccount.uid) === String(user.uid);
+      } else {
+        legacyMatches = String(legacyEmail).trim().toLowerCase() === String(user.email || "").trim().toLowerCase();
+      }
       let localSubjectContents = safeParse(localStorage.getItem("comfortSubjectContents") || "{}");
       let localTaskFiles = safeParse(originalGet("comfortTaskFiles") || "{}");
       let localReaderFiles = safeParse(originalGet("comfortStudyReaderFiles") || "[]");
@@ -312,6 +338,15 @@
       }
       const collection = await root.collection("data").get();
       const remote = new Map(collection.docs.map(doc => [doc.id, doc.data().value]));
+
+      if (!remote.has("comfortProfile") && remote.has("profile")) {
+        const legacyProfile = remote.get("profile");
+        await root.collection("data").doc("comfortProfile").set({
+          value: legacyProfile,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        remote.set("comfortProfile", legacyProfile);
+      }
 
       for (const key of KEYS) {
         if (remote.has(key)) continue;
@@ -344,9 +379,15 @@
       };
       originalSet("comfortAuthUser", JSON.stringify(account));
       originalRemove("comfortLegacyEmail");
+      originalRemove("comfortLegacyUid");
       originalSet("comfortSession", "1");
       if (!remote.has("comfortProfile")) {
-        originalSet("comfortProfile", JSON.stringify({ name: account.name, email: account.email, school: "", course: "", bio: "" }));
+        const profile = { name: account.name, email: account.email, school: "", course: "", bio: "" };
+        originalSet("comfortProfile", JSON.stringify(profile));
+        await root.collection("data").doc("comfortProfile").set({
+          value: profile,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
       }
       if (navigator.onLine !== false) {
         ["comfortSubjectContents", "comfortTaskFiles", "comfortStudyReaderFiles"].forEach(key => {

@@ -4363,15 +4363,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.addEventListener("click", async () => {
                 btn.disabled = true;
                 try {
+                    if (typeof window.comfortCloudFlush === "function") {
+                        const synced = await window.comfortCloudFlush();
+                        if (!synced) {
+                            alert("Não consegui confirmar a sincronização. Verifique a conexão e tente sair novamente para evitar perder alterações recentes.");
+                            btn.disabled = false;
+                            return;
+                        }
+                    }
                     if (window.comfortAuth && window.comfortAuth.currentUser) await window.comfortAuth.signOut();
+                    if (typeof window.comfortClearLocalUserData === "function" && !window.comfortClearLocalUserData()) {
+                        throw new Error("Há alterações aguardando sincronização; os dados locais foram mantidos.");
+                    }
+                    location.replace("index.html");
                 } catch (error) {
                     console.error("ComfortStudy: erro ao sair", error);
-                } finally {
-                    const signedOutAccount = getSessionUser();
-                    if (signedOutAccount.email) localStorage.setItem("comfortLegacyEmail", String(signedOutAccount.email).trim().toLowerCase());
-                    localStorage.removeItem("comfortSession");
-                    localStorage.removeItem("comfortAuthUser");
-                    location.replace("index.html");
+                    alert("Não foi possível encerrar e limpar esta sessão com segurança. Verifique a conexão e tente novamente.");
+                    if (window.comfortAuth && !window.comfortAuth.currentUser) location.replace("index.html");
+                    else btn.disabled = false;
                 }
             });
             profileArea.appendChild(btn);

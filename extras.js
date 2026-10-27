@@ -1,6 +1,6 @@
 (function () {
   const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-  const SAFE_EXPORT_EXCLUDE = new Set(["comfortAuthUser", "comfortSession", "comfortLegacyEmail", "comfortSyncPendingKeys"]);
+  const SAFE_EXPORT_EXCLUDE = new Set(["comfortAuthUser", "comfortSession", "comfortLegacyEmail", "comfortLegacyUid", "comfortSyncPendingKeys"]);
   let currentReviewId = null;
   let notificationTimer = null;
   let activeQuiz = null;
