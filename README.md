@@ -11,8 +11,13 @@ Organizador de estudos para tarefas, provas, matérias e rotina semanal.
 - Sugestões de horários livres usando a grade de aulas e avisos de aula, prazo e revisão enquanto o app estiver aberto.
 - Diário de estudos, revisão espaçada de anotações importantes e flashcards, cálculo de nota necessária e relatório mensal/semanal.
 - Leitor de PDF com páginas favoritas e observações, além de temas, avatar e cartões personalizáveis no painel.
+- Perfil ajustável com nome, e-mail, escola, curso, biografia e foto, com opções para salvar ou cancelar alterações.
+- Layout adaptável para celulares, tablets e computadores, com rolagem interna nos formulários e modais.
 - Metas semanais, plano de estudo para provas e registro de notas.
+- Simulados com questões objetivas próprias, correção automática, histórico de resultados e conquistas de estudo.
 - Exportação e restauração de backup. PDFs do leitor e seus apontamentos ficam neste navegador e no backup, não sincronizam entre dispositivos.
+
+Consulte [PLANO_DE_EVOLUCAO.md](PLANO_DE_EVOLUCAO.md) para acompanhar as etapas de responsividade, estabilidade e melhorias do projeto.
 
 ## Publicação
 Use CONFIGURAR_FIREBASE.md e COMO_INSTALAR.txt. As páginas carregam firebase-config-v2.js. Inclua extras.js, extras.css e os ícones na publicação.

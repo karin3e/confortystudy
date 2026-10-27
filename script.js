@@ -192,8 +192,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const allContents = getSubjectContents();
         if (!Array.isArray(allContents[subjectName])) allContents[subjectName] = [];
         const record = typeof content === 'string'
-            ? { id: Date.now(), title: content.slice(0, 90), text: content, important: false, files: [], createdAt: new Date().toISOString() }
-            : { id: Date.now(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString() };
+            ? { id: Date.now(), topic: "", title: content.slice(0, 90), text: content, important: false, files: [], createdAt: new Date().toISOString() }
+            : { id: Date.now(), topic: String(content.topic || "").trim(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString() };
         allContents[subjectName].push(record);
         saveSubjectContents(allContents);
     }
@@ -263,6 +263,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         setStorage(STORAGE.profile, profile);
     }
 
+    function renderProfileAvatar(photoData, name) {
+        const avatar = document.querySelector(".big-avatar");
+        if (!avatar) return;
+        const safeImage = typeof photoData === "string" && /^data:image\/(png|jpeg|webp|gif);base64,/i.test(photoData);
+        if (safeImage) {
+            const image = document.createElement("img");
+            image.src = photoData;
+            image.alt = "Foto de perfil de " + (name || "estudante");
+            avatar.replaceChildren(image);
+            avatar.classList.add("profile-photo-avatar");
+            avatar.classList.remove("emoji-avatar");
+        } else {
+            const appearance = getStorage("comfortAppearance", {});
+            avatar.textContent = appearance.avatar || "👤";
+            avatar.classList.add("emoji-avatar");
+            avatar.classList.remove("profile-photo-avatar");
+        }
+    }
+
 
     function renderProfile() {
 
@@ -271,13 +290,10 @@ document.addEventListener("DOMContentLoaded", async () => {
        
 
         const fields = {
-            profileName: profile.name,
+            profileNameDisplay: profile.name,
+            profileEmailDisplay: profile.email || "Plano Gratuito",
             userName: profile.name,
-            profileEmail: profile.email,
             userEmail: profile.email,
-            profileSchool: profile.school,
-            profileCourse: profile.course,
-            profileBio: profile.bio
         };
 
         Object.entries(fields).forEach(
@@ -303,209 +319,77 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         
 
-        const profilePage =
-            document.getElementById("page-perfil");
-
-        if (!profilePage) return;
-
-
-        let editButton =
-            document.getElementById(
-                "editProfileButton"
-            );
-
-
-        if (!editButton) {
-
-            editButton =
-                document.createElement("button");
-
-            editButton.id =
-                "editProfileButton";
-
-            editButton.type =
-                "button";
-
-            editButton.className =
-                "btn-primary";
-
-            editButton.textContent =
-                " Editar perfil";
-
-
-            
-
-            profilePage.prepend(editButton);
-
-            editButton.addEventListener(
-                "click",
-                showProfileModal
-            );
+        const form = document.getElementById("profileSettingsForm");
+        if (form) {
+            if (form.dataset.dirty !== "true") {
+                ["name", "email", "school", "course", "bio"].forEach(key => {
+                    const field = form.elements.namedItem(key);
+                    if (field) field.value = profile[key] || "";
+                });
+                form.dataset.photoData = profile.photoData || "";
+                const photoInput = document.getElementById("profilePhotoFile");
+                if (photoInput) photoInput.value = "";
+            }
         }
+        const draftName = form?.dataset.dirty === "true" ? form.elements.namedItem("name")?.value.trim() : profile.name;
+        const draftPhoto = form?.dataset.dirty === "true" ? form.dataset.photoData : profile.photoData;
+        renderProfileAvatar(draftPhoto, draftName);
     }
 
-
-    function profileForm() {
-
-        const profile = getProfile();
-
-        return `
-            <form
-                id="profileForm"
-                class="modal-form">
-
-                <label for="profileFormName">
-                    Nome
-                </label>
-
-                <input
-                    type="text"
-                    id="profileFormName"
-                    value="${escapeHTML(profile.name)}"
-                    placeholder="Seu nome"
-                    required
-                >
-
-                <label for="profileFormEmail">
-                    E-mail
-                </label>
-
-                <input
-                    type="email"
-                    id="profileFormEmail"
-                    value="${escapeHTML(profile.email)}"
-                    placeholder="seuemail@email.com"
-                >
-
-                <label for="profileFormSchool">
-                    Escola
-                </label>
-
-                <input
-                    type="text"
-                    id="profileFormSchool"
-                    value="${escapeHTML(profile.school)}"
-                    placeholder="Nome da escola"
-                >
-
-                <label for="profileFormCourse">
-                    Curso / Série
-                </label>
-
-                <input
-                    type="text"
-                    id="profileFormCourse"
-                    value="${escapeHTML(profile.course)}"
-                    placeholder="Ex: 3ª série"
-                >
-
-                <label for="profileFormBio">
-                    Sobre você
-                </label>
-
-                <textarea
-                    id="profileFormBio"
-                    rows="4"
-                    placeholder="Escreva algo sobre você..."
-                >${escapeHTML(profile.bio)}</textarea>
-
-                <button
-                    type="submit"
-                    class="btn-primary">
-
-                    Salvar perfil
-
-                </button>
-
-            </form>
-        `;
-    }
-
-
-    function showProfileModal() {
-
-        openModal(
-            "Editar meu perfil",
-            profileForm()
-        );
-
-        const form =
-            document.getElementById(
-                "profileForm"
-            );
-
-        if (!form) return;
-
-        form.addEventListener(
-            "submit",
-            event => {
-
-                event.preventDefault();
-
-                const profile = {
-                    name:
-                        document
-                            .getElementById(
-                                "profileFormName"
-                            )
-                            .value
-                            .trim(),
-
-                    email:
-                        document
-                            .getElementById(
-                                "profileFormEmail"
-                            )
-                            .value
-                            .trim(),
-
-                    school:
-                        document
-                            .getElementById(
-                                "profileFormSchool"
-                            )
-                            .value
-                            .trim(),
-
-                    course:
-                        document
-                            .getElementById(
-                                "profileFormCourse"
-                            )
-                            .value
-                            .trim(),
-
-                    bio:
-                        document
-                            .getElementById(
-                                "profileFormBio"
-                            )
-                            .value
-                            .trim()
-                };
-
-
-                if (!profile.name) {
-
-                    alert(
-                        "Digite pelo menos o seu nome."
-                    );
-
+    function initializeProfileSettings() {
+        const form = document.getElementById("profileSettingsForm");
+        if (!form || form.dataset.ready === "true") return;
+        form.dataset.ready = "true";
+        const status = document.getElementById("profileSaveStatus");
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+            const profile = Object.fromEntries(["name", "email", "school", "course", "bio"].map(key => [key, form.elements.namedItem(key).value.trim()]));
+            if (!profile.name) { form.elements.namedItem("name").focus(); return; }
+            profile.photoData = form.dataset.photoData || "";
+            saveProfile({ ...getProfile(), ...profile });
+            form.dataset.dirty = "false";
+            renderProfile();
+            window.dispatchEvent(new Event("comfort-data-updated"));
+            if (status) status.textContent = "Alterações salvas.";
+        });
+        document.getElementById("cancelProfileChanges")?.addEventListener("click", () => {
+            form.dataset.dirty = "false";
+            renderProfile();
+            if (status) status.textContent = "Alterações descartadas.";
+        });
+        form.addEventListener("input", () => { form.dataset.dirty = "true"; if (status) status.textContent = ""; });
+        form.addEventListener("change", () => { form.dataset.dirty = "true"; if (status) status.textContent = ""; });
+        const photoInput = document.getElementById("profilePhotoFile");
+        photoInput?.addEventListener("change", () => {
+            const file = photoInput.files && photoInput.files[0];
+            if (!file) return;
+            if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type) || file.size > 350 * 1024) {
+                photoInput.value = "";
+                if (status) status.textContent = "Escolha uma imagem de até 350 KB.";
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (typeof reader.result !== "string" || !/^data:image\/(png|jpeg|webp|gif);base64,/i.test(reader.result)) {
+                    if (status) status.textContent = "Formato de imagem não compatível.";
                     return;
                 }
-
-
-                saveProfile(profile);
-
-                closeModal();
-
-                renderProfile();
-
-                alert(
-                    "Perfil atualizado com sucesso! ✅"
-                );
-            }
-        );
+                form.dataset.photoData = reader.result;
+                form.dataset.dirty = "true";
+                renderProfileAvatar(reader.result, form.elements.namedItem("name").value.trim());
+                if (status) status.textContent = "Foto selecionada. Salve as alterações para confirmar.";
+            };
+            reader.onerror = () => { if (status) status.textContent = "Não foi possível abrir essa imagem."; };
+            reader.readAsDataURL(file);
+        });
+        document.getElementById("removeProfilePhoto")?.addEventListener("click", () => {
+            form.dataset.photoData = "";
+            form.dataset.dirty = "true";
+            if (photoInput) photoInput.value = "";
+            renderProfileAvatar("", form.elements.namedItem("name").value.trim());
+            if (status) status.textContent = "A foto será removida ao salvar.";
+        });
     }
 
 
@@ -518,6 +402,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    function safeAttachmentDataUrl(value) {
+        return typeof value === "string" && /^data:(application\/pdf|image\/(png|jpeg|webp|gif));base64,[A-Za-z0-9+/=]+$/i.test(value) ? value : "";
     }
 
 
@@ -813,6 +701,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             "closeModal"
         );
 
+    let modalPreviousFocus = null;
+
 
     function openModal(
         title,
@@ -820,6 +710,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         if (!modal) return;
+
+        if (!modal.classList.contains("show")) {
+            modalPreviousFocus = document.activeElement;
+        }
 
         if (modalTitle) {
             modalTitle.textContent =
@@ -834,6 +728,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         modal.classList.add("show");
         modal.style.display =
             "flex";
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modal-open");
+        modal.querySelector(".modal-content")?.focus({ preventScroll: true });
     }
 
 
@@ -844,6 +741,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         modal.classList.remove("show");
         modal.style.display =
             "none";
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+        if (modalPreviousFocus?.isConnected) modalPreviousFocus.focus({ preventScroll: true });
+        modalPreviousFocus = null;
     }
 
 
@@ -911,7 +812,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             '<label for="taskRecurrence">Repetição</label>' +
             '<select id="taskRecurrence"><option value="">Não repetir</option><option value="daily">Todos os dias</option><option value="weekly">Toda semana</option></select>' +
             '<label for="taskFiles">Anexar PDF ou imagem (até 700 KB no total)</label>' +
-            '<input type="file" id="taskFiles" accept="application/pdf,image/*" multiple>' +
+            '<input type="file" id="taskFiles" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>' +
             '<small>Os arquivos ficam neste navegador e entram no backup; não são sincronizados com a nuvem.</small>' +
             '<button type="submit" class="btn-primary">Adicionar tarefa</button></form>';
     }
@@ -963,6 +864,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert("Preencha o nome, a matéria e a data.");
             return;
         }
+        if (files.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) {
+            alert("Anexe apenas arquivos PDF ou imagens PNG, JPG, WEBP e GIF.");
+            return;
+        }
         if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 700 * 1024) {
             alert("Os anexos desta tarefa podem somar até 700 KB. Para arquivos maiores, use o caderno ou um link para o arquivo.");
             return;
@@ -971,7 +876,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const fileData = await Promise.all(files.map(file => new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
+                reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
             })));
@@ -1041,7 +946,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             if (taskFiles.length) {
                 html += '<div class="task-files">' + taskFiles.map(file =>
-                    '<a href="' + escapeHTML(file.dataUrl) + '" download="' + escapeHTML(file.name) + '">📎 ' + escapeHTML(file.name) + '</a>'
+                    safeAttachmentDataUrl(file.dataUrl) ? '<a href="' + escapeHTML(safeAttachmentDataUrl(file.dataUrl)) + '" download="' + escapeHTML(file.name) + '">📎 ' + escapeHTML(file.name) + '</a>' : ''
                 ).join("") + '</div>';
             }
             if (task.recurrence) html += '<p>Esta tarefa se repete ' + (task.recurrence === "daily" ? "diariamente" : "semanalmente") + ' quando for concluída.</p>';
@@ -2006,11 +1911,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!grid) return;
 
+        const searchInput = document.getElementById("subjectSearch");
+        if (searchInput && searchInput.dataset.ready !== "true") {
+            searchInput.dataset.ready = "true";
+            searchInput.addEventListener("input", renderSubjects);
+        }
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+        const visibleSubjects = getAllSubjects().filter(subject => {
+            if (!query || subject.name.toLowerCase().includes(query)) return true;
+            return getContentsForSubject(subject.name).some(content => [content.topic, content.title, content.text].some(value => String(value || "").toLowerCase().includes(query)));
+        });
+
 
         grid.innerHTML = `
-            <div class="subject-card subject-add-card" role="button" tabindex="0" onclick="promptAddSubject()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:150px;border:2px dashed #cbd5e1;box-shadow:none;">
+            <div class="subject-card subject-add-card" role="button" tabindex="0" onclick="promptAddSubject()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();promptAddSubject()}" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:150px;border:2px dashed #cbd5e1;box-shadow:none;">
                 <div style="text-align:center"><div style="font-size:32px">＋</div><h3>Adicionar matéria</h3><p>Personalize conforme sua escola</p></div>
-            </div>` + getAllSubjects()
+            </div>` + (visibleSubjects.length ? visibleSubjects
                 .map(
                     (subject, index) => {
 
@@ -2027,9 +1943,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                         return `
-                            <div
+            <div
                                 class="subject-card"
-                                onclick="showSubjectModal('${escapeHTML(subject.name)}')"
+                                data-subject-open="${escapeHTML(subject.name)}"
+                                role="button"
+                                tabindex="0"
                                 style="cursor:pointer;">
 
                                 <div
@@ -2094,7 +2012,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                         `;
                     }
                 )
-                .join("");
+                .join("") : query ? `<p class="feature-empty subject-search-empty">Nenhuma matéria ou anotação encontrada para “${escapeHTML(query)}”.</p>` : "");
+        grid.querySelectorAll("[data-subject-open]").forEach(card => {
+            card.addEventListener("click", () => showSubjectModal(card.dataset.subjectOpen));
+            card.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") { event.preventDefault(); showSubjectModal(card.dataset.subjectOpen); }
+            });
+        });
     }
 
 
@@ -2106,12 +2030,38 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.editSubjectContent = function (subjectName, contentId) {
         const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
         if (!item) return;
-        const title = prompt("Título do conteúdo:", item.title || "Anotação");
-        if (title === null) return;
-        const text = prompt("Anotações:", item.text || "");
-        if (text === null) return;
-        const important = confirm("Marcar este conteúdo como importante? OK = sim, Cancelar = não");
-        updateSubjectContent(subjectName, contentId, { title: title.trim() || "Anotação", text: text.trim(), important });
+        openModal("Editar conteúdo", `<form id="editSubjectContentForm" class="modal-form">
+            <label for="editSubjectTopic">Tópico (opcional)</label><input id="editSubjectTopic" type="text" maxlength="100" value="${escapeHTML(item.topic || "")}" placeholder="Ex.: Capítulo 2">
+            <label for="editSubjectTitle">Título / assunto</label><input id="editSubjectTitle" type="text" maxlength="120" value="${escapeHTML(item.title || "Anotação")}" required>
+            <label for="editSubjectText">Anotações</label><textarea id="editSubjectText" rows="6" maxlength="10000" required>${escapeHTML(item.text || "")}</textarea>
+            <label class="checkbox-label"><input id="editSubjectImportant" type="checkbox"${item.important ? " checked" : ""}> Marcar como importante para revisar</label>
+            <label for="editSubjectFiles">Adicionar mais PDFs ou fotos</label><input id="editSubjectFiles" type="file" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
+            <small>Arquivos atuais serão mantidos. Limite total do conteúdo: 900 KB.</small>
+            <button type="submit" class="btn-primary">Salvar alterações</button></form>`);
+        const form = document.getElementById("editSubjectContentForm");
+        form?.addEventListener("submit", event => {
+            event.preventDefault();
+            const title = document.getElementById("editSubjectTitle").value.trim();
+            const text = document.getElementById("editSubjectText").value.trim();
+            const selectedFiles = Array.from(document.getElementById("editSubjectFiles").files || []);
+            if (selectedFiles.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) { alert("Anexe apenas PDFs ou imagens PNG, JPG, WEBP e GIF."); return; }
+            const currentFiles = Array.isArray(item.files) ? item.files : [];
+            const currentBytes = currentFiles.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+            const newBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+            if (selectedFiles.some(file => file.size > 700 * 1024) || currentBytes + newBytes > 900 * 1024) { alert("O limite por arquivo é 700 KB e o limite total deste conteúdo é 900 KB."); return; }
+            Promise.all(selectedFiles.map(file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            }))).then(newFiles => updateSubjectContent(subjectName, contentId, {
+                topic: document.getElementById("editSubjectTopic").value.trim(),
+                title: title,
+                text: text,
+                important: document.getElementById("editSubjectImportant").checked,
+                files: currentFiles.concat(newFiles)
+            })).catch(() => alert("Não foi possível ler um dos arquivos."));
+        });
     };
 
     window.generateSubjectReview = function (subjectName, contentId) {
@@ -2206,13 +2156,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                     <form id="subjectContentForm" class="modal-form">
+                        <label for="subjectContentTopic">Tópico (opcional)</label>
+                        <input type="text" id="subjectContentTopic" maxlength="100" placeholder="Ex.: Capítulo 2">
                         <label for="subjectContentTitle">Título / assunto</label>
                         <input type="text" id="subjectContentTitle" placeholder="Ex.: Ligações químicas" required>
                         <label for="subjectContentInput">Anotações do conteúdo</label>
                         <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
                         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
                         <label for="subjectContentFiles">Anexar PDF ou fotos (até 700 KB por arquivo e 900 KB no total)</label>
-                        <input type="file" id="subjectContentFiles" accept="application/pdf,image/*" multiple>
+                        <input type="file" id="subjectContentFiles" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
                         <p style="font-size:12px;color:#718096">Os arquivos ficam guardados junto ao conteúdo neste navegador. Para sincronizar anexos entre dispositivos, configure Firebase Storage.</p>
                         <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
                     </form>
@@ -2226,6 +2178,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <h4>
                             📚 Conteúdos
                         </h4>
+
+                        ${contents.length ? '<label for="subjectContentSearch" class="subject-search-label">Buscar anotações</label><input type="search" id="subjectContentSearch" class="subject-content-search" placeholder="Pesquise por tópico, título ou texto">' : ''}
 
 
                         ${
@@ -2241,7 +2195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 : contents
                                     .map(
                                         content => `
-                                            <div
+                                            <article class="subject-note-card" data-note-search="${escapeHTML([content.topic, content.title, content.text, subjectName].join(" ").toLowerCase())}"
                                                 style="
                                                     display:flex;
                                                     align-items:center;
@@ -2253,14 +2207,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                                 <div style="flex:1;min-width:0">
                                                     <strong>${content.important ? '⭐ ' : '📖 '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
+                                                    ${content.topic ? `<small class="subject-note-topic">${escapeHTML(content.topic)}</small>` : ''}
                                                     <p style="white-space:pre-wrap;margin:6px 0">${escapeHTML(content.text || '')}</p>
-                                                    ${(content.files || []).map(file => file.dataUrl ? `<p><a href="${file.dataUrl}" download="${escapeHTML(file.name)}" target="_blank">📎 ${escapeHTML(file.name)}</a></p>` : '').join('')}
-                                                    <button type="button" class="small-button" onclick="editSubjectContent('${escapeHTML(subjectName)}',${Number(content.id)})">✏️ Editar</button>
-                                                    <button type="button" class="small-button" onclick="generateSubjectReview('${escapeHTML(subjectName)}',${Number(content.id)})">🧠 Revisar</button>
+                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl); if (!url) return ''; const image = /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener">📎 ${escapeHTML(file.name)}</a></p>`; }).join('')}
+                                                    <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}">✏️ Editar</button>
+                                                    <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}">🧠 Revisar</button>
                                                 </div>
-                                                <button type="button" class="small-button" onclick="deleteSubjectContent('${escapeHTML(subjectName)}',${Number(content.id)})" aria-label="Excluir conteúdo">🗑️</button>
+                                                <button type="button" class="small-button" data-subject-action="delete" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}" aria-label="Excluir conteúdo">🗑️</button>
 
-                                            </div>
+                                            </article>
                                         `
                                     )
                                     .join("")
@@ -2302,6 +2257,27 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "subjectContentForm"
             );
 
+        if (modalBody && modalBody.dataset.subjectActionHandler !== "true") {
+            modalBody.dataset.subjectActionHandler = "true";
+            modalBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-subject-action]");
+                if (!button) return;
+                const name = button.dataset.subject;
+                const id = Number(button.dataset.contentId);
+                if (button.dataset.subjectAction === "edit") window.editSubjectContent(name, id);
+                if (button.dataset.subjectAction === "review") window.generateSubjectReview(name, id);
+                if (button.dataset.subjectAction === "delete") window.deleteSubjectContent(name, id);
+            });
+        }
+
+        const searchInput = document.getElementById("subjectContentSearch");
+        if (searchInput) searchInput.addEventListener("input", () => {
+            const query = searchInput.value.trim().toLowerCase();
+            document.querySelectorAll(".subject-note-card").forEach(note => {
+                note.hidden = Boolean(query) && !String(note.dataset.noteSearch || "").includes(query);
+            });
+        });
+
 
         if (!form) return;
 
@@ -2319,19 +2295,21 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
 
 
+                const topic = document.getElementById("subjectContentTopic").value.trim();
                 const title = document.getElementById("subjectContentTitle").value.trim();
                 const content = input.value.trim();
                 const fileInput = document.getElementById("subjectContentFiles");
                 const files = Array.from(fileInput.files || []);
                 if (!title || !content) { alert("Preencha o título e as anotações."); return; }
+                if (files.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) { alert("Anexe apenas PDFs ou imagens PNG, JPG, WEBP e GIF."); return; }
                 if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 900 * 1024) { alert("Para evitar erro de armazenamento, cada arquivo deve ter até 700 KB e o total por anotação até 900 KB. Para arquivos maiores, será necessário configurar o Firebase Storage."); return; }
                 Promise.all(files.map(file => new Promise((resolve, reject) => {
                     const reader = new FileReader();
-                    reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
+                    reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
                     reader.onerror = reject;
                     reader.readAsDataURL(file);
                 }))).then(fileData => {
-                    addSubjectContent(subjectName, { title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
+                    addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
                     renderSubjects();
                     showSubjectModal(subjectName);
                 }).catch(() => alert("Não foi possível ler um dos arquivos."));
@@ -2708,6 +2686,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     let timerRunning = false;
 
     let pendingStudyLogSeconds = 0;
+    let pendingSubjectStudySeconds = {};
+    let activeTimerSubject = "";
 
     function flushWeeklyStudyLog() {
         if (!pendingStudyLogSeconds) return;
@@ -2715,12 +2695,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         const day = getTodayString();
         log[day] = (Number(log[day]) || 0) + pendingStudyLogSeconds;
         localStorage.setItem("comfortStudyLog", JSON.stringify(log));
+        const subjects = getStorage("comfortStudySubjectLog", {});
+        subjects[day] = subjects[day] && typeof subjects[day] === "object" ? subjects[day] : {};
+        Object.entries(pendingSubjectStudySeconds).forEach(([subject, seconds]) => {
+            subjects[day][subject] = (Number(subjects[day][subject]) || 0) + Number(seconds || 0);
+        });
+        if (Object.keys(pendingSubjectStudySeconds).length) localStorage.setItem("comfortStudySubjectLog", JSON.stringify(subjects));
         pendingStudyLogSeconds = 0;
+        pendingSubjectStudySeconds = {};
         window.dispatchEvent(new Event("comfort-data-updated"));
     }
 
     function recordWeeklyStudySecond() {
         pendingStudyLogSeconds++;
+        if (activeTimerSubject) pendingSubjectStudySeconds[activeTimerSubject] = (pendingSubjectStudySeconds[activeTimerSubject] || 0) + 1;
         if (pendingStudyLogSeconds >= 60) flushWeeklyStudyLog();
     }
 
@@ -2776,6 +2764,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         timerRunning =
             true;
+
+        activeTimerSubject = document.getElementById("timerStudySubject")?.value || "";
 
 
         timerInterval =
@@ -4348,6 +4338,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     updateTimerDisplay();
 
+    initializeProfileSettings();
     renderProfile();
 
     /*

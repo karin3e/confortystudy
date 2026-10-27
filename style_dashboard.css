@@ -1537,6 +1537,41 @@ body {
     font-size: 13px;
 }
 
+.profile-hint { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+.big-avatar.profile-photo-avatar { overflow: hidden; padding: 0; }
+.big-avatar.profile-photo-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.profile-settings-form { margin-top: 22px; }
+.subject-search-bar { display: grid; gap: 7px; max-width: 600px; margin: 18px 0; }
+.subject-search-bar label { font-size: 13px; font-weight: 700; color: #475569; }
+.subject-search-bar input { box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: #fff; font: inherit; }
+.profile-settings-section { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px; box-shadow: var(--shadow); }
+.profile-settings-heading h3 { margin: 0 0 6px; font-size: 18px; }
+.profile-settings-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.profile-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
+.profile-field { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.profile-field-wide { grid-column: 1 / -1; }
+.profile-field label { font-size: 13px; font-weight: 700; color: #475569; }
+.profile-field input, .profile-field textarea { width: 100%; min-width: 0; padding: 12px 13px; border: 1px solid var(--border); border-radius: 10px; color: #1e293b; background: #fafcff; font: inherit; font-size: 14px; }
+.profile-field input[type="file"] { padding: 8px; }
+.profile-field small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.subject-attachment { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.subject-attachment img { display: block; max-width: min(100%, 260px); max-height: 180px; border-radius: 9px; object-fit: contain; background: #f1f5f9; }
+.profile-field textarea { resize: vertical; min-height: 100px; }
+.profile-field input:focus, .profile-field textarea:focus { outline: 3px solid rgba(59,130,246,.13); border-color: var(--primary); }
+.profile-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--border); margin-top: 22px; padding-top: 18px; }
+.profile-form-actions > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-save-status { color: #15803d; font-size: 13px; min-height: 1em; }
+.profile-form-actions button { min-height: 44px; }
+
+@media (max-width: 640px) {
+    .profile-settings-section { padding: 20px 16px; }
+    .profile-fields-grid { grid-template-columns: 1fr; gap: 14px; }
+    .profile-field-wide { grid-column: auto; }
+    .profile-form-actions { align-items: stretch; flex-direction: column; }
+    .profile-form-actions > div { display: grid; grid-template-columns: 1fr 1fr; }
+    .profile-form-actions button { width: 100%; }
+}
+
 
 
 .modal {
@@ -2187,3 +2222,22 @@ body {
 #subjectContentForm textarea { width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: #fff; font: inherit; }
 #subjectContentForm input[type="text"], #subjectContentForm input[type="file"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 #subjectContentForm label { display: block; margin-top: 10px; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+
+/* Formulários do modal rolam dentro da janela em celulares e em telas baixas. */
+.modal { z-index: 1200; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; align-items: flex-start; padding: 16px; }
+.modal-content { box-sizing: border-box; width: min(100%, 560px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.modal-content h2 { padding-right: 42px; }
+.modal-close { position: sticky; top: 0; right: auto; z-index: 2; display: block; margin: -8px -8px -34px auto; }
+.modal-form { min-width: 0; }
+.modal-form input, .modal-form select, .modal-form textarea { box-sizing: border-box; min-width: 0; }
+.modal-form input[type="checkbox"], .modal-form input[type="radio"] { flex: 0 0 20px; width: 20px; min-width: 20px; min-height: 20px; height: 20px; padding: 0; margin: 0; }
+.modal-form input[type="file"] { max-width: 100%; font-size: 13px; }
+.modal-form button[type="submit"] { width: 100%; min-height: 46px; }
+body.modal-open { overflow: hidden; }
+
+@media (max-height: 620px) {
+  .modal { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .modal-content { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: 20px; }
+  .modal-content h2 { margin-bottom: 14px; }
+  .modal-form { gap: 10px; }
+}

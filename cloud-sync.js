@@ -4,15 +4,19 @@
     "comfortTasks", "comfortExams", "comfortNotices", "comfortStudySeconds",
     "comfortStudyLog", "comfortSubjectContents", "comfortSubjects", "comfortProfile",
     "comfortWeeklyGoal", "comfortClassSchedule", "comfortStudyPlans", "comfortFlashcards", "comfortGrades",
-    "comfortStudyDiary", "comfortAppearance"
+    "comfortStudyDiary", "comfortAppearance", "comfortQuizQuestions", "comfortQuizResults",
+    "comfortDailyGoalMinutes", "comfortStudySubjectLog"
   ];
-  const LOCAL_ONLY_KEYS = ["comfortTaskFiles", "comfortPdfAnnotations", "comfortStudyReaderFiles", "comfortStudyNotifications", "comfortNotificationSent"];
+  const LOCAL_ONLY_KEYS = ["comfortTaskFiles", "comfortPdfAnnotations", "comfortStudyReaderFiles", "comfortStudyNotifications", "comfortNotificationSent", "comfortSyncPendingKeys"];
+  const PENDING_KEY = "comfortSyncPendingKeys";
   let activeUid = null;
   let hydrating = false;
+  let pendingKeys = new Set();
   const timers = new Map();
   let resolveReady;
   window.comfortCloudReady = new Promise(resolve => { resolveReady = resolve; });
   const originalSet = localStorage.setItem.bind(localStorage);
+  const originalGet = localStorage.getItem.bind(localStorage);
   const originalRemove = localStorage.removeItem.bind(localStorage);
   const safeParse = value => { try { return JSON.parse(value); } catch (_) { return value; } };
   function cloudSafeValue(key, value) {
@@ -44,26 +48,56 @@
   const dbReady = () => window.comfortFirebaseConfigured && window.comfortDb && window.comfortAuth;
 
   function clearPendingWrites() {
-    timers.forEach(timer => clearTimeout(timer));
+    timers.forEach((timer, key) => { clearTimeout(timer); markPending(key); });
     timers.clear();
   }
 
+  function persistPendingKeys() {
+    try { originalSet(PENDING_KEY, JSON.stringify(Array.from(pendingKeys))); } catch (_) {}
+  }
+
+  function markPending(key) {
+    if (!KEYS.includes(key)) return;
+    pendingKeys.add(key);
+    persistPendingKeys();
+  }
+
   async function writeKey(key, raw, uid) {
-    if (!uid || activeUid !== uid || hydrating || !KEYS.includes(key) || !dbReady()) return;
+    if (!uid || activeUid !== uid || hydrating || !KEYS.includes(key) || !dbReady()) return false;
     try {
       const value = raw === null ? null : cloudSafeValue(key, safeParse(raw));
       await comfortDb.collection("users").doc(uid).collection("data").doc(key).set({
         value: value,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      pendingKeys.delete(key);
+      persistPendingKeys();
+      return true;
     } catch (error) {
       console.error("ComfortStudy: falha ao sincronizar", key, error);
+      markPending(key);
+      return false;
+    }
+  }
+
+  async function deleteKey(key, uid) {
+    if (!uid || activeUid !== uid || hydrating || !KEYS.includes(key) || !dbReady()) return false;
+    try {
+      await comfortDb.collection("users").doc(uid).collection("data").doc(key).delete();
+      pendingKeys.delete(key);
+      persistPendingKeys();
+      return true;
+    } catch (error) {
+      console.error("ComfortStudy: falha ao sincronizar remoção", key, error);
+      markPending(key);
+      return false;
     }
   }
 
   localStorage.setItem = function (key, value) {
     originalSet(key, value);
     if (!KEYS.includes(key) || hydrating || !activeUid) return;
+    if (navigator.onLine === false) { markPending(key); return; }
     const uid = activeUid;
     clearTimeout(timers.get(key));
     timers.set(key, setTimeout(() => {
@@ -75,8 +109,10 @@
   localStorage.removeItem = function (key) {
     originalRemove(key);
     if (!KEYS.includes(key) || hydrating || !activeUid || !dbReady()) return;
+    if (timers.has(key)) { clearTimeout(timers.get(key)); timers.delete(key); }
     const uid = activeUid;
-    comfortDb.collection("users").doc(uid).collection("data").doc(key).delete().catch(console.error);
+    if (navigator.onLine === false) { markPending(key); return; }
+    deleteKey(key, uid);
   };
   window.comfortCloudFlush = async function () {
     const uid = activeUid;
@@ -88,7 +124,20 @@
       pending.push(writeKey(key, localStorage.getItem(key), uid));
     });
     await Promise.all(pending);
+    await flushOfflineChanges();
   };
+
+  async function flushOfflineChanges() {
+    if (!activeUid || !dbReady() || hydrating || navigator.onLine === false || !pendingKeys.size) return;
+    const uid = activeUid;
+    for (const key of Array.from(pendingKeys)) {
+      const raw = originalGet(key);
+      if (raw === null) await deleteKey(key, uid);
+      else await writeKey(key, raw, uid);
+    }
+  }
+
+  window.addEventListener("online", flushOfflineChanges);
 
   async function hydrate(user) {
     if (!user || !dbReady()) { resolveReady(false); return; }
@@ -96,6 +145,10 @@
     clearPendingWrites();
     activeUid = user.uid;
     hydrating = true;
+    try {
+      const savedPending = JSON.parse(originalGet(PENDING_KEY) || "[]");
+      pendingKeys = new Set(Array.isArray(savedPending) ? savedPending.filter(key => KEYS.includes(key)) : []);
+    } catch (_) { pendingKeys = new Set(); }
     try {
       const root = comfortDb.collection("users").doc(user.uid);
       let oldAccount = null;
@@ -106,6 +159,8 @@
       if (!legacyMatches) {
         for (const key of KEYS) originalRemove(key);
         for (const key of LOCAL_ONLY_KEYS) originalRemove(key);
+        pendingKeys.clear();
+        persistPendingKeys();
         localSubjectContents = {};
       }
       const collection = await root.collection("data").get();
@@ -125,7 +180,7 @@
       }
 
       for (const key of KEYS) {
-        if (!remote.has(key)) continue;
+        if (!remote.has(key) || pendingKeys.has(key)) continue;
         let value = remote.get(key);
         if (key === "comfortSubjectContents") value = mergeLocalSubjectFiles(value, localSubjectContents);
         originalSet(key, typeof value === "string" && key === "comfortStudySeconds" ? value : JSON.stringify(value));
@@ -150,6 +205,7 @@
       hydrating = false;
       resolveReady(true);
       window.dispatchEvent(new CustomEvent("comfort-cloud-ready"));
+      if (navigator.onLine !== false && pendingKeys.size) setTimeout(flushOfflineChanges, 0);
     }
   }
 

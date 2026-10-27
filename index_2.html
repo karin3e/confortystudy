@@ -23,7 +23,7 @@
 
 <body>
 
-    
+
     <aside class="sidebar">
 
         <div>
@@ -126,11 +126,11 @@
     </aside>
 
 
-    
+
 
     <main class="content">
 
-        
+
 
         <header class="topbar">
 
@@ -182,7 +182,7 @@
         </header>
 
 
-        
+
         <section
             class="page-section active-page"
             id="page-dashboard">
@@ -262,7 +262,7 @@
             </section>
 
 
-            
+
 
             <section class="feature-card feature-wide dashboard-today" id="dashboardTodayCard" data-dashboard-card="today">
                 <div class="feature-card-heading"><div><h3><i class="ph ph-sun"></i> Seu Hoje</h3><p class="feature-help">As prioridades do dia e as próximas provas.</p></div><button type="button" class="small-button" data-page="planejamento">Ver meu plano</button></div>
@@ -294,7 +294,7 @@
                         class="task-list"
                         id="dashboardTaskList">
 
-                       
+
 
                     </div>
 
@@ -325,11 +325,11 @@
             </div>
 
 
-            
+
 
             <div class="dashboard-bottom-grid">
 
-               
+
 
                 <section class="info-card" data-dashboard-card="exams">
 
@@ -355,14 +355,14 @@
                         class="exam-preview"
                         id="dashboardExamList">
 
-                        
+
 
                     </div>
 
                 </section>
 
 
-                
+
 
                 <section class="info-card" data-dashboard-card="notices">
 
@@ -387,7 +387,7 @@
                     <div
                         id="dashboardNoticeList">
 
-                        
+
                     </div>
 
                 </section>
@@ -397,7 +397,7 @@
         </section>
 
 
-        
+
 
         <section
             class="page-section"
@@ -420,17 +420,19 @@
             </div>
 
 
+            <div class="subject-search-bar"><label for="subjectSearch">Buscar matéria ou anotação</label><input type="search" id="subjectSearch" placeholder="Pesquise por matéria, tópico ou conteúdo"></div>
+
             <div
                 class="subjects-grid"
                 id="subjectsGrid">
 
-               
+
             </div>
 
         </section>
 
 
-        
+
 
         <section
             class="page-section"
@@ -508,7 +510,7 @@
                     class="calendar-days"
                     id="calendarDays">
 
-                    
+
 
                 </div>
 
@@ -517,7 +519,7 @@
         </section>
 
 
-        
+
         <section
             class="page-section"
             id="page-tarefas">
@@ -581,14 +583,14 @@
                 class="full-task-list"
                 id="fullTaskList">
 
-                
+
 
             </div>
 
         </section>
 
 
-        
+
 
         <section
             class="page-section"
@@ -624,14 +626,14 @@
                 class="exam-list"
                 id="examList">
 
-                
+
 
             </div>
 
         </section>
 
 
-       
+
         <section
             class="page-section"
             id="page-cronometro">
@@ -659,6 +661,8 @@
                     </span>
 
                 </div>
+
+                <div class="timer-subject-picker"><label for="timerStudySubject">Matéria desta sessão (opcional)</label><select id="timerStudySubject"><option value="">Sem matéria específica</option></select></div>
 
 
                 <div class="timer-buttons">
@@ -716,7 +720,7 @@
         </section>
 
 
-       
+
 
         <section
             class="page-section"
@@ -752,14 +756,14 @@
                 class="notice-list"
                 id="noticeList">
 
-               
+
 
             </div>
 
         </section>
 
 
-        
+
         <section
             class="page-section"
             id="page-desempenho">
@@ -841,16 +845,19 @@
                     class="performance-rows"
                     id="performanceSubjectList">
 
-                   
+
 
                 </div>
+
+                <h3 class="performance-subheading">Tempo de estudo por matéria</h3>
+                <div id="subjectStudyTimeList" class="subject-study-time-list"></div>
 
             </div>
 
         </section>
 
 
-       
+
 
         <section class="page-section" id="page-planejamento">
             <div class="page-header">
@@ -874,6 +881,16 @@
                     </form>
                     <div class="goal-track"><span id="weeklyGoalBar"></span></div>
                     <p id="weeklyGoalText" class="feature-help"></p>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Meta diária de estudo</h3>
+                    <p class="feature-help">Acompanhe o tempo de hoje junto com a meta da semana.</p>
+                    <form id="dailyGoalForm" class="feature-form">
+                        <label for="dailyGoalMinutes">Meta em minutos por dia</label>
+                        <div class="feature-inline"><input id="dailyGoalMinutes" type="number" min="10" max="720" step="5" required><button class="btn-primary" type="submit">Salvar meta</button></div>
+                    </form>
+                    <div class="goal-track"><span id="dailyGoalBar"></span></div><p id="dailyGoalText" class="feature-help"></p>
                 </article>
 
                 <article class="feature-card">
@@ -939,6 +956,26 @@
                     <div id="flashcardList" class="feature-list"></div>
                 </article>
 
+                <article class="feature-card feature-wide">
+                    <h3>Simulados</h3>
+                    <p class="feature-help">Cadastre questões objetivas por matéria e faça um simulado com correção automática.</p>
+                    <form id="quizQuestionForm" class="feature-form">
+                        <label for="quizSubject">Matéria</label><select id="quizSubject" name="subject" required></select>
+                        <label for="quizPrompt">Pergunta</label><textarea id="quizPrompt" name="prompt" rows="2" maxlength="600" required></textarea>
+                        <div class="quiz-options-grid">
+                            <div><label for="quizOption0">Alternativa A</label><input id="quizOption0" name="option0" maxlength="300" required></div>
+                            <div><label for="quizOption1">Alternativa B</label><input id="quizOption1" name="option1" maxlength="300" required></div>
+                            <div><label for="quizOption2">Alternativa C</label><input id="quizOption2" name="option2" maxlength="300" required></div>
+                            <div><label for="quizOption3">Alternativa D</label><input id="quizOption3" name="option3" maxlength="300" required></div>
+                        </div>
+                        <label for="quizCorrect">Resposta correta</label><select id="quizCorrect" name="correct" required><option value="0">Alternativa A</option><option value="1">Alternativa B</option><option value="2">Alternativa C</option><option value="3">Alternativa D</option></select>
+                        <button class="btn-primary" type="submit">Salvar questão</button>
+                    </form>
+                    <div class="quiz-bank-heading"><h4>Banco de questões</h4><button type="button" class="btn-secondary" id="startQuizSimulation">Começar simulado</button></div>
+                    <div id="quizQuestionList" class="feature-list"></div>
+                    <div id="quizSessionPanel" class="review-panel" hidden><div id="quizSessionBody"></div></div>
+                </article>
+
                 <article class="feature-card">
                     <h3>Notas por matéria</h3>
                     <p class="feature-help">Registre avaliações e acompanhe a média percentual.</p>
@@ -987,7 +1024,7 @@
                 </article>
 
                 <article class="feature-card">
-                    <h3>Relatório do mês</h3><p class="feature-help" id="monthlyReportMonth"></p><div id="monthlyReport" class="report-metrics"></div><h4>Ritmo de estudos</h4><div id="studyRhythmSummary" class="report-metrics"></div>
+                    <h3>Relatório do mês</h3><p class="feature-help" id="monthlyReportMonth"></p><div id="monthlyReport" class="report-metrics"></div><h4>Ritmo de estudos</h4><div id="studyRhythmSummary" class="report-metrics"></div><h4>Conquistas</h4><div id="studyAchievements" class="achievement-list"></div>
                 </article>
 
                 <article class="feature-card feature-wide">
@@ -999,15 +1036,7 @@
                     </div></div><div id="studyPdfEmpty" class="feature-empty">Adicione um arquivo PDF para começar.</div>
                 </article>
 
-                <article class="feature-card">
-                    <h3>Personalizar meu app</h3><p class="feature-help">Ajustes simples para deixar seu espaço com a sua cara.</p>
-                    <form id="appearanceForm" class="feature-form">
-                        <label for="appearanceTheme">Cor do app</label><select id="appearanceTheme"><option value="blue">Azul (atual)</option><option value="violet">Violeta</option><option value="green">Verde</option><option value="rose">Rosa</option></select>
-                        <label for="appearanceAvatar">Avatar</label><select id="appearanceAvatar"><option value="👤">👤 Pessoa</option><option value="😊">😊 Sorriso</option><option value="🐱">🐱 Gato</option><option value="🐼">🐼 Panda</option><option value="🦊">🦊 Raposa</option><option value="⭐">⭐ Estrela</option><option value="🌻">🌻 Girassol</option></select>
-                        <fieldset class="dashboard-options"><legend>Cartões no painel</legend><label><input type="checkbox" name="dashboardCard" value="today"> Seu Hoje</label><label><input type="checkbox" name="dashboardCard" value="tasks"> Minhas tarefas</label><label><input type="checkbox" name="dashboardCard" value="exams"> Próximas provas</label><label><input type="checkbox" name="dashboardCard" value="notices"> Avisos</label></fieldset>
-                        <button class="btn-primary" type="submit">Salvar personalização</button>
-                    </form>
-                </article>
+
 
                 <article class="feature-card feature-wide">
                     <h3>Backup dos seus dados</h3>
@@ -1096,7 +1125,7 @@
         </section>
 
 
-       
+
         <section
             class="page-section"
             id="page-perfil">
@@ -1126,37 +1155,69 @@
 
                 <div class="profile-info">
 
-                    <h2>
+                    <h2 id="profileNameDisplay">
                         Estudante
                     </h2>
 
-                    <p>
+                    <p id="profileEmailDisplay">
                         Plano Gratuito
                     </p>
 
-                    <button class="btn-secondary">
-                        Editar Perfil
-                    </button>
+                    <p class="profile-hint">Atualize seus dados e preferências quando quiser.</p>
 
                 </div>
 
             </div>
+
+            <form id="profileSettingsForm" class="profile-settings-form">
+                <section class="profile-settings-section" aria-labelledby="profilePersonalHeading">
+                    <div class="profile-settings-heading">
+                        <h3 id="profilePersonalHeading">Dados pessoais</h3>
+                        <p>Essas informações ficam salvas no seu perfil deste dispositivo/conta.</p>
+                    </div>
+                    <div class="profile-fields-grid">
+                        <div class="profile-field"><label for="profileName">Nome</label><input id="profileName" name="name" type="text" maxlength="80" placeholder="Como podemos chamar você?" required></div>
+                        <div class="profile-field"><label for="profileEmail">E-mail</label><input id="profileEmail" name="email" type="email" maxlength="120" placeholder="seuemail@email.com"></div>
+                        <div class="profile-field profile-field-wide"><label for="profilePhotoFile">Foto do perfil</label><input id="profilePhotoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" aria-describedby="profilePhotoHelp"><small id="profilePhotoHelp">Imagem de até 350 KB. A foto será salva junto ao seu perfil.</small><button type="button" class="btn-secondary" id="removeProfilePhoto">Remover foto</button></div>
+                        <div class="profile-field"><label for="profileSchool">Escola</label><input id="profileSchool" name="school" type="text" maxlength="120" placeholder="Nome da escola"></div>
+                        <div class="profile-field"><label for="profileCourse">Curso / série</label><input id="profileCourse" name="course" type="text" maxlength="80" placeholder="Ex.: 3ª série"></div>
+                        <div class="profile-field profile-field-wide"><label for="profileBio">Sobre você</label><textarea id="profileBio" name="bio" rows="4" maxlength="500" placeholder="Conte um pouco sobre seus objetivos de estudo..."></textarea></div>
+                    </div>
+                    <div class="profile-form-actions"><span id="profileSaveStatus" class="profile-save-status" role="status" aria-live="polite"></span><div><button type="button" class="btn-secondary" id="cancelProfileChanges">Cancelar</button><button type="submit" class="btn-primary">Salvar alterações</button></div></div>
+                </section>
+            </form>
+
+            <article class="feature-card profile-appearance-card">
+                    <h3>Personalizar meu app</h3><p class="feature-help">Ajustes simples para deixar seu espaço com a sua cara.</p>
+                    <form id="appearanceForm" class="feature-form">
+                        <label for="appearanceTheme">Cor do app</label><select id="appearanceTheme"><option value="blue">Azul (atual)</option><option value="violet">Violeta</option><option value="green">Verde</option><option value="rose">Rosa</option></select>
+                        <label for="appearanceAvatar">Avatar</label><select id="appearanceAvatar"><option value="👤">👤 Pessoa</option><option value="😊">😊 Sorriso</option><option value="🐱">🐱 Gato</option><option value="🐼">🐼 Panda</option><option value="🦊">🦊 Raposa</option><option value="⭐">⭐ Estrela</option><option value="🌻">🌻 Girassol</option></select>
+                        <fieldset class="dashboard-options"><legend>Cartões no painel</legend><label><input type="checkbox" name="dashboardCard" value="today"> Seu Hoje</label><label><input type="checkbox" name="dashboardCard" value="tasks"> Minhas tarefas</label><label><input type="checkbox" name="dashboardCard" value="exams"> Próximas provas</label><label><input type="checkbox" name="dashboardCard" value="notices"> Avisos</label></fieldset>
+                        <button class="btn-primary" type="submit">Salvar personalização</button>
+                    </form>
+                </article>
 
         </section>
 
     </main>
 
 
-   
+
     <div
         class="modal"
-        id="modal">
+        id="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="modalTitle">
 
-        <div class="modal-content">
+        <div class="modal-content" tabindex="-1">
 
             <button
                 class="modal-close"
-                id="closeModal">
+                id="closeModal"
+                type="button"
+                aria-label="Fechar formulário">
 
                 <i class="ph ph-x"></i>
 
@@ -1175,7 +1236,7 @@
     </div>
 
 
-    
+
 
     <div class="mobile-more-backdrop" id="mobileMoreBackdrop" hidden></div>
     <nav class="mobile-more-menu" id="mobileMoreMenu" aria-label="Mais opções" hidden>

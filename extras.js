@@ -1,8 +1,9 @@
 (function () {
   const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-  const SAFE_EXPORT_EXCLUDE = new Set(["comfortAuthUser", "comfortSession", "comfortLegacyEmail"]);
+  const SAFE_EXPORT_EXCLUDE = new Set(["comfortAuthUser", "comfortSession", "comfortLegacyEmail", "comfortSyncPendingKeys"]);
   let currentReviewId = null;
   let notificationTimer = null;
+  let activeQuiz = null;
 
   function read(key, fallback) {
     try {
@@ -17,6 +18,7 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
     });
   }
+  function safePdfDataUrl(value) { return typeof value === "string" && /^data:application\/pdf;base64,[A-Za-z0-9+/=]+$/i.test(value); }
   function localDate(date) {
     return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
   }
@@ -69,6 +71,31 @@
     const percent = Math.min(100, Math.round((studiedHours / target) * 100));
     bar.style.width = percent + "%";
     label.textContent = studiedHours.toFixed(1).replace(".", ",") + " de " + target.toLocaleString("pt-BR") + " horas nesta semana (" + percent + "%)";
+    const dailyInput = document.getElementById("dailyGoalMinutes");
+    const dailyBar = document.getElementById("dailyGoalBar");
+    const dailyLabel = document.getElementById("dailyGoalText");
+    if (dailyInput && dailyBar && dailyLabel) {
+      const dailyTarget = Math.max(10, Number(read("comfortDailyGoalMinutes", 60)) || 60);
+      if (document.activeElement !== dailyInput) dailyInput.value = dailyTarget;
+      const dailyMinutes = (Number(log[today()]) || 0) / 60;
+      const dailyPercent = Math.min(100, Math.round(dailyMinutes / dailyTarget * 100));
+      dailyBar.style.width = dailyPercent + "%";
+      dailyLabel.textContent = dailyMinutes.toFixed(0) + " de " + dailyTarget + " minutos hoje (" + dailyPercent + "%)";
+    }
+  }
+
+  function renderSubjectStudyTime() {
+    const host = document.getElementById("subjectStudyTimeList");
+    if (!host) return;
+    const dailyLog = read("comfortStudySubjectLog", {});
+    const totals = {};
+    Object.values(dailyLog || {}).forEach(day => {
+      Object.entries(day || {}).forEach(([subject, seconds]) => { totals[subject] = (totals[subject] || 0) + (Number(seconds) || 0); });
+    });
+    const rows = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    if (!rows.length) { host.innerHTML = empty("Escolha uma matéria no cronômetro para começar a acompanhar seu tempo por assunto."); return; }
+    const max = rows[0][1] || 1;
+    host.innerHTML = rows.map(([subject, seconds]) => '<div class="subject-study-time-row"><strong>' + esc(subject) + '</strong><div class="performance-bar"><span style="width:' + Math.max(2, Math.round(seconds / max * 100)) + '%"></span></div><span>' + formatHours(seconds) + '</span></div>').join("");
   }
 
   function renderSchedule() {
@@ -111,6 +138,88 @@
     host.innerHTML = cards.map(function (card) {
       return '<div class="feature-row"><div><strong>' + esc(card.front) + '</strong><span>' + esc(card.subject) + " · revisão " + niceDate(card.dueAt || today()) + '</span></div><button type="button" class="small-button" data-extra-action="delete-card" data-id="' + Number(card.id) + '" aria-label="Excluir flashcard">🗑️</button></div>';
     }).join("");
+  }
+
+  function renderQuizBank() {
+    const host = document.getElementById("quizQuestionList");
+    const start = document.getElementById("startQuizSimulation");
+    if (!host) return;
+    const questions = list("comfortQuizQuestions").filter(item => item && Array.isArray(item.options) && item.options.length === 4 && Number.isInteger(Number(item.correct)) && Number(item.correct) >= 0 && Number(item.correct) < 4);
+    if (start) start.disabled = !questions.length;
+    host.innerHTML = questions.length ? questions.map(function (item) {
+      return '<div class="feature-row"><div><strong>' + esc(item.prompt) + '</strong><span>' + esc(item.subject) + ' · ' + (Array.isArray(item.options) ? item.options.length : 0) + ' alternativas</span></div><button type="button" class="small-button" data-extra-action="delete-quiz-question" data-id="' + Number(item.id) + '" aria-label="Excluir questão">🗑️</button></div>';
+    }).join("") : empty("Adicione questões ao seu banco para montar um simulado.");
+  }
+
+  function renderQuizSession() {
+    const panel = document.getElementById("quizSessionPanel");
+    const host = document.getElementById("quizSessionBody");
+    if (!panel || !host || !activeQuiz) return;
+    const item = activeQuiz.questions[activeQuiz.index];
+    panel.hidden = false;
+    host.innerHTML = '<p class="quiz-progress">Questão ' + (activeQuiz.index + 1) + ' de ' + activeQuiz.questions.length + ' · ' + esc(item.subject) + '</p>' +
+      '<h4 class="quiz-prompt">' + esc(item.prompt) + '</h4>' +
+      '<fieldset class="quiz-answer-options"><legend>Escolha uma alternativa</legend>' + item.options.map(function (option, index) {
+        return '<label class="quiz-answer-option"><input type="radio" name="quizAnswer" value="' + index + '"' + (activeQuiz.answered ? ' disabled' : '') + (activeQuiz.selected === index ? ' checked' : '') + '><span><strong>' + String.fromCharCode(65 + index) + '.</strong> ' + esc(option) + '</span></label>';
+      }).join("") + '</fieldset><p class="quiz-feedback" id="quizFeedback" aria-live="polite">' + (activeQuiz.answered ? (activeQuiz.lastCorrect ? "Resposta correta!" : "Resposta incorreta. A alternativa correta está destacada abaixo.") : "") + '</p>' +
+      (activeQuiz.answered ? '<button type="button" class="btn-primary" id="quizNextQuestion">' + (activeQuiz.index + 1 === activeQuiz.questions.length ? "Ver resultado" : "Próxima questão") + '</button>' : '<button type="button" class="btn-primary" id="quizAnswerButton">Corrigir resposta</button>');
+    if (activeQuiz.answered && !activeQuiz.lastCorrect) {
+      const correct = host.querySelectorAll(".quiz-answer-option")[item.correct];
+      if (correct) correct.classList.add("quiz-correct-option");
+    }
+  }
+
+  function beginQuiz() {
+    const questions = list("comfortQuizQuestions").filter(item => item && typeof item.prompt === "string" && Array.isArray(item.options) && item.options.length === 4 && Number.isInteger(Number(item.correct)) && Number(item.correct) >= 0 && Number(item.correct) < 4).slice();
+    if (!questions.length) return;
+    for (let i = questions.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [questions[i], questions[j]] = [questions[j], questions[i]];
+    }
+    activeQuiz = { questions: questions, index: 0, correct: 0, answered: false, selected: null, lastCorrect: false, bySubject: {} };
+    renderQuizSession();
+    document.getElementById("quizSessionPanel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function answerQuizQuestion() {
+    if (!activeQuiz || activeQuiz.answered) return;
+    const selected = document.querySelector('input[name="quizAnswer"]:checked');
+    if (!selected) {
+      const feedback = document.getElementById("quizFeedback");
+      if (feedback) feedback.textContent = "Selecione uma alternativa para continuar.";
+      return;
+    }
+    activeQuiz.selected = Number(selected.value);
+    activeQuiz.lastCorrect = activeQuiz.selected === Number(activeQuiz.questions[activeQuiz.index].correct);
+    if (activeQuiz.lastCorrect) activeQuiz.correct++;
+    const subject = activeQuiz.questions[activeQuiz.index].subject;
+    if (!activeQuiz.bySubject[subject]) activeQuiz.bySubject[subject] = { correct: 0, total: 0 };
+    activeQuiz.bySubject[subject].total++;
+    if (activeQuiz.lastCorrect) activeQuiz.bySubject[subject].correct++;
+    activeQuiz.answered = true;
+    renderQuizSession();
+  }
+
+  function nextQuizQuestion() {
+    if (!activeQuiz || !activeQuiz.answered) return;
+    if (activeQuiz.index + 1 < activeQuiz.questions.length) {
+      activeQuiz.index++;
+      activeQuiz.answered = false;
+      activeQuiz.selected = null;
+      activeQuiz.lastCorrect = false;
+      renderQuizSession();
+      return;
+    }
+    const bySubject = activeQuiz.bySubject;
+    const result = { id: Date.now(), date: today(), correct: activeQuiz.correct, total: activeQuiz.questions.length, percent: Math.round(activeQuiz.correct / activeQuiz.questions.length * 100), bySubject: bySubject };
+    const results = list("comfortQuizResults");
+    results.push(result);
+    write("comfortQuizResults", results);
+    activeQuiz = null;
+    const host = document.getElementById("quizSessionBody");
+    const weakSubjects = Object.entries(bySubject).filter(([, score]) => score.correct / score.total < .7).map(([subject]) => subject);
+    if (host) host.innerHTML = '<h4>Simulado concluído!</h4><p>Você acertou <strong>' + result.correct + ' de ' + result.total + '</strong> questões (' + result.percent + '%).</p>' + (weakSubjects.length ? '<p>Vale revisar: <strong>' + weakSubjects.map(esc).join(", ") + '</strong>.</p>' : '<p>Bom resultado! Continue revisando para manter o ritmo.</p>') + '<button type="button" class="btn-secondary" id="closeQuizResult">Fechar resultado</button>';
+    renderReports();
   }
 
   function renderReviewCard() {
@@ -238,6 +347,11 @@
 
     const classes = list("comfortClassSchedule");
     const deadlines = list("comfortTasks").filter(item => !item.completed && item.date >= today()).concat(list("comfortExams").filter(item => !item.completed && item.date >= today())).sort((a, b) => String(a.date).localeCompare(String(b.date)));
+    const subjectLog = read("comfortStudySubjectLog", {});
+    const recentStart = shiftDate(today(), -6);
+    const subjectTotals = {};
+    Object.entries(subjectLog || {}).forEach(([date, day]) => { if (date >= recentStart && date <= today()) Object.entries(day || {}).forEach(([subject, seconds]) => { subjectTotals[subject] = (subjectTotals[subject] || 0) + (Number(seconds) || 0); }); });
+    const balancedSubjects = subjects().sort((a, b) => (subjectTotals[a] || 0) - (subjectTotals[b] || 0));
     const picks = [];
     dates.forEach(date => {
       const weekday = new Date(date + "T12:00:00").getDay();
@@ -247,13 +361,14 @@
         const start = Math.max(cursor, 8 * 60);
         const end = Math.min(pair[0], 20 * 60);
         if (end - start >= 45 && picks.length < 5) {
-          const focus = deadlines.find(item => item.date >= date && item.subject) || deadlines.find(item => item.subject) || null;
-          picks.push({ date: date, start: start, end: Math.min(start + 60, end), focus: focus ? focus.subject : "revisão livre" });
+          const deadline = deadlines.find(item => item.date >= date && item.subject) || deadlines.find(item => item.subject) || null;
+          const suggestedSubject = balancedSubjects.length ? balancedSubjects[picks.length % balancedSubjects.length] : "revisão livre";
+          picks.push({ date: date, start: start, end: Math.min(start + 60, end), focus: deadline ? deadline.subject : suggestedSubject, reason: deadline ? "prazo próximo" : "matéria com menos tempo recente" });
         }
         cursor = Math.max(cursor, pair[1]);
       });
     });
-    suggestions.innerHTML = picks.length ? picks.map(slot => '<div class="feature-row"><div><strong>' + niceDate(slot.date) + ' · ' + minutesText(slot.start) + '–' + minutesText(slot.end) + '</strong><span>Sugestão de estudo: ' + esc(slot.focus) + '</span></div></div>').join("") : empty("Cadastre suas aulas para encontrar intervalos livres.");
+    suggestions.innerHTML = picks.length ? picks.map(slot => '<div class="feature-row"><div><strong>' + niceDate(slot.date) + ' · ' + minutesText(slot.start) + '–' + minutesText(slot.end) + '</strong><span>Sugestão de estudo: ' + esc(slot.focus) + ' · ' + esc(slot.reason) + '</span></div></div>').join("") : empty("Cadastre suas aulas para encontrar intervalos livres.");
     const notificationButton = document.getElementById("enableStudyNotifications");
     if (notificationButton) notificationButton.textContent = read("comfortStudyNotifications", false) ? "Avisos ativos" : "Ativar avisos";
   }
@@ -293,7 +408,9 @@
     const completed = tasks.filter(task => task.completed && task.completedAt && String(task.completedAt).slice(0, 7) === month).length;
     const grades = list("comfortGrades").filter(grade => String(grade.date || "").slice(0, 7) === month);
     const average = grades.length ? grades.reduce((sum, grade) => sum + (Number(grade.score) / (Number(grade.maximum) || 1)) * 100, 0) / grades.length : null;
-    report.innerHTML = '<div class="report-metric"><strong>' + formatHours(studySeconds) + '</strong><span>tempo estudado</span></div><div class="report-metric"><strong>' + completed + '</strong><span>tarefas concluídas</span></div><div class="report-metric"><strong>' + (average === null ? "—" : average.toFixed(1).replace(".", ",") + "%") + '</strong><span>média das notas do mês</span></div>';
+    const quizResults = list("comfortQuizResults").filter(result => String(result.date || "").slice(0, 7) === month);
+    const quizAverage = quizResults.length ? Math.round(quizResults.reduce((sum, result) => sum + (Number(result.percent) || 0), 0) / quizResults.length) : null;
+    report.innerHTML = '<div class="report-metric"><strong>' + formatHours(studySeconds) + '</strong><span>tempo estudado</span></div><div class="report-metric"><strong>' + completed + '</strong><span>tarefas concluídas</span></div><div class="report-metric"><strong>' + (average === null ? "—" : average.toFixed(1).replace(".", ",") + "%") + '</strong><span>média das notas do mês</span></div><div class="report-metric"><strong>' + (quizAverage === null ? "—" : quizAverage + "%") + '</strong><span>média dos simulados (' + quizResults.length + ')</span></div>';
     const now = new Date(); const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
     const start = localDate(monday);
     const weekSeconds = Object.keys(log || {}).filter(date => date >= start && date <= today()).reduce((sum, date) => sum + (Number(log[date]) || 0), 0);
@@ -305,6 +422,19 @@
     if (!days.includes(today())) cursor.setDate(cursor.getDate() - 1);
     while (days.includes(localDate(cursor))) { streak++; cursor.setDate(cursor.getDate() - 1); }
     rhythm.innerHTML = '<div class="report-metric"><strong>' + formatHours(weekSeconds) + '</strong><span>estudo nesta semana</span></div><div class="report-metric"><strong>' + studiedDays + '</strong><span>dias estudados</span></div><div class="report-metric"><strong>' + streak + '</strong><span>dias seguidos</span></div><div class="report-metric"><strong>' + weekCompleted + ' · ' + diaryWeek + '</strong><span>tarefas concluídas · registros no diário</span></div>';
+    const achievements = document.getElementById("studyAchievements");
+    if (achievements) {
+      const totalStudySeconds = Object.values(log || {}).reduce((sum, value) => sum + (Number(value) || 0), 0);
+      const totalCompleted = tasks.filter(task => task.completed).length;
+      const diaryCount = list("comfortStudyDiary").length;
+      const badges = [
+        [totalStudySeconds >= 3600, "Primeira hora", "Acumule uma hora de estudo."],
+        [totalCompleted >= 10, "Tarefas em dia", "Conclua 10 tarefas."],
+        [streak >= 7, "Ritmo constante", "Estude por 7 dias seguidos."],
+        [diaryCount >= 5, "Diário de bordo", "Registre 5 sessões de estudo."]
+      ];
+      achievements.innerHTML = badges.map(([unlocked, title, description]) => '<div class="achievement-badge' + (unlocked ? " is-unlocked" : "") + '" aria-label="' + (unlocked ? "Conquista desbloqueada: " : "Conquista a desbloquear: ") + title + '"><span aria-hidden="true">' + (unlocked ? "★" : "☆") + '</span><div><strong>' + title + '</strong><small>' + description + '</small></div></div>').join("");
+    }
   }
 
   function calculateGradeTarget(event) {
@@ -328,6 +458,15 @@
     const selectTheme = document.getElementById("appearanceTheme"); if (selectTheme) selectTheme.value = document.documentElement.dataset.theme;
     const selectAvatar = document.getElementById("appearanceAvatar"); if (selectAvatar) selectAvatar.value = prefs.avatar || "👤";
     document.querySelectorAll(".sidebar .avatar").forEach(host => { host.textContent = prefs.avatar || "👤"; host.classList.add("emoji-avatar"); });
+    const bigAvatar = document.querySelector(".big-avatar");
+    const profile = read("comfortProfile", {});
+    const photoData = profile && typeof profile.photoData === "string" && /^data:image\/(png|jpeg|webp|gif);base64,/i.test(profile.photoData) ? profile.photoData : "";
+    if (bigAvatar && photoData) {
+      const image = document.createElement("img"); image.src = photoData; image.alt = "Foto de perfil";
+      bigAvatar.replaceChildren(image); bigAvatar.classList.add("profile-photo-avatar"); bigAvatar.classList.remove("emoji-avatar");
+    } else if (bigAvatar) {
+      bigAvatar.textContent = prefs.avatar || "👤"; bigAvatar.classList.add("emoji-avatar"); bigAvatar.classList.remove("profile-photo-avatar");
+    }
     document.querySelectorAll("[data-dashboard-card]").forEach(card => card.classList.toggle("dashboard-card-hidden", Array.isArray(prefs.visibleCards) && !prefs.visibleCards.includes(card.dataset.dashboardCard)));
     document.querySelectorAll('input[name="dashboardCard"]').forEach(input => { input.checked = Array.isArray(prefs.visibleCards) ? prefs.visibleCards.includes(input.value) : true; });
   }
@@ -349,6 +488,10 @@
     if (files.some(file => String(file.id) === old)) select.value = old; else if (files.length) select.value = String(files[0].id);
     const file = activePdf(); workspace.hidden = !file; emptyHost.hidden = Boolean(file);
     if (!file) { const viewer = document.getElementById("studyPdfViewer"); if (viewer) viewer.removeAttribute("src"); return; }
+    if (!safePdfDataUrl(file.dataUrl)) {
+      workspace.hidden = true; emptyHost.hidden = false; emptyHost.textContent = "Este PDF não pode ser aberto com segurança. Remova-o e adicione novamente um arquivo PDF válido.";
+      const viewer = document.getElementById("studyPdfViewer"); if (viewer) viewer.removeAttribute("src"); return;
+    }
     const page = Math.max(1, Number(document.getElementById("pdfPageNumber").value) || 1);
     document.getElementById("pdfPageNumber").value = page;
     document.getElementById("studyPdfViewer").src = file.dataUrl + "#page=" + page + "&toolbar=1";
@@ -370,10 +513,10 @@
   }
   function addPdf(file) {
     if (!file) return;
-    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) { window.alert("Escolha um arquivo PDF."); return; }
+    if (file.type !== "application/pdf") { window.alert("Escolha um arquivo PDF válido."); return; }
     if (file.size > 700 * 1024) { window.alert("Para manter o app estável, o PDF deve ter até 700 KB. PDFs maiores precisarão de armazenamento em nuvem."); return; }
     const reader = new FileReader(); reader.onload = function () {
-      try { const files = pdfFiles(); files.push({ id: Date.now(), name: file.name, type: "application/pdf", dataUrl: reader.result }); write("comfortStudyReaderFiles", files); renderPdf(); }
+      try { if (!safePdfDataUrl(reader.result)) { window.alert("O arquivo não parece ser um PDF válido."); return; } const files = pdfFiles(); files.push({ id: Date.now(), name: file.name, type: "application/pdf", dataUrl: reader.result }); write("comfortStudyReaderFiles", files); renderPdf(); }
       catch (_) { window.alert("Não há espaço suficiente neste navegador para guardar esse PDF."); }
     }; reader.onerror = function () { window.alert("Não foi possível abrir esse PDF."); }; reader.readAsDataURL(file);
   }
@@ -427,6 +570,8 @@
   function renderAll() {
     fillSubjectSelect("classSubject");
     fillSubjectSelect("flashcardSubject");
+    fillSubjectSelect("quizSubject");
+    fillSubjectSelect("timerStudySubject");
     fillSubjectSelect("gradeSubject");
     fillSubjectSelect("gradeTargetSubject");
     fillSubjectSelect("diarySubject");
@@ -439,6 +584,8 @@
     renderSchedule();
     renderStudyPlan();
     renderFlashcards();
+    renderQuizBank();
+    renderSubjectStudyTime();
     renderGrades();
     renderToday();
     renderAgenda();
@@ -506,6 +653,11 @@
       const hours = Math.max(0.5, Math.min(100, Number(document.getElementById("weeklyGoalHours").value) || 5));
       write("comfortWeeklyGoal", hours);
       renderGoal();
+    } else if (form.id === "dailyGoalForm") {
+      event.preventDefault();
+      const minutes = Math.max(10, Math.min(720, Number(document.getElementById("dailyGoalMinutes").value) || 60));
+      write("comfortDailyGoalMinutes", minutes);
+      renderGoal();
     } else if (form.id === "classScheduleForm") {
       event.preventDefault();
       const data = new FormData(form);
@@ -530,6 +682,17 @@
       write("comfortFlashcards", cards);
       form.reset();
       renderFlashcards();
+    } else if (form.id === "quizQuestionForm") {
+      event.preventDefault();
+      const data = new FormData(form);
+      const options = [0, 1, 2, 3].map(index => String(data.get("option" + index) || "").trim());
+      const prompt = String(data.get("prompt") || "").trim();
+      if (!prompt || options.some(option => !option)) return;
+      const questions = list("comfortQuizQuestions");
+      questions.push({ id: Date.now(), subject: String(data.get("subject")), prompt: prompt, options: options, correct: Number(data.get("correct")) });
+      write("comfortQuizQuestions", questions);
+      form.reset();
+      renderQuizBank();
     } else if (form.id === "gradeForm") {
       event.preventDefault();
       const data = new FormData(form);
@@ -565,6 +728,7 @@
       if (action === "delete-plan") write("comfortStudyPlans", list("comfortStudyPlans").filter(item => String(item.id) !== String(id)));
       if (action === "toggle-plan") { const plans = list("comfortStudyPlans"); const item = plans.find(session => String(session.id) === String(id)); if (item) item.done = Boolean(actionButton.checked); write("comfortStudyPlans", plans); }
       if (action === "delete-card") write("comfortFlashcards", list("comfortFlashcards").filter(item => Number(item.id) !== Number(id)));
+      if (action === "delete-quiz-question") write("comfortQuizQuestions", list("comfortQuizQuestions").filter(item => Number(item.id) !== Number(id)));
       if (action === "delete-grade") write("comfortGrades", list("comfortGrades").filter(item => Number(item.id) !== Number(id)));
       if (action === "review-diary") applyReview(id);
       if (action === "review-note") applyNoteReview(id, actionButton.dataset.subject);
@@ -578,6 +742,10 @@
     else if (id === "flashcardRemembered") gradeCurrentCard(true);
     else if (id === "flashcardForgot") gradeCurrentCard(false);
     else if (id === "startFlashcardReview") beginReview();
+    else if (id === "startQuizSimulation") beginQuiz();
+    else if (id === "quizAnswerButton") answerQuizQuestion();
+    else if (id === "quizNextQuestion") nextQuizQuestion();
+    else if (id === "closeQuizResult") { const panel = document.getElementById("quizSessionPanel"); if (panel) panel.hidden = true; }
     else if (id === "exportBackup") exportBackup();
     else if (id === "removeStudyPdf") { const file = activePdf(); if (file && window.confirm("Remover este PDF e suas marcações deste navegador?")) { write("comfortStudyReaderFiles", pdfFiles().filter(item => Number(item.id) !== Number(file.id))); const all = annotations(); delete all[String(file.id)]; write("comfortPdfAnnotations", all); renderPdf(); } }
     else if (id === "savePdfBookmark") { const file = activePdf(); if (file) { const page = Math.max(1, Number(document.getElementById("pdfPageNumber").value) || 1); const all = annotations(); const data = all[String(file.id)] || { bookmarks: [], notes: [] }; if (!data.bookmarks.includes(page)) data.bookmarks.push(page); all[String(file.id)] = data; write("comfortPdfAnnotations", all); renderPdf(); } }
@@ -590,6 +758,7 @@
     if (!page) return;
     page.addEventListener("submit", handleSubmit);
     page.addEventListener("click", handleClick);
+    document.getElementById("page-perfil")?.addEventListener("submit", handleSubmit);
     const importInput = document.getElementById("importBackup");
     if (importInput) importInput.addEventListener("change", function () { if (importInput.files && importInput.files[0]) importBackup(importInput.files[0]); importInput.value = ""; });
     window.addEventListener("comfort-data-updated", renderAll);
