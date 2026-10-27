@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         notices: "comfortNotices",
         studySeconds: "comfortStudySeconds",
         subjectContents: "comfortSubjectContents",
-        customSubjects: "comfortCustomSubjects",
+        subjects: "comfortSubjects",
         profile: "comfortProfile"
     };
 
@@ -58,6 +58,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         { name: "Biologia", icon: "🧬", className: "biology" },
         { name: "Inglês", icon: "🇺🇸", className: "english" }
     ];
+
+    function getCustomSubjects() {
+        const items = getStorage(STORAGE.subjects, []);
+        return Array.isArray(items) ? items.filter(item => item && item.name) : [];
+    }
+
+    function getAllSubjects() {
+        const all = [...FIXED_SUBJECTS, ...getCustomSubjects()];
+        const seen = new Set();
+        return all.filter(item => {
+            const key = String(item.name).trim().toLocaleLowerCase('pt-BR');
+            if (!key || seen.has(key)) return false;
+            seen.add(key); return true;
+        });
+    }
+
+    function addCustomSubject(name) {
+        const clean = String(name || '').trim();
+        if (!clean) return false;
+        if (getAllSubjects().some(s => s.name.toLocaleLowerCase('pt-BR') === clean.toLocaleLowerCase('pt-BR'))) {
+            alert('Essa matéria já existe.'); return false;
+        }
+        const items = getCustomSubjects();
+        items.push({ name: clean, icon: '📘', className: 'custom' });
+        setStorage(STORAGE.subjects, items);
+        return true;
+    }
 
     const pageNames = {
         dashboard: "Visão Geral",
@@ -160,56 +187,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    function addSubjectContent(subjectName, contentData) {
+    function addSubjectContent(subjectName, content) {
         const allContents = getSubjectContents();
         if (!Array.isArray(allContents[subjectName])) allContents[subjectName] = [];
-        const entry = typeof contentData === "string" ? { title: contentData, text: "" } : contentData;
-        allContents[subjectName].push({
-            id: Date.now() + Math.floor(Math.random() * 1000),
-            title: String(entry.title || "Anotação").trim(),
-            text: String(entry.text || ""),
-            important: Boolean(entry.important),
-            attachment: entry.attachment || null,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        });
+        const record = typeof content === 'string'
+            ? { id: Date.now(), title: content.slice(0, 90), text: content, important: false, files: [], createdAt: new Date().toISOString() }
+            : { id: Date.now(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString() };
+        allContents[subjectName].push(record);
         saveSubjectContents(allContents);
     }
 
-    function updateSubjectContent(subjectName, contentId, updates) {
+    function updateSubjectContent(subjectName, contentId, changes) {
         const allContents = getSubjectContents();
-        if (!Array.isArray(allContents[subjectName])) return;
-        allContents[subjectName] = allContents[subjectName].map(item =>
-            Number(item.id) === Number(contentId)
-                ? { ...item, ...updates, updatedAt: new Date().toISOString() }
-                : item
-        );
+        const list = allContents[subjectName];
+        if (!Array.isArray(list)) return;
+        const item = list.find(c => Number(c.id) === Number(contentId));
+        if (!item) return;
+        Object.assign(item, changes, { updatedAt: new Date().toISOString() });
         saveSubjectContents(allContents);
+        showSubjectModal(subjectName);
     }
+
+    window.updateSubjectContent = updateSubjectContent;
+    window.addCustomSubject = addCustomSubject;
 
     function deleteSubjectContent(subjectName, contentId) {
+
         const allContents = getSubjectContents();
-        if (!Array.isArray(allContents[subjectName])) return;
-        allContents[subjectName] = allContents[subjectName].filter(item => Number(item.id) !== Number(contentId));
+
+        if (!Array.isArray(allContents[subjectName])) {
+            return;
+        }
+
+        allContents[subjectName] =
+            allContents[subjectName].filter(
+                content =>
+                    Number(content.id) !== Number(contentId)
+            );
+
         saveSubjectContents(allContents);
+
         showSubjectModal(subjectName);
-        renderSubjects();
     }
 
-    window.deleteSubjectContent = deleteSubjectContent;
-    window.editSubjectContent = (subjectName, contentId) => {
-        const item = getContentsForSubject(subjectName).find(entry => Number(entry.id) === Number(contentId));
-        if (!item) return;
-        showContentEditor(subjectName, item);
-    };
-    window.toggleImportantContent = (subjectName, contentId) => {
-        const item = getContentsForSubject(subjectName).find(entry => Number(entry.id) === Number(contentId));
-        if (!item) return;
-        updateSubjectContent(subjectName, contentId, { important: !item.important });
-        showSubjectModal(subjectName);
-        renderSubjects();
-    };
 
+    window.deleteSubjectContent = deleteSubjectContent;
 
 
     const DEFAULT_PROFILE = {
@@ -567,32 +589,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    function getCustomSubjects() {
-        const saved = getStorage(STORAGE.customSubjects, []);
-        return Array.isArray(saved) ? saved.filter(item => item && item.name) : [];
-    }
-
-    function getAllSubjects() {
-        const custom = getCustomSubjects();
-        const names = new Set(FIXED_SUBJECTS.map(item => item.name.toLocaleLowerCase("pt-BR")));
-        return [...FIXED_SUBJECTS, ...custom.filter(item => {
-            const key = String(item.name).trim().toLocaleLowerCase("pt-BR");
-            if (!key || names.has(key)) return false;
-            names.add(key);
-            return true;
-        })];
-    }
-
-    function saveCustomSubjects(subjects) {
-        setStorage(STORAGE.customSubjects, subjects);
-    }
-
     function getSubject(subjectName) {
-        return getAllSubjects().find(subject =>
-            String(subject.name).toLocaleLowerCase("pt-BR") ===
-            String(subjectName).toLocaleLowerCase("pt-BR")
-        ) || { name: subjectName, icon: "📚", className: "portuguese", custom: true };
+
+        return getAllSubjects().find(
+            subject =>
+                subject.name.toLowerCase() ===
+                String(subjectName).toLowerCase()
+        ) || {
+            name: subjectName,
+            icon: "📚",
+            className: "portuguese"
+        };
     }
+
 
     function emptyMessage(
         icon,
@@ -2093,211 +2102,358 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     function renderSubjects() {
-        const grid = document.getElementById("subjectsGrid");
+
+        const grid =
+            document.getElementById(
+                "subjectsGrid"
+            );
+
+
         if (!grid) return;
 
-        const subjects = getAllSubjects();
+
         grid.innerHTML = `
-            <button type="button" class="btn-primary subject-add-button" id="addCustomSubjectButton">
-                <i class="ph ph-plus"></i> Adicionar matéria
-            </button>
-            ${subjects.map((subject, index) => {
-                const progress = getSubjectProgress(subject.name);
-                const contents = getContentsForSubject(subject.name);
-                const tasks = getTasks().filter(task => String(task.subject).toLocaleLowerCase("pt-BR") === subject.name.toLocaleLowerCase("pt-BR"));
-                const color = ["red", "blue", "yellow", "green"][index % 4];
-                return `
-                    <button type="button" class="subject-card" data-open-subject="${escapeHTML(subject.name)}" style="cursor:pointer;text-align:left;width:100%;">
-                        <div class="subject-color ${color}"></div>
-                        <div class="subject-icon">${escapeHTML(subject.icon || "📚")}</div>
-                        <h3>${escapeHTML(subject.name)}</h3>
-                        <p>${contents.length} conteúdo(s) · ${tasks.length} atividade(s)</p>
-                        <div class="progress-info"><span>Atividades concluídas</span><strong>${progress}%</strong></div>
-                        <div class="progress"><span style="width:${progress}%"></span></div>
-                    </button>`;
-            }).join("")}
-        `;
+            <div class="subject-card subject-add-card" role="button" tabindex="0" onclick="promptAddSubject()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:150px;border:2px dashed #cbd5e1;box-shadow:none;">
+                <div style="text-align:center"><div style="font-size:32px">＋</div><h3>Adicionar matéria</h3><p>Personalize conforme sua escola</p></div>
+            </div>` + getAllSubjects()
+                .map(
+                    (subject, index) => {
 
-        const addButton = document.getElementById("addCustomSubjectButton");
-        if (addButton) addButton.addEventListener("click", showAddSubjectModal);
-        grid.querySelectorAll("[data-open-subject]").forEach(button => {
-            button.addEventListener("click", () => showSubjectModal(button.dataset.openSubject));
-        });
+                        const progress =
+                            getSubjectProgress(
+                                subject.name
+                            );
+
+
+                        const contents =
+                            getContentsForSubject(
+                                subject.name
+                            );
+
+
+                        return `
+                            <div
+                                class="subject-card"
+                                onclick="showSubjectModal('${escapeHTML(subject.name)}')"
+                                style="cursor:pointer;">
+
+                                <div
+                                    class="subject-color ${[
+                                        "red",
+                                        "blue",
+                                        "yellow",
+                                        "green"
+                                    ][index % 4]}">
+                                </div>
+
+
+                                <div class="subject-icon">
+
+                                    ${subject.icon}
+
+                                </div>
+
+
+                                <h3>
+
+                                    ${escapeHTML(
+                                        subject.name
+                                    )}
+
+                                </h3>
+
+
+                                <p>
+
+                                    ${
+                                        contents.length > 0
+                                            ? `${contents.length} conteúdo(s) adicionado(s)`
+                                            : "Clique para adicionar conteúdos"
+                                    }
+
+                                </p>
+
+
+                                <div class="progress-info">
+
+                                    <span>
+                                        Progresso
+                                    </span>
+
+                                    <strong>
+                                        ${progress}%
+                                    </strong>
+
+                                </div>
+
+
+                                <div class="progress">
+
+                                    <span
+                                        style="width:${progress}%">
+                                    </span>
+
+                                </div>
+
+                            </div>
+                        `;
+                    }
+                )
+                .join("");
     }
 
-    function showAddSubjectModal() {
-        openModal("Adicionar matéria", `
-            <form id="customSubjectForm" class="modal-form">
-                <label for="customSubjectName">Nome da matéria</label>
-                <input id="customSubjectName" maxlength="60" placeholder="Ex.: Sociologia" required>
-                <label for="customSubjectIcon">Ícone (emoji opcional)</label>
-                <input id="customSubjectIcon" maxlength="8" placeholder="📚">
-                <button type="submit" class="btn-primary">Salvar matéria</button>
-            </form>`);
-        const form = document.getElementById("customSubjectForm");
-        form?.addEventListener("submit", event => {
-            event.preventDefault();
-            const name = document.getElementById("customSubjectName").value.trim();
-            const icon = document.getElementById("customSubjectIcon").value.trim() || "📚";
-            if (!name) return;
-            if (getAllSubjects().some(subject => subject.name.toLocaleLowerCase("pt-BR") === name.toLocaleLowerCase("pt-BR"))) {
-                alert("Essa matéria já existe.");
-                return;
-            }
-            const custom = getCustomSubjects();
-            custom.push({ name, icon, className: "custom", custom: true });
-            saveCustomSubjects(custom);
-            renderSubjects();
-            closeModal();
-        });
-    }
 
-    function showContentEditor(subjectName, existing = null) {
-        const content = existing || { title: "", text: "", important: false };
-        openModal(existing ? "Editar anotação" : "Nova anotação", `
-            <form id="subjectContentForm" class="modal-form">
-                <label for="subjectContentTitle">Assunto / título</label>
-                <input id="subjectContentTitle" maxlength="120" value="${escapeHTML(content.title || content.text || "")}" placeholder="Ex.: Ligações químicas" required>
-                <label for="subjectContentText">Anotações</label>
-                <textarea id="subjectContentText" rows="6" placeholder="Escreva suas anotações da aula...">${escapeHTML(content.text || "")}</textarea>
-                <label for="subjectContentFile">Anexar PDF ou imagem (até 1,5 MB)</label>
-                <input id="subjectContentFile" type="file" accept="application/pdf,image/*">
-                ${content.attachment ? `<p>Arquivo atual: ${escapeHTML(content.attachment.name || "Anexo")} (escolha outro para substituir)</p>` : ""}
-                <label class="content-important-label"><input id="subjectContentImportant" type="checkbox" ${content.important ? "checked" : ""}> Marcar como importante para a prova</label>
-                <button type="submit" class="btn-primary">${existing ? "Salvar alterações" : "Salvar conteúdo"}</button>
-            </form>`);
-        const form = document.getElementById("subjectContentForm");
-        form?.addEventListener("submit", async event => {
-            event.preventDefault();
-            const title = document.getElementById("subjectContentTitle").value.trim();
-            const text = document.getElementById("subjectContentText").value.trim();
-            const fileInput = document.getElementById("subjectContentFile");
-            const file = fileInput.files && fileInput.files[0];
-            if (!title && !text) {
-                alert("Digite um título ou escreva suas anotações.");
-                return;
-            }
-            let attachment = content.attachment || null;
-            if (file) {
-                if (file.size > 1.5 * 1024 * 1024) {
-                    alert("O arquivo é maior que 1,5 MB. Reduza o tamanho antes de anexar.");
-                    return;
-                }
-                if (!(file.type === "application/pdf" || file.type.startsWith("image/"))) {
-                    alert("Escolha um arquivo PDF ou uma imagem.");
-                    return;
-                }
-                try {
-                    attachment = { name: file.name, type: file.type, dataUrl: await readFileAsDataURL(file), size: file.size };
-                } catch (error) {
-                    alert("Não foi possível ler esse arquivo.");
-                    return;
-                }
-            }
-            const updates = { title: title || "Anotação", text, important: document.getElementById("subjectContentImportant").checked, attachment };
-            if (existing) updateSubjectContent(subjectName, existing.id, updates);
-            else addSubjectContent(subjectName, updates);
-            renderSubjects();
-            showSubjectModal(subjectName);
-        });
-    }
+    window.promptAddSubject = function () {
+        const name = prompt("Qual é o nome da nova matéria?");
+        if (name && addCustomSubject(name)) renderSubjects();
+    };
 
-    function readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function generateContentReview(subjectName, contentId) {
-        const item = getContentsForSubject(subjectName).find(entry => Number(entry.id) === Number(contentId));
+    window.editSubjectContent = function (subjectName, contentId) {
+        const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
         if (!item) return;
-        const source = `${item.title || ""}\n${item.text || ""}`.trim();
-        const sentences = source.split(/(?<=[.!?])\s+|\n+/).map(line => line.trim()).filter(line => line.length > 12);
-        const keywords = [...new Set((source.match(/\b[\p{L}]{5,}\b/gu) || []).map(word => word.toLocaleLowerCase("pt-BR")))].slice(0, 12);
-        const questions = sentences.slice(0, 8).map((sentence, index) => ({
-            question: `De acordo com suas anotações, o que você pode explicar sobre: "${sentence.length > 100 ? sentence.slice(0, 97) + "..." : sentence}"?`,
-            answer: sentence
-        }));
-        const summary = sentences.length ? sentences.join(" ") : source;
-        openModal(`Revisão — ${escapeHTML(subjectName)}`, `
-            <div class="study-review">
-                <h3>Resumo das suas anotações</h3>
-                <p>${escapeHTML(summary || "Adicione mais anotações para criar uma revisão melhor.")}</p>
-                <h3>Termos para revisar</h3>
-                <p>${escapeHTML(keywords.join(" · ") || "Não foram identificados termos suficientes.")}</p>
-                <h3>Perguntas de revisão</h3>
-                ${questions.length ? questions.map((entry, index) => `<details><summary>${index + 1}. ${escapeHTML(entry.question)}</summary><p><strong>Resposta nas suas anotações:</strong> ${escapeHTML(entry.answer)}</p></details>`).join("") : `<p>Escreva algumas frases nas anotações para criar perguntas de revisão.</p>`}
-                <p class="review-note">Esta revisão é gerada localmente a partir do texto salvo. Ela não é uma IA e não interpreta o conteúdo interno de PDFs/imagens.</p>
-                <button type="button" class="btn-secondary" id="copyReviewButton">Copiar revisão</button>
-            </div>`);
-        const copy = document.getElementById("copyReviewButton");
-        copy?.addEventListener("click", async () => {
-            const text = `Revisão de ${subjectName} — ${item.title}\n\nResumo:\n${summary}\n\nPerguntas:\n${questions.map((q, i) => `${i + 1}. ${q.question}\nResposta: ${q.answer}`).join("\n\n")}`;
-            try { await navigator.clipboard.writeText(text); alert("Revisão copiada!"); }
-            catch { alert("Não foi possível copiar automaticamente. Selecione o texto e copie."); }
-        });
-    }
+        const title = prompt("Título do conteúdo:", item.title || "Anotação");
+        if (title === null) return;
+        const text = prompt("Anotações:", item.text || "");
+        if (text === null) return;
+        const important = confirm("Marcar este conteúdo como importante? OK = sim, Cancelar = não");
+        updateSubjectContent(subjectName, contentId, { title: title.trim() || "Anotação", text: text.trim(), important });
+    };
 
-    window.generateContentReview = generateContentReview;
+    window.generateSubjectReview = function (subjectName, contentId) {
+        const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
+        if (!item) return;
+        const text = String(item.text || "").trim();
+        if (!text) { alert("Adicione anotações antes de gerar uma revisão."); return; }
+        const sentences = text.split(/(?<=[.!?])\s+|\n+/).map(s => s.trim()).filter(Boolean);
+        const questions = sentences.slice(0, 8).map((sentence, i) => `<div style="padding:10px 0;border-bottom:1px solid #e5e7eb"><strong>Pergunta ${i+1}:</strong> Explique com suas palavras: “${escapeHTML(sentence)}”<details style="margin-top:6px"><summary>Ver resposta-base</summary><p>${escapeHTML(sentence)}</p></details></div>`).join("");
+        openModal("Revisão: " + (item.title || subjectName), `<p>Esta revisão foi criada a partir das anotações salvas. Confira as respostas com o material da aula.</p><h3>Resumo</h3><p style="white-space:pre-wrap">${escapeHTML(text)}</p><h3 style="margin-top:16px">Perguntas para revisar</h3>${questions || "Não há texto suficiente."}<button type="button" class="btn-primary" onclick="window.print()">Imprimir / salvar em PDF</button>`);
+    };
 
-    function showSubjectModal(subjectName) {
-        const subject = getSubject(subjectName);
-        const contents = getContentsForSubject(subjectName);
-        const tasks = getTasks().filter(task => String(task.subject).toLocaleLowerCase("pt-BR") === String(subjectName).toLocaleLowerCase("pt-BR"));
-        const exams = getExams().filter(exam => String(exam.subject).toLocaleLowerCase("pt-BR") === String(subjectName).toLocaleLowerCase("pt-BR"));
-        const progress = getSubjectProgress(subjectName);
-        openModal(`${escapeHTML(subject.icon)} ${escapeHTML(subject.name)}`, `
-            <div class="subject-detail">
-                <div class="subject-detail-heading">
-                    <div class="subject-detail-icon">${escapeHTML(subject.icon)}</div>
-                    <h3>${escapeHTML(subject.name)}</h3>
-                    <p>Progresso das atividades: <strong>${progress}%</strong></p>
-                </div>
-                <div class="subject-action-row">
-                    <button type="button" class="btn-primary" id="addSubjectNoteButton"><i class="ph ph-plus"></i> Nova anotação</button>
-                    ${subject.custom ? `<button type="button" class="btn-secondary" id="deleteCustomSubjectButton">Excluir matéria</button>` : ""}
-                </div>
-                <h4>📚 Caderno digital</h4>
-                ${contents.length ? contents.map(content => `
-                    <article class="subject-note ${content.important ? "is-important" : ""}">
-                        <div class="subject-note-title"><strong>${escapeHTML(content.title || content.text || "Anotação")}</strong>${content.important ? `<span>⭐ Importante</span>` : ""}</div>
-                        ${content.text ? `<p class="subject-note-text">${escapeHTML(content.text).replace(/\n/g, "<br>")}</p>` : ""}
-                        ${content.attachment ? `<p class="subject-attachment">📎 <a href="${content.attachment.dataUrl}" download="${escapeHTML(content.attachment.name)}" target="_blank" rel="noopener">${escapeHTML(content.attachment.name)}</a> · ${escapeHTML(content.attachment.type || "arquivo")}</p>` : ""}
-                        <div class="subject-note-actions">
-                            <button type="button" class="small-button" data-edit-content="${Number(content.id)}">Editar</button>
-                            <button type="button" class="small-button" data-important-content="${Number(content.id)}">${content.important ? "Desmarcar importante" : "Marcar importante"}</button>
-                            <button type="button" class="small-button" data-review-content="${Number(content.id)}">Preparar revisão</button>
-                            <button type="button" class="small-button" data-delete-content="${Number(content.id)}">Excluir</button>
+    window.showSubjectModal =
+        showSubjectModal;
+
+
+    function showSubjectModal(
+        subjectName
+    ) {
+
+        const subject =
+            getSubject(subjectName);
+
+
+        const contents =
+            getContentsForSubject(
+                subjectName
+            );
+
+
+        const tasks =
+            getTasks().filter(
+                task =>
+                    String(task.subject)
+                        .toLowerCase() ===
+                    String(subjectName)
+                        .toLowerCase()
+            );
+
+
+        const exams =
+            getExams().filter(
+                exam =>
+                    String(exam.subject)
+                        .toLowerCase() ===
+                    String(subjectName)
+                        .toLowerCase()
+            );
+
+
+        const progress =
+            getSubjectProgress(
+                subjectName
+            );
+
+
+        openModal(
+            `${subject.icon} ${subject.name}`,
+
+            `
+                <div>
+
+                    <div
+                        style="
+                            text-align:center;
+                            margin-bottom:20px;
+                        ">
+
+                        <div
+                            style="
+                                font-size:45px;
+                            ">
+
+                            ${subject.icon}
+
                         </div>
-                    </article>`).join("") : `<p class="subject-empty">Você ainda não adicionou anotações. Comece registrando o que aprendeu na aula.</p>`}
-                <div class="subject-linked-summary">
-                    <p>📝 ${tasks.length} atividade(s) vinculada(s)</p>
-                    <p>📚 ${exams.length} prova(s) vinculada(s)</p>
+
+                        <h3>
+                            ${escapeHTML(
+                                subject.name
+                            )}
+                        </h3>
+
+                        <p>
+                            Progresso:
+                            <strong>
+                                ${progress}%
+                            </strong>
+                        </p>
+
+                    </div>
+
+
+                    <form id="subjectContentForm" class="modal-form">
+                        <label for="subjectContentTitle">Título / assunto</label>
+                        <input type="text" id="subjectContentTitle" placeholder="Ex.: Ligações químicas" required>
+                        <label for="subjectContentInput">Anotações do conteúdo</label>
+                        <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
+                        <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
+                        <label for="subjectContentFiles">Anexar PDF ou fotos (máx. 1,5 MB por arquivo)</label>
+                        <input type="file" id="subjectContentFiles" accept="application/pdf,image/*" multiple>
+                        <p style="font-size:12px;color:#718096">Os arquivos ficam guardados junto ao conteúdo neste navegador. Para sincronizar anexos entre dispositivos, configure Firebase Storage.</p>
+                        <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
+                    </form>
+
+
+                    <div
+                        style="
+                            margin-top:20px;
+                        ">
+
+                        <h4>
+                            📚 Conteúdos
+                        </h4>
+
+
+                        ${
+                            contents.length === 0
+
+                                ? `
+                                    <p>
+                                        Nenhum conteúdo
+                                        adicionado ainda.
+                                    </p>
+                                `
+
+                                : contents
+                                    .map(
+                                        content => `
+                                            <div
+                                                style="
+                                                    display:flex;
+                                                    align-items:center;
+                                                    justify-content:space-between;
+                                                    gap:10px;
+                                                    padding:10px 0;
+                                                    border-bottom:1px solid #eee;
+                                                ">
+
+                                                <div style="flex:1;min-width:0">
+                                                    <strong>${content.important ? '⭐ ' : '📖 '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
+                                                    <p style="white-space:pre-wrap;margin:6px 0">${escapeHTML(content.text || '')}</p>
+                                                    ${(content.files || []).map(file => file.dataUrl ? `<p><a href="${file.dataUrl}" download="${escapeHTML(file.name)}" target="_blank">📎 ${escapeHTML(file.name)}</a></p>` : '').join('')}
+                                                    <button type="button" class="small-button" onclick="editSubjectContent('${escapeHTML(subjectName)}',${Number(content.id)})">✏️ Editar</button>
+                                                    <button type="button" class="small-button" onclick="generateSubjectReview('${escapeHTML(subjectName)}',${Number(content.id)})">🧠 Revisar</button>
+                                                </div>
+                                                <button type="button" class="small-button" onclick="deleteSubjectContent('${escapeHTML(subjectName)}',${Number(content.id)})" aria-label="Excluir conteúdo">🗑️</button>
+
+                                            </div>
+                                        `
+                                    )
+                                    .join("")
+                        }
+
+                    </div>
+
+
+                    <div
+                        style="
+                            margin-top:20px;
+                        ">
+
+                        <p>
+                            📝
+                            ${
+                                tasks.length
+                            }
+                            tarefa(s)
+                        </p>
+
+                        <p>
+                            📚
+                            ${
+                                exams.length
+                            }
+                            prova(s)
+                        </p>
+
+                    </div>
+
                 </div>
-            </div>`);
-        document.getElementById("addSubjectNoteButton")?.addEventListener("click", () => showContentEditor(subjectName));
-        document.querySelectorAll("[data-edit-content]").forEach(button => button.addEventListener("click", () => {
-            const item = contents.find(entry => Number(entry.id) === Number(button.dataset.editContent));
-            if (item) showContentEditor(subjectName, item);
-        }));
-        document.querySelectorAll("[data-important-content]").forEach(button => button.addEventListener("click", () => window.toggleImportantContent(subjectName, button.dataset.importantContent)));
-        document.querySelectorAll("[data-review-content]").forEach(button => button.addEventListener("click", () => generateContentReview(subjectName, button.dataset.reviewContent)));
-        document.querySelectorAll("[data-delete-content]").forEach(button => button.addEventListener("click", () => {
-            if (confirm("Excluir esta anotação e seu anexo?")) deleteSubjectContent(subjectName, button.dataset.deleteContent);
-        }));
-        document.getElementById("deleteCustomSubjectButton")?.addEventListener("click", () => {
-            if (!confirm(`Excluir a matéria ${subjectName}? As anotações serão mantidas nos dados salvos, mas deixarão de aparecer nesta lista.`)) return;
-            saveCustomSubjects(getCustomSubjects().filter(item => item.name !== subjectName));
-            renderSubjects();
-            closeModal();
-        });
+            `
+        );
+
+
+        const form =
+            document.getElementById(
+                "subjectContentForm"
+            );
+
+
+        if (!form) return;
+
+
+        form.addEventListener(
+            "submit",
+            event => {
+
+                event.preventDefault();
+
+
+                const input =
+                    document.getElementById(
+                        "subjectContentInput"
+                    );
+
+
+                const title = document.getElementById("subjectContentTitle").value.trim();
+                const content = input.value.trim();
+                const fileInput = document.getElementById("subjectContentFiles");
+                const files = Array.from(fileInput.files || []);
+                if (!title || !content) { alert("Preencha o título e as anotações."); return; }
+                if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 900 * 1024) { alert("Para evitar erro de armazenamento, cada arquivo deve ter até 700 KB e o total por anotação até 900 KB. Para arquivos maiores, será necessário configurar o Firebase Storage."); return; }
+                Promise.all(files.map(file => new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                }))).then(fileData => {
+                    addSubjectContent(subjectName, { title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
+                    renderSubjects();
+                    showSubjectModal(subjectName);
+                }).catch(() => alert("Não foi possível ler um dos arquivos."));
+                return;
+
+
+                renderSubjects();
+
+                showSubjectModal(
+                    subjectName
+                );
+            }
+        );
     }
 
-    window.showSubjectModal = showSubjectModal;
 
+   
     function formatStudyTime(
         seconds
     ) {

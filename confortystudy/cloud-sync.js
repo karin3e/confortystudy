@@ -1,6 +1,6 @@
 /* Sincronização por conta: cada usuário só acessa sua própria coleção Firestore. */
 (function () {
-  const KEYS = ['comfortTasks', 'comfortExams', 'comfortNotices', 'comfortStudySeconds', 'comfortSubjectContents', 'comfortProfile'];
+  const KEYS = ['comfortTasks', 'comfortExams', 'comfortNotices', 'comfortStudySeconds', 'comfortSubjectContents', 'comfortSubjects', 'comfortProfile'];
   let activeUid = null;
   let hydrating = false;
   let timers = new Map();
