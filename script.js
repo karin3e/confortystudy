@@ -329,7 +329,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "btn-primary";
 
             editButton.textContent =
-                "✏️ Editar perfil";
+                " Editar perfil";
 
 
             
@@ -1811,7 +1811,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         alert(
-            "Prova adicionada com sucesso! 📚"
+            "Prova adicionada com sucesso! "
         );
     }
 
@@ -3631,7 +3631,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 class="btn-primary"
                                 id="calendarAddTask">
 
-                                📝 Adicionar tarefa
+                                 Adicionar tarefa
 
                             </button>
 
@@ -3641,7 +3641,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 class="btn-secondary"
                                 id="calendarAddExam">
 
-                                📚 Adicionar prova
+                                 Adicionar prova
 
                             </button>
 
