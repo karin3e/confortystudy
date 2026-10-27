@@ -1,0 +1,37 @@
+COMFORTSTUDY - PACOTE ORGANIZADO
+
+Este pacote contém a versão principal do projeto, sem a pasta .git, arquivos exportados do ChatGPT, cópias aninhadas e ZIPs antigos que estavam duplicando o projeto.
+
+ARQUIVOS PRINCIPAIS
+- index.html: login
+- cadastro.html: criação de conta
+- recuperar-senha.html: recuperação de senha
+- index_2.html: painel do estudante
+- script.js: funções do painel
+- style_dashboard.css: estilos
+- firebase-config-v2.js / firebase-init.js: configuração e inicialização do Firebase
+- auth.js / cloud-sync.js: autenticação e sincronização
+- firestore.rules: regras do Firestore
+- manifest.json / service-worker.js / icons: instalação como aplicativo (PWA)
+
+MELHORIAS NESTA VERSÃO
+- Cadastrar matérias personalizadas, mantendo as oito matérias padrão.
+- Caderno digital por matéria com título e anotações editáveis.
+- Marcar conteúdo como importante.
+- Anexar PDFs e imagens pequenos a uma anotação.
+- Gerar uma revisão simples com resumo e perguntas com base no texto escrito.
+- Sincronizar a lista de matérias personalizadas e o caderno através da lista de chaves do cloud-sync.js.
+
+LIMITAÇÕES IMPORTANTES
+- A revisão atual usa o texto escrito e NÃO é uma IA generativa. Ela não interpreta automaticamente o conteúdo de imagens ou PDFs.
+- Os anexos são guardados no armazenamento local do navegador dentro dos dados do caderno. Para sincronizar arquivos entre dispositivos, configure Firebase Storage e regras seguras; arquivos grandes não devem ser guardados no localStorage.
+- Não foi possível testar o Firebase remoto com uma conta real nesta execução. Faça testes com uma conta de teste antes de publicar.
+
+PUBLICAÇÃO SEGURA
+1. Guarde uma cópia da pasta atual e dos dados.
+2. Extraia este ZIP em uma pasta nova.
+3. Confira a configuração Firebase e as regras antes de publicar.
+4. Teste login, cadastro, recuperação de senha, tarefas, provas, calendário, caderno e sincronização.
+5. Publique somente depois dos testes.
+
+Não compartilhe chaves secretas de serviços de IA no JavaScript do navegador. Integrações de IA devem passar por backend seguro.
