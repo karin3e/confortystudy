@@ -23,17 +23,26 @@ O login Google usa o provedor Firebase. Não use o antigo fluxo de apenas decodi
 3. Regras previstas: cada conta só pode ler/gravar documentos dentro de `/users/{seu-uid}/data/`.
 4. Nunca publique regras abertas como `allow read, write: if true`.
 
-## 4. Publicar no GitHub Pages
-Inclua todos os arquivos da pasta do projeto, inclusive firebase-config-v2.js, firebase-init.js, auth.js, cloud-sync.js, extras.js, extras.css, service-worker.js, firestore.rules e os ícones. Em Settings → Pages, selecione a branch e a pasta correta. Acesse sempre por HTTPS.
+## 4. Ativar sincronização de fotos e PDFs
+1. Firebase Console → Storage → Get started/Primeiros passos e crie o bucket no mesmo projeto usado pelo app.
+2. Confira se `storageBucket` em `firebase-config-v2.js` corresponde ao bucket exibido no Firebase.
+3. Publique `storage.rules` na aba Storage → Rules. As regras permitem que cada conta acesse somente seus próprios anexos em `users/{uid}/attachments/` e limitam cada arquivo a 10 MB.
+4. O app envia anexos novos ao Storage quando a conta está conectada e migra anexos locais pequenos ao sincronizar. Em aparelhos diferentes, a conta precisa ser a mesma. O modo local e os backups continuam disponíveis.
+5. Configure alertas de orçamento no Firebase e confira os custos do Storage antes de compartilhar o app amplamente.
 
-## 5. Dados locais existentes
+## 5. Publicar no GitHub Pages
+Inclua todos os arquivos da pasta do projeto, inclusive firebase-config-v2.js, firebase-init.js, auth.js, cloud-sync.js, extras.js, extras.css, service-worker.js, firestore.rules, storage.rules e os ícones. Em Settings → Pages, selecione a branch e a pasta correta. Acesse sempre por HTTPS.
+
+## 6. Dados locais existentes
 Os dados do protótipo ficam no navegador. Na primeira entrada no Firebase, `cloud-sync.js` tenta importar os dados locais apenas quando o e-mail da antiga conta local corresponde ao e-mail autenticado. Mesmo assim, faça backup antes de atualizar. Contas locais antigas precisam ser recriadas no Firebase; senhas antigas não são migradas.
 
-## 6. Testes obrigatórios antes de divulgar
+## 7. Testes obrigatórios antes de divulgar
 - Criar conta com e-mail novo e verificar o tratamento de e-mail duplicado.
 - Entrar e sair; redefinir senha pelo e-mail recebido.
 - Ativar Google e testar login no domínio publicado, se desejar esse método.
 - Criar tarefas, provas e conteúdos; abrir a mesma conta em outro navegador/dispositivo e verificar sincronização.
+- Anexar uma imagem e um PDF, entrar na mesma conta em outro aparelho e confirmar que ambos abrem; testar também permissões e limites do Storage.
+- Errar uma questão em um simulado e confirmar que ela aparece nos flashcards; conferir busca geral, plano rápido, lembretes e a remoção do aviso depois de marcá-lo como lido.
 - Criar duas contas e confirmar que uma não consegue ver os dados da outra.
 - Testar em iPhone, Android e computador; testar instalação PWA e atualização do service worker.
 - Testar notificações. Avisos programados com o site completamente fechado ainda exigem Web Push e um serviço de envio no servidor; notificações locais não garantem entrega fechadas.
@@ -41,4 +50,5 @@ Os dados do protótipo ficam no navegador. Na primeira entrada no Firebase, `clo
 ## Limitações conhecidas
 - O app continua sendo um frontend estático; não há painel administrativo, cobrança Premium, envio de Web Push no servidor ou política de privacidade/termos publicados incluídos nesta entrega.
 - Os dados de estudo são sincronizados como documentos por usuário, mas é necessário validar com testes reais e dados representativos antes de anunciar disponibilidade pública.
+- As notificações internas são atualizadas enquanto o app está aberto. O aviso nativo depende da permissão do navegador; entrega com o app fechado exige Web Push e um serviço no servidor.
 - Configure limites/alertas de orçamento e monitore uso no Firebase. Nunca coloque credenciais administrativas no repositório.

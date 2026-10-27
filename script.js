@@ -220,6 +220,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        const removed = allContents[subjectName].find(content => Number(content.id) === Number(contentId));
+        (removed && Array.isArray(removed.files) ? removed.files : []).forEach(file => window.comfortDeleteAttachment?.(file));
         allContents[subjectName] =
             allContents[subjectName].filter(
                 content =>
@@ -405,7 +407,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function safeAttachmentDataUrl(value) {
-        return typeof value === "string" && /^data:(application\/pdf|image\/(png|jpeg|webp|gif));base64,[A-Za-z0-9+/=]+$/i.test(value) ? value : "";
+        if (typeof value !== "string") return "";
+        if (/^data:(application\/pdf|image\/(png|jpeg|webp|gif));base64,[A-Za-z0-9+/=]+$/i.test(value)) return value;
+        try {
+            const url = new URL(value);
+            const bucket = window.COMFORT_FIREBASE_CONFIG && window.COMFORT_FIREBASE_CONFIG.storageBucket;
+            const path = decodeURIComponent(url.pathname);
+            if (url.protocol === "https:" && url.hostname === "firebasestorage.googleapis.com" && bucket && path.startsWith("/v0/b/" + bucket + "/o/users/")) return url.href;
+        } catch (_) {}
+        return "";
     }
 
 
@@ -811,9 +821,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             '<textarea id="taskSteps" rows="3" maxlength="1000" placeholder="Ler o capítulo&#10;Resolver os exercícios"></textarea>' +
             '<label for="taskRecurrence">Repetição</label>' +
             '<select id="taskRecurrence"><option value="">Não repetir</option><option value="daily">Todos os dias</option><option value="weekly">Toda semana</option></select>' +
-            '<label for="taskFiles">Anexar PDF ou imagem (até 700 KB no total)</label>' +
+            '<label for="taskFiles">Anexar PDF ou imagem (até 10 MB por arquivo com Firebase Storage)</label>' +
             '<input type="file" id="taskFiles" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>' +
-            '<small>Os arquivos ficam neste navegador e entram no backup; não são sincronizados com a nuvem.</small>' +
+            '<small>Com Firebase Storage configurado, os anexos ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 700 KB no total.</small>' +
             '<button type="submit" class="btn-primary">Adicionar tarefa</button></form>';
     }
 
@@ -868,20 +878,26 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert("Anexe apenas arquivos PDF ou imagens PNG, JPG, WEBP e GIF.");
             return;
         }
-        if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 700 * 1024) {
-            alert("Os anexos desta tarefa podem somar até 700 KB. Para arquivos maiores, use o caderno ou um link para o arquivo.");
+        const totalFileBytes = files.reduce((sum, file) => sum + file.size, 0);
+        const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+        if (files.some(file => file.size > 10 * 1024 * 1024) || totalFileBytes > 20 * 1024 * 1024) {
+            alert("Cada arquivo pode ter até 10 MB e os anexos da tarefa podem somar até 20 MB.");
+            return;
+        }
+        if (!cloudStorageAvailable && totalFileBytes > 700 * 1024) {
+            alert("Para anexos acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet.");
             return;
         }
 
         try {
-            const fileData = await Promise.all(files.map(file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            })));
+            const taskId = Date.now();
+            const fileData = await Promise.all(files.map(file => window.comfortPrepareAttachmentFile
+                ? window.comfortPrepareAttachmentFile(file, "tarefas-" + taskId)
+                : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); })));
+            const fallbackBytes = fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+            if (fallbackBytes > 700 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 700 KB.");
             const task = {
-                id: Date.now(),
+                id: taskId,
                 name: name,
                 subject: subject,
                 date: date,
@@ -901,10 +917,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             closeModal();
             updateEverything();
             checkDueDateNotifications();
-            alert("Tarefa adicionada com sucesso! ✅");
+            alert(fileData.some(file => file.storagePending)
+                ? "Tarefa salva neste aparelho. O Firebase Storage não aceitou o anexo; confira a configuração e as regras para sincronizá-lo."
+                : "Tarefa adicionada com sucesso! ✅");
         } catch (error) {
             console.error("ComfortStudy: não foi possível salvar a tarefa", error);
-            alert("Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
+            alert(error && error.message ? error.message : "Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
         }
     }
 
@@ -929,7 +947,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (_) {}
         const steps = Array.isArray(task.steps) ? task.steps : [];
         const hasDetails = task.description || steps.length || taskFiles.length || task.recurrence;
-        let html = '<div class="task-item ' + (task.completed ? "completed" : "") + '">' +
+        let html = '<div class="task-item ' + (task.completed ? "completed" : "") + '" data-task-id="' + Number(task.id) + '">' +
             '<div class="task-check"><button type="button" class="small-button" onclick="toggleTask(' + Number(task.id) + ')" title="' + (task.completed ? "Desmarcar tarefa" : "Marcar como concluída") + '">' + (task.completed ? "✓" : "○") + '</button></div>' +
             '<span class="task-subject ' + subject.className + '">' + subject.icon + " " + escapeHTML(subject.name) + '</span>' +
             '<span class="task-title">' + escapeHTML(task.name) + '</span>' +
@@ -946,7 +964,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             if (taskFiles.length) {
                 html += '<div class="task-files">' + taskFiles.map(file =>
-                    safeAttachmentDataUrl(file.dataUrl) ? '<a href="' + escapeHTML(safeAttachmentDataUrl(file.dataUrl)) + '" download="' + escapeHTML(file.name) + '">📎 ' + escapeHTML(file.name) + '</a>' : ''
+                    safeAttachmentDataUrl(file.dataUrl || file.storageUrl) ? '<a href="' + escapeHTML(safeAttachmentDataUrl(file.dataUrl || file.storageUrl)) + '" download="' + escapeHTML(file.name) + '" target="_blank" rel="noopener">📎 ' + escapeHTML(file.name) + '</a>' : ''
                 ).join("") + '</div>';
             }
             if (task.recurrence) html += '<p>Esta tarefa se repete ' + (task.recurrence === "daily" ? "diariamente" : "semanalmente") + ' quando for concluída.</p>';
@@ -989,9 +1007,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const search =
             searchInput
-                ? searchInput.value
-                    .trim()
-                    .toLowerCase()
+                ? searchInput.value.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 : "";
 
 
@@ -1005,13 +1021,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 tasks.filter(task =>
 
                     String(task.name)
-                        .toLowerCase()
+                        .toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                         .includes(search)
 
                     ||
 
                     String(task.subject)
-                        .toLowerCase()
+                        .toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                         .includes(search)
 
                 );
@@ -1166,7 +1182,11 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const files = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
                 const fileKey = String(removed.attachmentSourceId || removed.id);
                 const stillReferenced = tasks.some(task => String(task.attachmentSourceId || task.id) === fileKey);
-                if (!stillReferenced) delete files[fileKey];
+                if (!stillReferenced) {
+                    (Array.isArray(files[fileKey]) ? files[fileKey] : []).forEach(file => window.comfortDeleteAttachment?.(file));
+                    delete files[fileKey];
+                }
+                (Array.isArray(files[String(removed.id)]) ? files[String(removed.id)] : []).forEach(file => window.comfortDeleteAttachment?.(file));
                 delete files[String(removed.id)];
                 localStorage.setItem("comfortTaskFiles", JSON.stringify(files));
             } catch (_) {}
@@ -1647,7 +1667,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         return `
             <div
                 class="exam-preview
-                ${exam.completed ? "completed" : ""}">
+                ${exam.completed ? "completed" : ""}"
+                data-exam-id="${Number(exam.id)}">
 
                 <div class="exam-icon">
                     ${exam.completed ? "✓" : "📝"}
@@ -2036,7 +2057,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <label for="editSubjectText">Anotações</label><textarea id="editSubjectText" rows="6" maxlength="10000" required>${escapeHTML(item.text || "")}</textarea>
             <label class="checkbox-label"><input id="editSubjectImportant" type="checkbox"${item.important ? " checked" : ""}> Marcar como importante para revisar</label>
             <label for="editSubjectFiles">Adicionar mais PDFs ou fotos</label><input id="editSubjectFiles" type="file" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
-            <small>Arquivos atuais serão mantidos. Limite total do conteúdo: 900 KB.</small>
+            <small>Arquivos atuais serão mantidos. Com Firebase Storage, o total pode chegar a 20 MB.</small>
             <button type="submit" class="btn-primary">Salvar alterações</button></form>`);
         const form = document.getElementById("editSubjectContentForm");
         form?.addEventListener("submit", event => {
@@ -2048,19 +2069,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             const currentFiles = Array.isArray(item.files) ? item.files : [];
             const currentBytes = currentFiles.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
             const newBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-            if (selectedFiles.some(file => file.size > 700 * 1024) || currentBytes + newBytes > 900 * 1024) { alert("O limite por arquivo é 700 KB e o limite total deste conteúdo é 900 KB."); return; }
-            Promise.all(selectedFiles.map(file => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            }))).then(newFiles => updateSubjectContent(subjectName, contentId, {
-                topic: document.getElementById("editSubjectTopic").value.trim(),
-                title: title,
-                text: text,
-                important: document.getElementById("editSubjectImportant").checked,
-                files: currentFiles.concat(newFiles)
-            })).catch(() => alert("Não foi possível ler um dos arquivos."));
+            const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+            if (selectedFiles.some(file => file.size > 10 * 1024 * 1024) || currentBytes + newBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e este conteúdo pode somar até 20 MB."); return; }
+            if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+            Promise.all(selectedFiles.map(file => window.comfortPrepareAttachmentFile
+                ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName + "-" + contentId)
+                : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(newFiles => {
+                const fallbackBytes = currentFiles.concat(newFiles).filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+                if (fallbackBytes > 900 * 1024) throw new Error("Sem o Storage, os anexos locais deste conteúdo podem somar até 900 KB.");
+                const updated = updateSubjectContent(subjectName, contentId, {
+                    topic: document.getElementById("editSubjectTopic").value.trim(),
+                    title: title,
+                    text: text,
+                    important: document.getElementById("editSubjectImportant").checked,
+                    files: currentFiles.concat(newFiles)
+                });
+                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                return updated;
+            }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
         });
     };
 
@@ -2163,9 +2189,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <label for="subjectContentInput">Anotações do conteúdo</label>
                         <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
                         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
-                        <label for="subjectContentFiles">Anexar PDF ou fotos (até 700 KB por arquivo e 900 KB no total)</label>
+                        <label for="subjectContentFiles">Anexar PDF ou fotos (até 10 MB por arquivo com Firebase Storage)</label>
                         <input type="file" id="subjectContentFiles" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
-                        <p style="font-size:12px;color:#718096">Os arquivos ficam guardados junto ao conteúdo neste navegador. Para sincronizar anexos entre dispositivos, configure Firebase Storage.</p>
+                        <p style="font-size:12px;color:#718096">Com Firebase Storage configurado, fotos e PDFs ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 900 KB por conteúdo.</p>
                         <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
                     </form>
 
@@ -2195,7 +2221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 : contents
                                     .map(
                                         content => `
-                                            <article class="subject-note-card" data-note-search="${escapeHTML([content.topic, content.title, content.text, subjectName].join(" ").toLowerCase())}"
+                                            <article class="subject-note-card" data-note-search="${escapeHTML([content.topic, content.title, content.text, subjectName, ...(Array.isArray(content.files) ? content.files.map(file => file.name) : [])].join(" ").toLowerCase())}"
                                                 style="
                                                     display:flex;
                                                     align-items:center;
@@ -2209,7 +2235,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                     <strong>${content.important ? '⭐ ' : '📖 '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
                                                     ${content.topic ? `<small class="subject-note-topic">${escapeHTML(content.topic)}</small>` : ''}
                                                     <p style="white-space:pre-wrap;margin:6px 0">${escapeHTML(content.text || '')}</p>
-                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl); if (!url) return ''; const image = /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener">📎 ${escapeHTML(file.name)}</a></p>`; }).join('')}
+                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl || file.storageUrl); if (!url) return ''; const image = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(file.name || '') || /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener">📎 ${escapeHTML(file.name)}</a></p>`; }).join('')}
                                                     <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}">✏️ Editar</button>
                                                     <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}">🧠 Revisar</button>
                                                 </div>
@@ -2272,9 +2298,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const searchInput = document.getElementById("subjectContentSearch");
         if (searchInput) searchInput.addEventListener("input", () => {
-            const query = searchInput.value.trim().toLowerCase();
+            const normalize = value => String(value || "").trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const query = normalize(searchInput.value);
             document.querySelectorAll(".subject-note-card").forEach(note => {
-                note.hidden = Boolean(query) && !String(note.dataset.noteSearch || "").includes(query);
+                note.hidden = Boolean(query) && !normalize(note.dataset.noteSearch || "").includes(query);
             });
         });
 
@@ -2302,17 +2329,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const files = Array.from(fileInput.files || []);
                 if (!title || !content) { alert("Preencha o título e as anotações."); return; }
                 if (files.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) { alert("Anexe apenas PDFs ou imagens PNG, JPG, WEBP e GIF."); return; }
-                if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 900 * 1024) { alert("Para evitar erro de armazenamento, cada arquivo deve ter até 700 KB e o total por anotação até 900 KB. Para arquivos maiores, será necessário configurar o Firebase Storage."); return; }
-                Promise.all(files.map(file => new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result });
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                }))).then(fileData => {
+                const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+                const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+                if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB."); return; }
+                if (!cloudStorageAvailable && totalBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+                Promise.all(files.map(file => window.comfortPrepareAttachmentFile
+                    ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
+                    : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(fileData => {
+                    if (fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0) > 900 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 900 KB por anotação.");
                     addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
                     renderSubjects();
                     showSubjectModal(subjectName);
-                }).catch(() => alert("Não foi possível ler um dos arquivos."));
+                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
                 return;
 
 
@@ -3619,7 +3648,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const total =
-            getNotices().length;
+            getNotices().filter(notice => !(notice && (notice.readAt || notice.seenAt))).length;
 
 
         count.textContent =
@@ -3647,69 +3676,39 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-        const notices =
-            getNotices();
+        const allNotices = getNotices();
+        const notices = allNotices.filter(notice => !(notice && (notice.readAt || notice.seenAt)));
+        const history = allNotices.filter(notice => notice && (notice.readAt || notice.seenAt));
+        const renderNotice = notice => `
+            <div class="notice" data-notice-id="${escapeHTML(String(notice.id))}" role="button" tabindex="0" aria-label="Aviso: ${escapeHTML(notice.title)}. Toque para marcar como lido.">
+                <i class="ph ph-bell" aria-hidden="true"></i>
+                <div class="notice-copy">
+                    <strong>${escapeHTML(notice.title || "Aviso")}</strong>
+                    <p>${escapeHTML(notice.message || "")}</p>
+                    <small>Toque para marcar como lido</small>
+                </div>
+            </div>`;
+        const renderReadNotice = notice => `
+            <div class="notice is-read">
+                <i class="ph ph-check-circle" aria-hidden="true"></i>
+                <div class="notice-copy"><strong>${escapeHTML(notice.title || "Aviso")}</strong><p>${escapeHTML(notice.message || "")}</p></div>
+            </div>`;
 
 
         if (container) {
 
-            if (
-                notices.length ===
-                0
-            ) {
-
-                container.innerHTML =
-                    emptyMessage(
-                        "🔔",
-                        "Nenhum aviso",
-                        "Você não possui avisos no momento."
-                    );
-
-            } else {
-
-                container.innerHTML =
-                    notices
-                        .map(
-                            notice => `
-
-                                <div
-                                    class="notice">
-
-                                    <i
-                                        class="ph ph-bell">
-                                    </i>
-
-
-                                    <div>
-
-                                        <strong>
-                                            ${escapeHTML(
-                                                notice.title
-                                            )}
-                                        </strong>
-
-
-                                        <p>
-                                            ${escapeHTML(
-                                                notice.message
-                                            )}
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            `
-                        )
-                        .join("");
+            container.innerHTML = notices.length
+                ? notices.map(renderNotice).join("")
+                : emptyMessage("🔔", "Tudo em dia", "Não há avisos novos para você.");
+            if (history.length) {
+                container.insertAdjacentHTML("beforeend", '<details class="notice-history"><summary>Histórico (' + history.length + ')</summary><div class="notice-history-list">' + history.slice(0, 30).map(renderReadNotice).join("") + '</div></details>');
             }
         }
 
 
         if (dashboardContainer) {
 
-            const latest =
-                notices.slice(0, 3);
+            const latest = notices.slice(0, 3);
 
 
             if (
@@ -3726,41 +3725,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             } else {
 
-                dashboardContainer.innerHTML =
-                    latest
-                        .map(
-                            notice => `
-
-                                <div
-                                    class="notice">
-
-                                    <i
-                                        class="ph ph-bell">
-                                    </i>
-
-
-                                    <div>
-
-                                        <strong>
-                                            ${escapeHTML(
-                                                notice.title
-                                            )}
-                                        </strong>
-
-
-                                        <p>
-                                            ${escapeHTML(
-                                                notice.message
-                                            )}
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            `
-                        )
-                        .join("");
+                dashboardContainer.innerHTML = latest.map(renderNotice).join("");
             }
         }
 
@@ -4099,6 +4064,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         ) {
             return;
         }
+        // As preferências novas são atendidas por extras.js, inclusive revisões; evita duplicar os avisos nativos antigos.
+        if (localStorage.getItem("comfortReminderSettings")) return;
 
         const today =
             getTodayString();
@@ -4223,17 +4190,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             "notificationButton"
         );
 
+    function markNoticeAsRead(event) {
+        const card = event.target.closest(".notice[data-notice-id]");
+        if (!card) return;
+        const notices = getNotices();
+        const notice = notices.find(item => String(item.id) === String(card.dataset.noticeId));
+        if (!notice || notice.readAt || notice.seenAt) return;
+        notice.readAt = new Date().toISOString();
+        saveNotices(notices);
+        renderNotices();
+    }
+
+    ["noticeList", "dashboardNoticeList"].forEach(id => {
+        const host = document.getElementById(id);
+        host?.addEventListener("click", markNoticeAsRead);
+        host?.addEventListener("keydown", event => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            const card = event.target.closest(".notice[data-notice-id]");
+            if (!card) return;
+            event.preventDefault();
+            markNoticeAsRead(event);
+        });
+    });
+    window.addEventListener("comfort-notices-updated", renderNotices);
+
 
     if (notificationButton) {
 
         notificationButton.addEventListener(
             "click",
-            async () => {
-
-                await requestNotificationPermission();
-
-                checkDueDateNotifications();
-
+            () => {
                 openPage(
                     "avisos"
                 );

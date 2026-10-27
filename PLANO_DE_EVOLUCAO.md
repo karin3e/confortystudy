@@ -1,6 +1,6 @@
 # Plano de evolução do ComfortStudy
 
-Este plano reúne as oito etapas combinadas. Os recursos existentes foram mantidos e as melhorias novas foram adicionadas à cópia de trabalho do repositório.
+Este plano acompanha as oito etapas combinadas. Os recursos existentes foram preservados e as atualizações desta rodada foram feitas na pasta oficial do projeto.
 
 ## Etapa 1 — Responsividade e rolagem
 
@@ -12,15 +12,15 @@ Este plano reúne as oito etapas combinadas. Os recursos existentes foram mantid
 
 ## Etapa 3 — Caderno digital
 
-**Implementada.** Anotações continuam organizadas por matéria e agora podem ter tópico, título, texto, marcador de importância e arquivos PDF/foto. Há busca global por matéria/tópico/conteúdo e busca dentro da matéria. Anotações podem ser editadas, revistas e anexadas. Os arquivos locais também aparecem no backup.
+**Implementada.** Anotações continuam organizadas por matéria e podem ter tópico, título, texto, marcador de importância e arquivos PDF/foto. A busca geral inclui matérias e anotações, além das buscas específicas. Anotações podem ser editadas, revistas e anexadas.
 
 ## Etapa 4 — Revisão e prática
 
-**Implementada.** Flashcards e revisão espaçada existentes foram mantidos. O banco de questões aceita perguntas objetivas com quatro alternativas, monta simulados aleatórios, corrige respostas, mostra os assuntos abaixo de 70% e guarda o histórico sincronizado.
+**Implementada.** Flashcards e revisão espaçada existentes foram mantidos. O banco de questões aceita perguntas objetivas com quatro alternativas, monta simulados aleatórios, corrige respostas, mostra os assuntos abaixo de 70% e guarda o histórico sincronizado. Respostas erradas viram flashcards com a alternativa correta e entram nos intervalos de revisão.
 
 ## Etapa 5 — Planejamento inteligente
 
-**Implementada.** Grade de aulas, agenda, plano baseado em provas, meta semanal, avisos e sugestões de horários existentes foram mantidos. Agora há meta diária, seleção da matéria no cronômetro e registro de tempo por matéria. Sugestões priorizam prazos e matérias com menos tempo estudado na última semana.
+**Implementada.** Grade de aulas, agenda, plano baseado em provas, metas e sugestões de horários existentes foram mantidos. O plano rápido monta blocos de estudo conforme o tempo escolhido, priorizando prazos, provas, revisões e matérias a reforçar. Os lembretes de tarefas, provas e revisões podem ser ajustados por antecedência.
 
 ## Etapa 6 — Desempenho e motivação
 
@@ -28,15 +28,14 @@ Este plano reúne as oito etapas combinadas. Os recursos existentes foram mantid
 
 ## Etapa 7 — Sincronização e modo offline
 
-**Parcialmente implementada.** O app shell é armazenado pelo service worker e alterações compatíveis feitas enquanto o app está aberto sem rede ficam salvas no dispositivo e entram numa fila para sincronização ao reconectar. Dados pequenos sincronizam pelo Firebase. Anexos de tarefas, PDF e marcações do leitor continuam locais e entram no backup; sincronizar arquivos maiores exige configurar Firebase Storage e suas regras de acesso.
+**Código integrado; ativação e teste remoto pendentes.** Dados e referências de anexos são sincronizados por conta. Fotos e PDFs podem ser enviados ao Firebase Storage e acessados em outros aparelhos; é preciso ativar o bucket e publicar `storage.rules` no Firebase. O app shell continua disponível pelo service worker e as alterações compatíveis feitas offline entram na fila quando a rede volta. Marcações e observações do leitor de PDF permanecem locais e entram no backup.
 
 ## Etapa 8 — Validação e publicação
 
-**Validação estática concluída; validação manual e publicação pendentes.** Sintaxe dos scripts, IDs únicos, formulários, referências locais, atributos ARIA, fila de sincronização offline e diff foram verificados. O pacote está em `outputs/comfortstudy-atualizado.zip` e as alterações estão salvas em um commit local. O fluxo autenticado do Firebase e a aparência em aparelhos reais ainda precisam de validação manual com a conta do projeto e os dispositivos disponíveis antes do envio ao GitHub.
+**Validação estática concluída; validação manual pendente.** A sintaxe dos scripts, 168 IDs, 14 formulários, referências locais, regras do Storage e diff foram conferidos. O fluxo autenticado do Firebase, as permissões reais do Storage e a aparência em aparelhos precisam ser validados com a conta e os dispositivos disponíveis. O envio ao GitHub fica a cargo da pessoa responsável pelo repositório.
 
 ## Preservação
 
-- O repositório original foi preservado; alterações foram feitas em uma cópia de trabalho.
-- O backup anterior está em `outputs/comfortstudy-backup-before-profile.zip`.
-- O pacote final atualizado está em `outputs/comfortstudy-atualizado.zip`.
+- As alterações foram feitas diretamente em `confortystudy`, a pasta oficial indicada pelo usuário; a pasta aninhada de mesmo nome não foi alterada.
+- Foi criada uma cópia ZIP de segurança antes desta rodada de atualizações.
 - Nenhum dado local, conta Firebase ou conteúdo existente foi apagado.

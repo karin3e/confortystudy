@@ -40,6 +40,12 @@
 
       window.comfortAuth = firebase.auth();
       window.comfortDb = firebase.firestore();
+      try {
+        window.comfortStorage = config.storageBucket && firebase.storage ? firebase.storage() : null;
+      } catch (storageError) {
+        window.comfortStorage = null;
+        console.warn('ComfortStudy: Firebase Storage indisponível; os anexos continuarão no modo local.', storageError);
+      }
       window.comfortFirebaseConfigured = true;
 
       console.log('ComfortStudy: Firebase inicializado com sucesso.');

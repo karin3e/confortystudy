@@ -15,7 +15,11 @@ Organizador de estudos para tarefas, provas, matérias e rotina semanal.
 - Layout adaptável para celulares, tablets e computadores, com rolagem interna nos formulários e modais.
 - Metas semanais, plano de estudo para provas e registro de notas.
 - Simulados com questões objetivas próprias, correção automática, histórico de resultados e conquistas de estudo.
-- Exportação e restauração de backup. PDFs do leitor e seus apontamentos ficam neste navegador e no backup, não sincronizam entre dispositivos.
+- Questões erradas em simulados viram flashcards com revisão espaçada.
+- Busca geral por tarefas, provas, matérias e anotações; plano rápido conforme o tempo disponível.
+- Lembretes configuráveis para tarefas, provas e revisões; avisos lidos saem da caixa principal e ficam no histórico.
+- Fotos e PDFs sincronizados entre dispositivos pelo Firebase Storage depois de ativar o bucket e publicar `storage.rules`.
+- Exportação e restauração de backup. As marcações e observações do leitor de PDF continuam locais e entram no backup.
 
 Consulte [PLANO_DE_EVOLUCAO.md](PLANO_DE_EVOLUCAO.md) para acompanhar as etapas de responsividade, estabilidade e melhorias do projeto.
 

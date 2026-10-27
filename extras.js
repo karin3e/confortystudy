@@ -19,6 +19,14 @@
     });
   }
   function safePdfDataUrl(value) { return typeof value === "string" && /^data:application\/pdf;base64,[A-Za-z0-9+/=]+$/i.test(value); }
+  function safeStoragePdfUrl(file) {
+    try {
+      const url = new URL(file && file.storageUrl || "");
+      const bucket = window.COMFORT_FIREBASE_CONFIG && window.COMFORT_FIREBASE_CONFIG.storageBucket;
+      const path = decodeURIComponent(url.pathname);
+      return file && file.type === "application/pdf" && url.protocol === "https:" && url.hostname === "firebasestorage.googleapis.com" && bucket && path.startsWith("/v0/b/" + bucket + "/o/users/") ? url.href : "";
+    } catch (_) { return ""; }
+  }
   function localDate(date) {
     return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0");
   }
@@ -189,13 +197,32 @@
       if (feedback) feedback.textContent = "Selecione uma alternativa para continuar.";
       return;
     }
+    const question = activeQuiz.questions[activeQuiz.index];
     activeQuiz.selected = Number(selected.value);
-    activeQuiz.lastCorrect = activeQuiz.selected === Number(activeQuiz.questions[activeQuiz.index].correct);
+    activeQuiz.lastCorrect = activeQuiz.selected === Number(question.correct);
     if (activeQuiz.lastCorrect) activeQuiz.correct++;
-    const subject = activeQuiz.questions[activeQuiz.index].subject;
+    const subject = question.subject;
     if (!activeQuiz.bySubject[subject]) activeQuiz.bySubject[subject] = { correct: 0, total: 0 };
     activeQuiz.bySubject[subject].total++;
     if (activeQuiz.lastCorrect) activeQuiz.bySubject[subject].correct++;
+    if (!activeQuiz.lastCorrect) {
+      const cards = list("comfortFlashcards");
+      let card = cards.find(item => String(item.sourceQuestionId) === String(question.id));
+      const correctAnswer = String(question.options[Number(question.correct)] || "");
+      const chosenAnswer = String(question.options[activeQuiz.selected] || "");
+      const answerText = "Resposta correta: " + String.fromCharCode(65 + Number(question.correct)) + ". " + correctAnswer + "\nSua resposta: " + String.fromCharCode(65 + activeQuiz.selected) + ". " + chosenAnswer;
+      if (card) {
+        card.back = answerText;
+        card.dueAt = today();
+        card.repetitions = 0;
+        card.lastWrongAt = today();
+      } else {
+        card = { id: Date.now(), subject: String(subject || "Geral"), front: String(question.prompt), back: answerText, dueAt: today(), repetitions: 0, sourceQuestionId: question.id, createdFrom: "simulado", lastWrongAt: today() };
+        cards.push(card);
+      }
+      write("comfortFlashcards", cards);
+      renderFlashcards();
+    }
     activeQuiz.answered = true;
     renderQuizSession();
   }
@@ -370,7 +397,7 @@
     });
     suggestions.innerHTML = picks.length ? picks.map(slot => '<div class="feature-row"><div><strong>' + niceDate(slot.date) + ' · ' + minutesText(slot.start) + '–' + minutesText(slot.end) + '</strong><span>Sugestão de estudo: ' + esc(slot.focus) + ' · ' + esc(slot.reason) + '</span></div></div>').join("") : empty("Cadastre suas aulas para encontrar intervalos livres.");
     const notificationButton = document.getElementById("enableStudyNotifications");
-    if (notificationButton) notificationButton.textContent = read("comfortStudyNotifications", false) ? "Avisos ativos" : "Ativar avisos";
+    if (notificationButton) notificationButton.textContent = reminderSettings().browserEnabled ? "Avisos do navegador ativos" : "Ativar avisos";
   }
   function toMinutes(value) { const parts = String(value || "").split(":").map(Number); return parts.length === 2 && parts.every(Number.isFinite) ? parts[0] * 60 + parts[1] : -1; }
   function minutesText(value) { return String(Math.floor(value / 60)).padStart(2, "0") + ":" + String(value % 60).padStart(2, "0"); }
@@ -488,13 +515,14 @@
     if (files.some(file => String(file.id) === old)) select.value = old; else if (files.length) select.value = String(files[0].id);
     const file = activePdf(); workspace.hidden = !file; emptyHost.hidden = Boolean(file);
     if (!file) { const viewer = document.getElementById("studyPdfViewer"); if (viewer) viewer.removeAttribute("src"); return; }
-    if (!safePdfDataUrl(file.dataUrl)) {
+    const pdfSource = safePdfDataUrl(file.dataUrl) ? file.dataUrl : safeStoragePdfUrl(file);
+    if (!pdfSource) {
       workspace.hidden = true; emptyHost.hidden = false; emptyHost.textContent = "Este PDF não pode ser aberto com segurança. Remova-o e adicione novamente um arquivo PDF válido.";
       const viewer = document.getElementById("studyPdfViewer"); if (viewer) viewer.removeAttribute("src"); return;
     }
     const page = Math.max(1, Number(document.getElementById("pdfPageNumber").value) || 1);
     document.getElementById("pdfPageNumber").value = page;
-    document.getElementById("studyPdfViewer").src = file.dataUrl + "#page=" + page + "&toolbar=1";
+    document.getElementById("studyPdfViewer").src = pdfSource + "#page=" + page + "&toolbar=1";
     const data = annotations()[String(file.id)] || { bookmarks: [], notes: [] };
     const note = (data.notes || []).find(item => Number(item.page) === page);
     document.getElementById("pdfPageNote").value = note ? note.text : "";
@@ -511,14 +539,23 @@
     if (existing) existing.text = text; else data.notes.push({ page: page, text: text });
     all[String(file.id)] = data; write("comfortPdfAnnotations", all); renderPdf();
   }
-  function addPdf(file) {
+  async function addPdf(file) {
     if (!file) return;
     if (file.type !== "application/pdf") { window.alert("Escolha um arquivo PDF válido."); return; }
-    if (file.size > 700 * 1024) { window.alert("Para manter o app estável, o PDF deve ter até 700 KB. PDFs maiores precisarão de armazenamento em nuvem."); return; }
-    const reader = new FileReader(); reader.onload = function () {
-      try { if (!safePdfDataUrl(reader.result)) { window.alert("O arquivo não parece ser um PDF válido."); return; } const files = pdfFiles(); files.push({ id: Date.now(), name: file.name, type: "application/pdf", dataUrl: reader.result }); write("comfortStudyReaderFiles", files); renderPdf(); }
-      catch (_) { window.alert("Não há espaço suficiente neste navegador para guardar esse PDF."); }
-    }; reader.onerror = function () { window.alert("Não foi possível abrir esse PDF."); }; reader.readAsDataURL(file);
+    const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+    if (file.size > 10 * 1024 * 1024) { window.alert("Cada PDF pode ter até 10 MB."); return; }
+    if (!cloudStorageAvailable && file.size > 700 * 1024) { window.alert("Para PDFs acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+    try {
+      const data = window.comfortPrepareAttachmentFile ? await window.comfortPrepareAttachmentFile(file, "leitor-pdf") : await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: "application/pdf", size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); });
+      if (data.dataUrl && !safePdfDataUrl(data.dataUrl)) throw new Error("O arquivo não parece ser um PDF válido.");
+      const files = pdfFiles();
+      files.push(Object.assign({ id: Date.now(), type: "application/pdf" }, data));
+      write("comfortStudyReaderFiles", files);
+      renderPdf();
+      if (data.storagePending) window.alert("PDF salvo neste aparelho. O Firebase Storage não aceitou o arquivo; confira a configuração e as regras para sincronizá-lo.");
+    } catch (error) {
+      window.alert(error && error.message ? error.message : "Não foi possível salvar este PDF.");
+    }
   }
 
   function applyReview(id) {
@@ -536,38 +573,311 @@
     contents[subject] = items; write("comfortSubjectContents", contents);
   }
 
+  const DEFAULT_REMINDER_SETTINGS = { tasks: [0, 1], exams: [0, 1, 3, 7], reviews: [0, 1], browserEnabled: false };
+  function reminderSettings() {
+    const rawSettings = read("comfortReminderSettings", {});
+    const saved = rawSettings && typeof rawSettings === "object" ? rawSettings : {};
+    return {
+      tasks: Array.isArray(saved.tasks) ? saved.tasks.map(Number).filter(Number.isFinite) : DEFAULT_REMINDER_SETTINGS.tasks,
+      exams: Array.isArray(saved.exams) ? saved.exams.map(Number).filter(Number.isFinite) : DEFAULT_REMINDER_SETTINGS.exams,
+      reviews: Array.isArray(saved.reviews) ? saved.reviews.map(Number).filter(Number.isFinite) : DEFAULT_REMINDER_SETTINGS.reviews,
+      browserEnabled: typeof saved.browserEnabled === "boolean" ? saved.browserEnabled : Boolean(read("comfortStudyNotifications", false))
+    };
+  }
+
+  function initializeReminderSettings() {
+    const form = document.getElementById("reminderSettingsForm");
+    if (!form) return;
+    if (form.dataset.dirty === "true") return;
+    if (form.dataset.listeners !== "true") {
+      form.dataset.listeners = "true";
+      form.addEventListener("input", () => { form.dataset.dirty = "true"; });
+      form.addEventListener("change", () => { form.dataset.dirty = "true"; });
+    }
+    const settings = reminderSettings();
+    ["tasks", "exams", "reviews"].forEach(type => {
+      form.querySelectorAll('input[name="reminder' + type[0].toUpperCase() + type.slice(1) + 'Days"]').forEach(input => {
+        input.checked = settings[type].includes(Number(input.value));
+      });
+    });
+    const browserToggle = document.getElementById("reminderBrowserEnabled");
+    if (browserToggle) browserToggle.checked = settings.browserEnabled;
+  }
+
+  function saveReminderSettings(event) {
+    event.preventDefault();
+    const form = event.target;
+    const collect = name => Array.from(form.querySelectorAll('input[name="' + name + '"]:checked')).map(input => Number(input.value)).filter(Number.isFinite).sort((a, b) => a - b);
+    const settings = {
+      tasks: collect("reminderTasksDays"),
+      exams: collect("reminderExamsDays"),
+      reviews: collect("reminderReviewsDays"),
+      browserEnabled: Boolean(document.getElementById("reminderBrowserEnabled")?.checked)
+    };
+    write("comfortReminderSettings", settings);
+    form.dataset.dirty = "false";
+    const status = document.getElementById("reminderSettingsStatus");
+    if (settings.browserEnabled && "Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission().then(permission => {
+        if (permission !== "granted") {
+          settings.browserEnabled = false;
+          write("comfortReminderSettings", settings);
+          const toggle = document.getElementById("reminderBrowserEnabled");
+          if (toggle) toggle.checked = false;
+          if (status) status.textContent = "Lembretes salvos. O navegador não autorizou avisos fora da página; os avisos internos continuam ativos.";
+        } else if (status) status.textContent = "Lembretes salvos. Avisos do navegador ativados.";
+        checkStudyNotifications();
+      }).catch(() => { if (status) status.textContent = "Lembretes salvos; não foi possível ativar os avisos do navegador."; });
+    } else {
+      if (status) status.textContent = settings.browserEnabled && !("Notification" in window) ? "Lembretes salvos. Este navegador não oferece avisos do sistema." : "Lembretes salvos.";
+      checkStudyNotifications();
+    }
+    if (!notificationTimer) notificationTimer = window.setInterval(checkStudyNotifications, 60000);
+  }
+
   function startNotifications() {
-    if (!("Notification" in window)) { window.alert("Este navegador não oferece avisos do app."); return; }
+    const settings = reminderSettings();
+    settings.browserEnabled = true;
+    write("comfortReminderSettings", settings);
+    if (!("Notification" in window)) {
+      settings.browserEnabled = false;
+      write("comfortReminderSettings", settings);
+      const toggle = document.getElementById("reminderBrowserEnabled");
+      if (toggle) toggle.checked = false;
+      window.alert("Os lembretes internos continuam ativos, mas este navegador não oferece avisos do sistema.");
+      return;
+    }
     Notification.requestPermission().then(permission => {
-      if (permission !== "granted") { window.alert("Os avisos não foram autorizados no navegador."); return; }
-      write("comfortStudyNotifications", true);
-      new Notification("ComfortStudy", { body: "Avisos de aulas, prazos, provas e revisões ativados enquanto o app estiver aberto." });
+      settings.browserEnabled = permission === "granted";
+      write("comfortReminderSettings", settings);
+      const toggle = document.getElementById("reminderBrowserEnabled");
+      if (toggle) toggle.checked = settings.browserEnabled;
+      const button = document.getElementById("enableStudyNotifications");
+      if (button) button.textContent = settings.browserEnabled ? "Avisos do navegador ativos" : "Ativar avisos";
+      const status = document.getElementById("reminderSettingsStatus");
+      if (status) status.textContent = settings.browserEnabled ? "Avisos do navegador ativados." : "Permissão negada; os avisos internos continuam ativos.";
       checkStudyNotifications();
       if (!notificationTimer) notificationTimer = window.setInterval(checkStudyNotifications, 60000);
-      const button = document.getElementById("enableStudyNotifications"); if (button) button.textContent = "Avisos ativos";
-    }).catch(() => window.alert("Não foi possível ativar avisos neste navegador. Confira as permissões do site."));
+    }).catch(() => window.alert("Não foi possível ativar os avisos do navegador. Os avisos internos continuam ativos."));
+  }
+
+  function daysBetween(from, to) {
+    const a = new Date(String(from) + "T12:00:00");
+    const b = new Date(String(to) + "T12:00:00");
+    if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return null;
+    return Math.round((b.getTime() - a.getTime()) / 86400000);
+  }
+
+  function createReminderNotice(type, item, subject, date, offset, settings, sent) {
+    const dateOffset = daysBetween(today(), date);
+    if (dateOffset === null || dateOffset < 0 || !settings[type].includes(offset)) return;
+    const key = [type, item.id, item.reminderKeyDate || date, offset].join(":");
+    if (sent[key]) return;
+    const labels = { tasks: "Tarefa", exams: "Prova", reviews: "Revisão" };
+    const timing = item.reminderOverdue ? "está pendente" : offset === 0 ? (dateOffset === 0 ? "é hoje" : "está pendente") : "em " + offset + " dia(s)";
+    const title = labels[type] + " " + timing;
+    const message = String(item.name || item.title || item.front || item.text || "Atividade") + (subject ? " · " + subject : "");
+    const notices = list("comfortNotices");
+    const existing = notices.some(notice => notice && notice.reminderKey === key);
+    if (!existing) {
+      const id = Date.now() + Math.floor(Math.random() * 1000);
+      notices.unshift({ id: id, title: title, message: message, date: new Date().toISOString(), readAt: "", reminderKey: key, notificationType: type });
+      write("comfortNotices", notices);
+      if (settings.browserEnabled && "Notification" in window && Notification.permission === "granted") {
+        const notification = new Notification(title, { body: message, tag: "comfortstudy-" + key, data: { noticeId: id } });
+        notification.onclick = function () {
+          const current = list("comfortNotices");
+          const notice = current.find(entry => String(entry.id) === String(id));
+          if (notice) notice.readAt = new Date().toISOString();
+          write("comfortNotices", current);
+          window.focus();
+          if (typeof window.openPage === "function") window.openPage("avisos");
+          window.dispatchEvent(new Event("comfort-notices-updated"));
+          notification.close();
+        };
+      }
+    }
+    sent[key] = true;
   }
 
   function checkStudyNotifications() {
-    if (!read("comfortStudyNotifications", false) || !("Notification" in window) || Notification.permission !== "granted") return;
-    const now = new Date(); const date = today(); const minute = now.getHours() * 60 + now.getMinutes(); const day = now.getDay(); const sent = read("comfortNotificationSent", {});
-    list("comfortClassSchedule").filter(item => Number(item.day) === day && Math.abs(toMinutes(item.start) - minute) <= 10).forEach(item => {
-      const key = "class-" + date + "-" + item.id;
-      if (!sent[key]) { new Notification("Aula em breve", { body: item.subject + " começa às " + item.start + "." }); sent[key] = true; }
-    });
-    if (now.getHours() >= 7 && now.getHours() < 22) {
-      const dueTasks = list("comfortTasks").filter(item => !item.completed && item.date === date).length;
-      const dueExams = list("comfortExams").filter(item => !item.completed && item.date >= date && item.date <= shiftDate(date, 2)).length;
-      const noteContents = read("comfortSubjectContents", {});
-      const noteReviews = Object.keys(noteContents || {}).reduce((sum, subject) => sum + (Array.isArray(noteContents[subject]) ? noteContents[subject].filter(item => item.important && item.nextReviewAt && item.nextReviewAt <= date).length : 0), 0);
-      const dueReviews = list("comfortStudyDiary").filter(item => item.review && item.nextReviewAt && item.nextReviewAt <= date).length + list("comfortFlashcards").filter(item => String(item.dueAt || date) <= date).length + noteReviews;
-      const key = "daily-" + date;
-      if (!sent[key] && (dueTasks || dueExams || dueReviews)) { new Notification("Seu lembrete de estudos", { body: dueTasks + " tarefa(s) para hoje, " + dueExams + " prova(s) nos próximos dias e " + dueReviews + " revisão(ões) pendente(s)." }); sent[key] = true; }
+    const date = today();
+    const settings = reminderSettings();
+    const sent = read("comfortNotificationSent", {});
+    if (settings.browserEnabled) {
+      const now = new Date();
+      const minute = now.getHours() * 60 + now.getMinutes();
+      list("comfortClassSchedule").filter(item => Number(item.day) === now.getDay() && Math.abs(toMinutes(item.start) - minute) <= 10).forEach(item => {
+        const key = "class:" + item.id + ":" + date;
+        if (sent[key]) return;
+        const notices = list("comfortNotices");
+        const id = Date.now() + Math.floor(Math.random() * 1000);
+        const title = "Aula em breve";
+        const message = String(item.subject || "Aula") + " começa às " + item.start + ".";
+        notices.unshift({ id: id, title: title, message: message, date: new Date().toISOString(), readAt: "", reminderKey: key, notificationType: "class" });
+        write("comfortNotices", notices);
+        if ("Notification" in window && Notification.permission === "granted") {
+          const notification = new Notification(title, { body: message, tag: "comfortstudy-" + key });
+          notification.onclick = function () { const current = list("comfortNotices"); const notice = current.find(entry => String(entry.id) === String(id)); if (notice) notice.readAt = new Date().toISOString(); write("comfortNotices", current); window.focus(); window.openPage?.("avisos"); window.dispatchEvent(new Event("comfort-notices-updated")); notification.close(); };
+        }
+        sent[key] = true;
+      });
     }
+    list("comfortTasks").filter(item => item && item.id != null && !item.completed && item.date).forEach(item => {
+      const remaining = daysBetween(date, item.date);
+      if (remaining === null) return;
+      if (remaining < 0) {
+        createReminderNotice("tasks", Object.assign({}, item, { reminderOverdue: true, reminderKeyDate: item.date }), item.subject, date, 0, settings, sent);
+        return;
+      }
+      createReminderNotice("tasks", item, item.subject, item.date, remaining, settings, sent);
+    });
+    list("comfortExams").filter(item => item && item.id != null && !item.completed && item.date).forEach(item => {
+      const remaining = daysBetween(date, item.date);
+      if (remaining === null || remaining < 0) return;
+      createReminderNotice("exams", item, item.subject, item.date, remaining, settings, sent);
+    });
+    const reviews = [];
+    list("comfortFlashcards").forEach(item => reviews.push({ id: "card-" + item.id, title: item.front, subject: item.subject, date: item.dueAt || date }));
+    list("comfortStudyDiary").filter(item => item.review).forEach(item => reviews.push({ id: "diary-" + item.id, title: item.review, subject: item.subject, date: item.nextReviewAt || date }));
+    const noteContents = read("comfortSubjectContents", {});
+    Object.keys(noteContents || {}).forEach(subject => {
+      (Array.isArray(noteContents[subject]) ? noteContents[subject] : []).filter(item => item.important && item.nextReviewAt).forEach(item => reviews.push({ id: "note-" + subject + "-" + item.id, title: item.title, subject: subject, date: item.nextReviewAt }));
+    });
+    reviews.forEach(item => {
+      const remaining = daysBetween(date, item.date);
+      if (remaining === null || (remaining < 0 && !settings.reviews.includes(0))) return;
+      createReminderNotice("reviews", item, item.subject, remaining < 0 ? date : item.date, remaining < 0 ? 0 : remaining, settings, sent);
+    });
+    const cutoff = shiftDate(date, -45);
+    Object.keys(sent).forEach(key => {
+      const sentDate = key.split(":")[2] || "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(sentDate) && sentDate < cutoff) delete sent[key];
+    });
     write("comfortNotificationSent", sent);
+    window.dispatchEvent(new Event("comfort-notices-updated"));
+  }
+
+  function searchNormalize(value) {
+    return String(value == null ? "" : value).toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  }
+
+  let globalSearchItems = [];
+  function collectGlobalSearchResults(query) {
+    const needle = searchNormalize(query);
+    const results = [];
+    const add = (type, title, detail, haystack, data) => {
+      if (!needle || !searchNormalize(haystack).includes(needle)) return;
+      results.push({ type: type, title: String(title || "Item"), detail: String(detail || ""), data: data || {} });
+    };
+    list("comfortTasks").forEach(item => add("task", item.name, (item.subject || "Sem matéria") + (item.date ? " · " + niceDate(item.date) : ""), [item.name, item.subject, item.description, ...(Array.isArray(item.steps) ? item.steps.map(step => step.text) : [])].join(" "), { id: item.id, query: item.name }));
+    list("comfortExams").forEach(item => add("exam", item.name, (item.subject || "Sem matéria") + (item.date ? " · " + niceDate(item.date) : ""), [item.name, item.subject].join(" "), { id: item.id, query: item.name }));
+    const contents = read("comfortSubjectContents", {});
+    const subjects = new Set(list("comfortSubjects").map(item => String(item.name || "").trim()).filter(Boolean));
+    Array.from(document.querySelectorAll("#timerStudySubject option, #diarySubject option, #subjectSearch option")).forEach(option => { if (option.value && option.value !== "__none") subjects.add(option.value); });
+    Object.keys(contents || {}).forEach(name => subjects.add(name));
+    subjects.forEach(name => add("subject", name, "Matéria", name, { subject: name }));
+    Object.keys(contents || {}).forEach(subject => {
+      (Array.isArray(contents[subject]) ? contents[subject] : []).forEach(item => {
+        const files = Array.isArray(item.files) ? item.files.map(file => file.name).join(" ") : "";
+        add("note", item.title || item.topic || "Anotação", [subject, item.topic, item.important ? "Importante" : ""].filter(Boolean).join(" · "), [subject, item.topic, item.title, item.text, files].join(" "), { subject: subject, id: item.id, query: query });
+      });
+    });
+    return results.slice(0, 14);
+  }
+
+  function renderGlobalSearch(query) {
+    const host = document.getElementById("globalSearchResults");
+    const input = document.getElementById("globalSearchInput");
+    if (!host || !input) return;
+    const clean = String(query || "").trim();
+    if (clean.length < 2) { globalSearchItems = []; host.hidden = true; input.setAttribute("aria-expanded", "false"); return; }
+    globalSearchItems = collectGlobalSearchResults(clean);
+    host.innerHTML = globalSearchItems.length
+      ? globalSearchItems.map((item, index) => '<button type="button" role="option" class="global-search-result" data-search-result="' + index + '"><strong>' + esc(item.title) + '</strong><span>' + esc(item.type === "task" ? "Tarefa" : item.type === "exam" ? "Prova" : item.type === "subject" ? "Matéria" : "Anotação") + (item.detail ? " · " + esc(item.detail) : "") + '</span></button>').join("")
+      : '<div class="global-search-empty">Nenhum resultado para “' + esc(clean) + '”.</div>';
+    host.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  function openGlobalSearchResult(result) {
+    if (!result) return;
+    const input = document.getElementById("globalSearchInput");
+    const host = document.getElementById("globalSearchResults");
+    if (host) host.hidden = true;
+    if (input) input.setAttribute("aria-expanded", "false");
+    if (result.type === "task") {
+      window.openPage?.("tarefas");
+      document.querySelector('.filter[data-filter="all"]')?.click();
+      const search = document.getElementById("taskSearch");
+      if (search) { search.value = result.data.query || result.title; search.dispatchEvent(new Event("input", { bubbles: true })); }
+      window.setTimeout(() => { const target = document.querySelector('#fullTaskList [data-task-id="' + String(result.data.id).replace(/[^\d]/g, "") + '"]'); target?.scrollIntoView({ behavior: "smooth", block: "center" }); target?.classList.add("global-search-highlight"); window.setTimeout(() => target?.classList.remove("global-search-highlight"), 1800); }, 80);
+    } else if (result.type === "exam") {
+      window.openPage?.("provas");
+      window.setTimeout(() => { const target = document.querySelector('#examList [data-exam-id="' + String(result.data.id).replace(/[^\d]/g, "") + '"]'); target?.scrollIntoView({ behavior: "smooth", block: "center" }); target?.classList.add("global-search-highlight"); window.setTimeout(() => target?.classList.remove("global-search-highlight"), 1800); }, 80);
+    } else {
+      window.openPage?.("materias");
+      if (typeof window.showSubjectModal === "function") window.showSubjectModal(result.data.subject || result.title);
+      if (result.type === "note") window.setTimeout(() => { const search = document.getElementById("subjectContentSearch"); if (search && result.data.query) { search.value = result.data.query; search.dispatchEvent(new Event("input", { bubbles: true })); } }, 50);
+    }
+  }
+
+  function quickStudyCandidates() {
+    const date = today();
+    const candidates = [];
+    list("comfortTasks").filter(item => item && !item.completed && item.date).forEach(item => {
+      const days = daysBetween(date, item.date);
+      candidates.push({ title: "Concluir tarefa: " + item.name, subject: item.subject, detail: days < 0 ? "Prazo passou" : days === 0 ? "Prazo hoje" : "Prazo em " + days + " dia(s)", minutes: 20, score: days <= 1 ? 1 : 4 });
+    });
+    list("comfortExams").filter(item => item && !item.completed && item.date).forEach(item => {
+      const days = daysBetween(date, item.date);
+      if (days < 0 || days > 45) return;
+      candidates.push({ title: "Estudar para a prova: " + item.name, subject: item.subject, detail: days === 0 ? "Prova hoje" : "Prova em " + days + " dia(s)", minutes: 25, score: days <= 3 ? 0 : days <= 10 ? 2 : 5 });
+    });
+    list("comfortFlashcards").filter(item => String(item.dueAt || date) <= date).slice(0, 8).forEach(item => candidates.push({ title: "Revisar flashcard: " + item.front, subject: item.subject, detail: "Revisão pendente", minutes: 8, score: 2 }));
+    list("comfortStudyDiary").filter(item => item.review && item.nextReviewAt && item.nextReviewAt <= date).slice(0, 4).forEach(item => candidates.push({ title: "Rever seu diário de estudos", subject: item.subject, detail: item.review, minutes: 12, score: 2 }));
+    const contents = read("comfortSubjectContents", {});
+    Object.keys(contents || {}).forEach(subject => (Array.isArray(contents[subject]) ? contents[subject] : []).filter(item => item.important && item.nextReviewAt && item.nextReviewAt <= date).slice(0, 3).forEach(item => candidates.push({ title: "Revisar anotação: " + item.title, subject: subject, detail: item.topic || "Conteúdo importante", minutes: 12, score: 2 })));
+    const latest = list("comfortQuizResults").slice().sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0];
+    const weakSubjects = latest && latest.bySubject ? Object.entries(latest.bySubject).filter(([, value]) => Number(value.total) && Number(value.correct) / Number(value.total) < .7).map(([name]) => name) : [];
+    weakSubjects.forEach(subject => candidates.push({ title: "Praticar o assunto que precisa de reforço", subject: subject, detail: "Seu último simulado indicou que vale revisar esta matéria", minutes: 20, score: 3 }));
+    const seen = new Set();
+    return candidates.sort((a, b) => a.score - b.score).filter(item => { const key = item.title + "|" + item.subject; if (seen.has(key)) return false; seen.add(key); return true; });
+  }
+
+  function renderQuickStudyPlan(event) {
+    if (event) event.preventDefault();
+    const host = document.getElementById("quickStudySuggestions");
+    const minutes = Math.max(10, Number(document.getElementById("quickStudyMinutes")?.value) || 45);
+    if (!host) return;
+    const candidates = quickStudyCandidates();
+    if (!candidates.length) {
+      const subject = document.getElementById("timerStudySubject")?.selectedOptions?.[0]?.textContent || "uma matéria";
+      host.innerHTML = '<div class="quick-study-empty">Separe ' + minutes + ' minutos para estudar <strong>' + esc(subject) + '</strong>: releia suas anotações e escreva um resumo com o que lembrar sem consultar o material.</div>';
+      return;
+    }
+    let remaining = minutes;
+    let elapsed = 0;
+    const steps = [];
+    for (const item of candidates) {
+      if (remaining <= 0) break;
+      const block = Math.min(item.minutes, remaining);
+      steps.push({ item: item, minutes: block, start: elapsed, end: elapsed + block });
+      elapsed += block;
+      remaining -= block;
+    }
+    const fallbackSubject = steps.length ? (steps[steps.length - 1].item.subject || "uma matéria") : (document.getElementById("timerStudySubject")?.selectedOptions?.[0]?.textContent || "uma matéria");
+    while (remaining > 0) {
+      const block = Math.min(25, remaining);
+      steps.push({ item: { title: "Revisar anotações e praticar exercícios", subject: fallbackSubject, detail: "Continue no seu ritmo; faça uma pausa curta ao terminar este bloco" }, minutes: block, start: elapsed, end: elapsed + block });
+      elapsed += block;
+      remaining -= block;
+    }
+    host.innerHTML = steps.map(step => '<div class="quick-study-step"><span class="quick-study-time">' + step.start + '–' + step.end + ' min</span><div><strong>' + esc(step.item.title) + (step.item.subject ? ' · ' + esc(step.item.subject) : '') + '</strong><span>' + esc(step.item.detail || "Concentre-se nesta etapa") + (step.minutes < step.item.minutes ? " · continue depois se precisar" : "") + '</span></div></div>').join("");
   }
 
   function renderAll() {
+    initializeReminderSettings();
     fillSubjectSelect("classSubject");
     fillSubjectSelect("flashcardSubject");
     fillSubjectSelect("quizSubject");
@@ -648,7 +958,11 @@
   function handleSubmit(event) {
     const form = event.target;
     if (!form || !form.id) return;
-    if (form.id === "weeklyGoalForm") {
+    if (form.id === "quickStudyForm") {
+      renderQuickStudyPlan(event);
+    } else if (form.id === "reminderSettingsForm") {
+      saveReminderSettings(event);
+    } else if (form.id === "weeklyGoalForm") {
       event.preventDefault();
       const hours = Math.max(0.5, Math.min(100, Number(document.getElementById("weeklyGoalHours").value) || 5));
       write("comfortWeeklyGoal", hours);
@@ -747,7 +1061,7 @@
     else if (id === "quizNextQuestion") nextQuizQuestion();
     else if (id === "closeQuizResult") { const panel = document.getElementById("quizSessionPanel"); if (panel) panel.hidden = true; }
     else if (id === "exportBackup") exportBackup();
-    else if (id === "removeStudyPdf") { const file = activePdf(); if (file && window.confirm("Remover este PDF e suas marcações deste navegador?")) { write("comfortStudyReaderFiles", pdfFiles().filter(item => Number(item.id) !== Number(file.id))); const all = annotations(); delete all[String(file.id)]; write("comfortPdfAnnotations", all); renderPdf(); } }
+    else if (id === "removeStudyPdf") { const file = activePdf(); if (file && window.confirm("Remover este PDF e suas marcações? A cópia sincronizada na nuvem também será removida.")) { window.comfortDeleteAttachment?.(file); write("comfortStudyReaderFiles", pdfFiles().filter(item => Number(item.id) !== Number(file.id))); const all = annotations(); delete all[String(file.id)]; write("comfortPdfAnnotations", all); renderPdf(); } }
     else if (id === "savePdfBookmark") { const file = activePdf(); if (file) { const page = Math.max(1, Number(document.getElementById("pdfPageNumber").value) || 1); const all = annotations(); const data = all[String(file.id)] || { bookmarks: [], notes: [] }; if (!data.bookmarks.includes(page)) data.bookmarks.push(page); all[String(file.id)] = data; write("comfortPdfAnnotations", all); renderPdf(); } }
     else if (id === "savePdfNote") savePdfNote();
     else if (id === "enableStudyNotifications") startNotifications();
@@ -761,13 +1075,33 @@
     document.getElementById("page-perfil")?.addEventListener("submit", handleSubmit);
     const importInput = document.getElementById("importBackup");
     if (importInput) importInput.addEventListener("change", function () { if (importInput.files && importInput.files[0]) importBackup(importInput.files[0]); importInput.value = ""; });
-    window.addEventListener("comfort-data-updated", renderAll);
+    window.addEventListener("comfort-data-updated", function () { renderAll(); checkStudyNotifications(); });
+    const searchInput = document.getElementById("globalSearchInput");
+    const searchResults = document.getElementById("globalSearchResults");
+    searchInput?.addEventListener("input", () => renderGlobalSearch(searchInput.value));
+    searchInput?.addEventListener("keydown", event => {
+      if (event.key === "Escape") { if (searchResults) searchResults.hidden = true; searchInput.setAttribute("aria-expanded", "false"); }
+      if (event.key === "Enter" && globalSearchItems.length) { event.preventDefault(); openGlobalSearchResult(globalSearchItems[0]); }
+      if (event.key === "ArrowDown" && searchResults && !searchResults.hidden) { event.preventDefault(); searchResults.querySelector("button")?.focus(); }
+    });
+    searchResults?.addEventListener("click", event => {
+      const button = event.target.closest("[data-search-result]");
+      if (!button) return;
+      openGlobalSearchResult(globalSearchItems[Number(button.dataset.searchResult)]);
+    });
+    document.addEventListener("click", event => {
+      if (!event.target.closest("#globalSearchBox") && searchResults) {
+        searchResults.hidden = true;
+        searchInput?.setAttribute("aria-expanded", "false");
+      }
+    });
     page.addEventListener("change", function (event) {
       if (!event.target) return;
       if (event.target.id === "studyPdfSelect") renderPdf();
       if (event.target.id === "studyPdfUpload") { if (event.target.files && event.target.files[0]) addPdf(event.target.files[0]); event.target.value = ""; }
     });
     renderAll();
-    if (read("comfortStudyNotifications", false)) { checkStudyNotifications(); if (!notificationTimer) notificationTimer = window.setInterval(checkStudyNotifications, 60000); }
+    checkStudyNotifications();
+    if (!notificationTimer) notificationTimer = window.setInterval(checkStudyNotifications, 60000);
   });
 })();
