@@ -5,7 +5,7 @@ Esta versão mantém o GitHub Pages como hospedagem estática e usa Firebase Aut
 ## 1. Criar projeto Firebase
 1. Acesse https://console.firebase.google.com/ e crie um projeto.
 2. Adicione um aplicativo Web (`</>`), copie a configuração do SDK.
-3. Abra `firebase-config.js` e substitua todos os valores `COLOQUE_...` pelos valores reais fornecidos pelo Firebase.
+3. Abra `firebase-config-v2.js` e substitua todos os valores `COLOQUE_...` pelos valores reais fornecidos pelo Firebase.
 4. Não publique senhas, chaves privadas de service account ou arquivos de credenciais administrativas. A configuração web `apiKey` é pública; a proteção dos dados depende das regras e dos provedores habilitados.
 
 ## 2. Ativar autenticação
@@ -24,7 +24,7 @@ O login Google usa o provedor Firebase. Não use o antigo fluxo de apenas decodi
 4. Nunca publique regras abertas como `allow read, write: if true`.
 
 ## 4. Publicar no GitHub Pages
-Inclua todos os arquivos da pasta do projeto, inclusive `firebase-config.js`, `firebase-init.js`, `auth.js`, `cloud-sync.js`, `firestore.rules` e os ícones. Em Settings → Pages, selecione a branch e a pasta correta. Acesse sempre por HTTPS.
+Inclua todos os arquivos da pasta do projeto, inclusive firebase-config-v2.js, firebase-init.js, auth.js, cloud-sync.js, extras.js, extras.css, service-worker.js, firestore.rules e os ícones. Em Settings → Pages, selecione a branch e a pasta correta. Acesse sempre por HTTPS.
 
 ## 5. Dados locais existentes
 Os dados do protótipo ficam no navegador. Na primeira entrada no Firebase, `cloud-sync.js` tenta importar os dados locais apenas quando o e-mail da antiga conta local corresponde ao e-mail autenticado. Mesmo assim, faça backup antes de atualizar. Contas locais antigas precisam ser recriadas no Firebase; senhas antigas não são migradas.

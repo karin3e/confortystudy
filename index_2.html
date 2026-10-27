@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <link rel="stylesheet" href="style_dashboard.css">
+    <link rel="stylesheet" href="extras.css">
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1224">
@@ -72,6 +73,11 @@
                 <a href="#" data-page="desempenho" class="mobile-hidden-link">
                     <i class="ph ph-chart-line-up"></i>
                     <span>Desempenho</span>
+                </a>
+
+                <a href="#" data-page="planejamento" class="mobile-hidden-link">
+                    <i class="ph ph-notebook"></i>
+                    <span>Meu Plano</span>
                 </a>
 
                 <button type="button" class="mobile-more-button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu">
@@ -848,6 +854,124 @@
 
        
 
+        <section class="page-section" id="page-planejamento">
+            <div class="page-header">
+                <div>
+                    <p class="welcome">ROTINA E REVISÃO</p>
+                    <h2>Meu Plano de Estudos</h2>
+                    <p>Organize sua semana, prepare-se para provas e acompanhe suas notas.</p>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <h3>Meta semanal de estudo</h3>
+                    <p class="feature-help">O progresso começa a contar o tempo do cronômetro a partir desta versão.</p>
+                    <form id="weeklyGoalForm" class="feature-form">
+                        <label for="weeklyGoalHours">Meta em horas por semana</label>
+                        <div class="feature-inline">
+                            <input id="weeklyGoalHours" type="number" min="0.5" max="100" step="0.5" required>
+                            <button class="btn-primary" type="submit">Salvar meta</button>
+                        </div>
+                    </form>
+                    <div class="goal-track"><span id="weeklyGoalBar"></span></div>
+                    <p id="weeklyGoalText" class="feature-help"></p>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Horário das aulas</h3>
+                    <p class="feature-help">Monte sua grade semanal de aulas.</p>
+                    <form id="classScheduleForm" class="feature-form">
+                        <label for="classDay">Dia</label>
+                        <select id="classDay" name="day" required>
+                            <option value="1">Segunda-feira</option><option value="2">Terça-feira</option>
+                            <option value="3">Quarta-feira</option><option value="4">Quinta-feira</option>
+                            <option value="5">Sexta-feira</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                        </select>
+                        <label for="classSubject">Matéria</label>
+                        <select id="classSubject" name="subject" required></select>
+                        <div class="feature-inline">
+                            <div><label for="classStart">Início</label><input id="classStart" name="start" type="time" required></div>
+                            <div><label for="classEnd">Término</label><input id="classEnd" name="end" type="time" required></div>
+                        </div>
+                        <label for="classLabel">Sala ou observação (opcional)</label>
+                        <input id="classLabel" name="label" maxlength="80" placeholder="Ex.: sala 12">
+                        <button class="btn-primary" type="submit">Adicionar aula</button>
+                    </form>
+                    <div id="classScheduleList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Plano para uma prova</h3>
+                    <p class="feature-help">Cria sessões de estudo nos dias anteriores à prova.</p>
+                    <form id="studyPlanForm" class="feature-form">
+                        <label for="studyPlanExam">Prova</label>
+                        <select id="studyPlanExam" required></select>
+                        <label for="studyPlanDays">Quantos dias antes começar?</label>
+                        <input id="studyPlanDays" type="number" min="1" max="30" value="7" required>
+                        <button class="btn-primary" type="submit">Montar plano</button>
+                    </form>
+                    <div id="studyPlanList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-card-heading">
+                        <div><h3>Flashcards</h3><p class="feature-help">Revise perguntas e respostas em intervalos.</p></div>
+                        <span id="flashcardDueCount" class="feature-badge">0 para revisar</span>
+                    </div>
+                    <form id="flashcardForm" class="feature-form">
+                        <label for="flashcardSubject">Matéria</label>
+                        <select id="flashcardSubject" name="subject" required></select>
+                        <label for="flashcardFront">Pergunta</label>
+                        <textarea id="flashcardFront" name="front" rows="2" maxlength="500" required></textarea>
+                        <label for="flashcardBack">Resposta</label>
+                        <textarea id="flashcardBack" name="back" rows="3" maxlength="1000" required></textarea>
+                        <button class="btn-primary" type="submit">Criar flashcard</button>
+                    </form>
+                    <button type="button" class="btn-secondary" id="startFlashcardReview">Revisar pendentes</button>
+                    <div id="flashcardReview" class="review-panel" hidden>
+                        <strong id="flashcardQuestion"></strong>
+                        <p id="flashcardAnswer" hidden></p>
+                        <button type="button" class="btn-secondary" id="saveFlashcardAnswer">Mostrar resposta</button>
+                        <div id="flashcardGradeButtons" class="feature-inline" hidden>
+                            <button type="button" class="btn-secondary" id="flashcardForgot">Errei</button>
+                            <button type="button" class="btn-primary" id="flashcardRemembered">Acertei</button>
+                        </div>
+                    </div>
+                    <div id="flashcardList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Notas por matéria</h3>
+                    <p class="feature-help">Registre avaliações e acompanhe a média percentual.</p>
+                    <form id="gradeForm" class="feature-form">
+                        <label for="gradeSubject">Matéria</label>
+                        <select id="gradeSubject" name="subject" required></select>
+                        <label for="gradeTitle">Avaliação</label>
+                        <input id="gradeTitle" name="title" maxlength="100" placeholder="Ex.: Prova do bimestre" required>
+                        <div class="feature-inline">
+                            <div><label for="gradeScore">Sua nota</label><input id="gradeScore" name="score" type="number" min="0" step="0.01" required></div>
+                            <div><label for="gradeMaximum">Nota máxima</label><input id="gradeMaximum" name="maximum" type="number" min="0.01" step="0.01" value="10" required></div>
+                        </div>
+                        <label for="gradeDate">Data</label>
+                        <input id="gradeDate" name="date" type="date" required>
+                        <button class="btn-primary" type="submit">Salvar nota</button>
+                    </form>
+                    <h4>Médias</h4><div id="gradeAverages" class="feature-list"></div>
+                    <h4>Avaliações registradas</h4><div id="gradeList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <h3>Backup dos seus dados</h3>
+                    <p class="feature-help">Baixe uma cópia para guardar com segurança ou restaure um backup anterior. O arquivo pode incluir suas anotações e anexos; não o compartilhe.</p>
+                    <div class="feature-inline">
+                        <button type="button" class="btn-primary" id="exportBackup">Baixar backup</button>
+                        <label class="backup-file-label" for="importBackup">Restaurar backup</label>
+                        <input id="importBackup" type="file" accept="application/json,.json">
+                    </div>
+                </article>
+            </div>
+        </section>
         <section
             class="page-section"
             id="page-premium">
@@ -1023,6 +1147,7 @@
         <a href="#" data-page="calendario"><i class="ph ph-calendar-blank"></i><span>Calendario</span></a>
         <a href="#" data-page="cronometro"><i class="ph ph-timer"></i><span>Cronometro</span></a>
         <a href="#" data-page="avisos"><i class="ph ph-bell"></i><span>Avisos</span></a>
+        <a href="#" data-page="planejamento"><i class="ph ph-notebook"></i><span>Meu Plano</span></a>
         <a href="#" data-page="desempenho"><i class="ph ph-chart-line-up"></i><span>Desempenho</span></a>
         <a href="#" data-page="premium"><i class="ph ph-crown"></i><span>Plano Premium</span></a>
         <a href="#" data-page="perfil"><i class="ph ph-user-circle"></i><span>Meu Perfil</span></a>
@@ -1035,6 +1160,7 @@
     <script src="firebase-init.js"></script>
     <script src="cloud-sync.js"></script>
     <script src="script.js"></script>
+    <script src="extras.js"></script>
 
 </body>
 

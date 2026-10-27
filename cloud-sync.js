@@ -1,78 +1,153 @@
-/* Sincronização por conta: cada usuário só acessa sua própria coleção Firestore. */
+/* Sincronização por conta. Cada usuário acessa os próprios dados. */
 (function () {
-  const KEYS = ['comfortTasks', 'comfortExams', 'comfortNotices', 'comfortStudySeconds', 'comfortSubjectContents', 'comfortSubjects', 'comfortProfile'];
+  const KEYS = [
+    "comfortTasks", "comfortExams", "comfortNotices", "comfortStudySeconds",
+    "comfortStudyLog", "comfortSubjectContents", "comfortSubjects", "comfortProfile",
+    "comfortWeeklyGoal", "comfortClassSchedule", "comfortStudyPlans", "comfortFlashcards", "comfortGrades"
+  ];
   let activeUid = null;
   let hydrating = false;
-  let timers = new Map();
+  const timers = new Map();
   let resolveReady;
   window.comfortCloudReady = new Promise(resolve => { resolveReady = resolve; });
   const originalSet = localStorage.setItem.bind(localStorage);
   const originalRemove = localStorage.removeItem.bind(localStorage);
-  const safeParse = (value) => { try { return JSON.parse(value); } catch { return value; } };
+  const safeParse = value => { try { return JSON.parse(value); } catch (_) { return value; } };
+  function cloudSafeValue(key, value) {
+    if (key !== "comfortSubjectContents" || !value || typeof value !== "object" || Array.isArray(value)) return value;
+    const clean = {};
+    Object.keys(value).forEach(subject => {
+      clean[subject] = Array.isArray(value[subject])
+        ? value[subject].map(item => Object.assign({}, item, { files: [] }))
+        : value[subject];
+    });
+    return clean;
+  }
+  function mergeLocalSubjectFiles(remoteValue, localValue) {
+    if (!remoteValue || typeof remoteValue !== "object" || Array.isArray(remoteValue)) return remoteValue;
+    const merged = Object.assign({}, remoteValue);
+    Object.keys(merged).forEach(subject => {
+      const remoteList = merged[subject];
+      const localList = localValue && Array.isArray(localValue[subject]) ? localValue[subject] : [];
+      if (!Array.isArray(remoteList)) return;
+      merged[subject] = remoteList.map(item => {
+        const local = localList.find(candidate => Number(candidate.id) === Number(item.id));
+        return local && Array.isArray(local.files) && local.files.length
+          ? Object.assign({}, item, { files: local.files })
+          : item;
+      });
+    });
+    return merged;
+  }
   const dbReady = () => window.comfortFirebaseConfigured && window.comfortDb && window.comfortAuth;
 
-  async function writeKey(key, raw) {
-    if (!activeUid || hydrating || !KEYS.includes(key) || !dbReady()) return;
-    try {
-      const value = raw === null ? null : safeParse(raw);
-      await comfortDb.collection('users').doc(activeUid).collection('data').doc(key).set({ value, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    } catch (error) { console.error('ComfortStudy: falha ao sincronizar', key, error); }
+  function clearPendingWrites() {
+    timers.forEach(timer => clearTimeout(timer));
+    timers.clear();
   }
+
+  async function writeKey(key, raw, uid) {
+    if (!uid || activeUid !== uid || hydrating || !KEYS.includes(key) || !dbReady()) return;
+    try {
+      const value = raw === null ? null : cloudSafeValue(key, safeParse(raw));
+      await comfortDb.collection("users").doc(uid).collection("data").doc(key).set({
+        value: value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (error) {
+      console.error("ComfortStudy: falha ao sincronizar", key, error);
+    }
+  }
+
   localStorage.setItem = function (key, value) {
     originalSet(key, value);
-    if (KEYS.includes(key) && !hydrating && activeUid) {
-      clearTimeout(timers.get(key));
-      timers.set(key, setTimeout(() => writeKey(key, String(value)), 350));
-    }
+    if (!KEYS.includes(key) || hydrating || !activeUid) return;
+    const uid = activeUid;
+    clearTimeout(timers.get(key));
+    timers.set(key, setTimeout(() => {
+      timers.delete(key);
+      writeKey(key, String(value), uid);
+    }, 350));
   };
+
   localStorage.removeItem = function (key) {
     originalRemove(key);
-    if (KEYS.includes(key) && !hydrating && activeUid && dbReady()) {
-      comfortDb.collection('users').doc(activeUid).collection('data').doc(key).delete().catch(console.error);
-    }
+    if (!KEYS.includes(key) || hydrating || !activeUid || !dbReady()) return;
+    const uid = activeUid;
+    comfortDb.collection("users").doc(uid).collection("data").doc(key).delete().catch(console.error);
+  };
+  window.comfortCloudFlush = async function () {
+    const uid = activeUid;
+    if (!uid || !dbReady()) return;
+    const pending = [];
+    timers.forEach((timer, key) => {
+      clearTimeout(timer);
+      timers.delete(key);
+      pending.push(writeKey(key, localStorage.getItem(key), uid));
+    });
+    await Promise.all(pending);
   };
 
   async function hydrate(user) {
     if (!user || !dbReady()) { resolveReady(false); return; }
+
+    clearPendingWrites();
     activeUid = user.uid;
     hydrating = true;
     try {
-      const root = comfortDb.collection('users').doc(user.uid);
-      const collection = await root.collection('data').get();
-      const remote = new Map(collection.docs.map(doc => [doc.id, doc.data().value]));
-      // Importa apenas chaves ausentes na nuvem. Dados antigos de estudo só são importados
-      // quando o e-mail da conta local anterior corresponde à conta Firebase atual.
+      const root = comfortDb.collection("users").doc(user.uid);
       let oldAccount = null;
-      try { oldAccount = JSON.parse(localStorage.getItem('comfortAuthUser') || 'null'); } catch {}
-      const legacyEmail = localStorage.getItem('comfortLegacyEmail') || (oldAccount && oldAccount.email) || '';
-      const legacyMatches = String(legacyEmail).trim().toLowerCase() === String(user.email || '').trim().toLowerCase();
+      try { oldAccount = JSON.parse(localStorage.getItem("comfortAuthUser") || "null"); } catch (_) {}
+      const legacyEmail = localStorage.getItem("comfortLegacyEmail") || (oldAccount && oldAccount.email) || "";
+      const legacyMatches = String(legacyEmail).trim().toLowerCase() === String(user.email || "").trim().toLowerCase();
+      let localSubjectContents = safeParse(localStorage.getItem("comfortSubjectContents") || "{}");
+      if (!legacyMatches) {
+        for (const key of KEYS) originalRemove(key);
+        originalRemove("comfortTaskFiles");
+        localSubjectContents = {};
+      }
+      const collection = await root.collection("data").get();
+      const remote = new Map(collection.docs.map(doc => [doc.id, doc.data().value]));
+
       for (const key of KEYS) {
         if (remote.has(key)) continue;
         const local = localStorage.getItem(key);
         if (local !== null && legacyMatches) {
-          const value = safeParse(local);
-          await root.collection('data').doc(key).set({ value, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          const value = cloudSafeValue(key, safeParse(local));
+          await root.collection("data").doc(key).set({
+            value: value,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
           remote.set(key, value);
         }
       }
+
       for (const key of KEYS) {
-        if (remote.has(key)) {
-          const value = remote.get(key);
-          originalSet(key, typeof value === 'string' && key === 'comfortStudySeconds' ? value : JSON.stringify(value));
-        }
+        if (!remote.has(key)) continue;
+        let value = remote.get(key);
+        if (key === "comfortSubjectContents") value = mergeLocalSubjectFiles(value, localSubjectContents);
+        originalSet(key, typeof value === "string" && key === "comfortStudySeconds" ? value : JSON.stringify(value));
       }
-      const account = { uid: user.uid, name: user.displayName || (remote.get('comfortProfile') || {}).name || 'Estudante', email: user.email || '' };
-      originalSet('comfortAuthUser', JSON.stringify(account));
-      localStorage.removeItem('comfortLegacyEmail');
-      originalSet('comfortSession', '1');
-      if (!remote.has('comfortProfile')) originalSet('comfortProfile', JSON.stringify({ name: account.name, email: account.email, school: '', course: '', bio: '' }));
+
+      const remoteProfile = remote.get("comfortProfile") || {};
+      const account = {
+        uid: user.uid,
+        name: user.displayName || remoteProfile.name || "Estudante",
+        email: user.email || ""
+      };
+      originalSet("comfortAuthUser", JSON.stringify(account));
+      originalRemove("comfortLegacyEmail");
+      originalSet("comfortSession", "1");
+      if (!remote.has("comfortProfile")) {
+        originalSet("comfortProfile", JSON.stringify({ name: account.name, email: account.email, school: "", course: "", bio: "" }));
+      }
     } catch (error) {
-      console.error('ComfortStudy: erro ao carregar dados da nuvem', error);
+      console.error("ComfortStudy: erro ao carregar dados da nuvem", error);
       window.comfortCloudError = error;
     } finally {
       hydrating = false;
       resolveReady(true);
-      window.dispatchEvent(new CustomEvent('comfort-cloud-ready'));
+      window.dispatchEvent(new CustomEvent("comfort-cloud-ready"));
     }
   }
 
@@ -80,12 +155,15 @@
     window.comfortCloudReady = Promise.resolve(false);
     return;
   }
+
   comfortAuth.onAuthStateChanged(async user => {
     if (!user) {
+      clearPendingWrites();
       activeUid = null;
       resolveReady(false);
       return;
     }
+    if (activeUid && activeUid !== user.uid) clearPendingWrites();
     await hydrate(user);
   });
 })();

@@ -96,7 +96,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         avisos: "Avisos",
         desempenho: "Meu Desempenho",
         premium: "Premium",
-        perfil: "Meu Perfil"
+        perfil: "Meu Perfil",
+        planejamento: "Meu Plano de Estudos"
     };
 
 
@@ -893,73 +894,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     
     function taskForm() {
-
-        return `
-            <form
-                id="taskForm"
-                class="modal-form">
-
-                <label for="taskName">
-                    Nome da tarefa
-                </label>
-
-                <input
-                    type="text"
-                    id="taskName"
-                    placeholder="Ex: Fazer exercícios de matemática"
-                    required
-                >
-
-                <label for="taskSubject">
-                    Matéria
-                </label>
-
-                <select
-                    id="taskSubject"
-                    required>
-
-                    <option value="">
-                        Selecione a matéria
-                    </option>
-
-                    ${getAllSubjects().map(
-                        subject => `
-                            <option
-                                value="${escapeHTML(subject.name)}">
-
-                                ${escapeHTML(
-                                    subject.name
-                                )}
-
-                            </option>
-                        `
-                    ).join("")}
-
-                </select>
-
-                <label for="taskDate">
-                    Data
-                </label>
-
-                <input
-                    type="date"
-                    id="taskDate"
-                    min="${getTodayString()}"
-                    required
-                >
-
-                <button
-                    type="submit"
-                    class="btn-primary">
-
-                    Adicionar tarefa
-
-                </button>
-
-            </form>
-        `;
+        const options = getAllSubjects().map(subject =>
+            '<option value="' + escapeHTML(subject.name) + '">' + escapeHTML(subject.name) + '</option>'
+        ).join("");
+        return '<form id="taskForm" class="modal-form">' +
+            '<label for="taskName">Nome da tarefa</label>' +
+            '<input type="text" id="taskName" placeholder="Ex: Fazer exercícios de matemática" required>' +
+            '<label for="taskSubject">Matéria</label>' +
+            '<select id="taskSubject" required><option value="">Selecione a matéria</option>' + options + '</select>' +
+            '<label for="taskDate">Data de entrega</label>' +
+            '<input type="date" id="taskDate" min="' + getTodayString() + '" required>' +
+            '<label for="taskDescription">Instruções (opcional)</label>' +
+            '<textarea id="taskDescription" rows="3" maxlength="1200" placeholder="Anote o que precisa fazer"></textarea>' +
+            '<label for="taskSteps">Checklist (uma etapa por linha)</label>' +
+            '<textarea id="taskSteps" rows="3" maxlength="1000" placeholder="Ler o capítulo&#10;Resolver os exercícios"></textarea>' +
+            '<label for="taskRecurrence">Repetição</label>' +
+            '<select id="taskRecurrence"><option value="">Não repetir</option><option value="daily">Todos os dias</option><option value="weekly">Toda semana</option></select>' +
+            '<label for="taskFiles">Anexar PDF ou imagem (até 700 KB no total)</label>' +
+            '<input type="file" id="taskFiles" accept="application/pdf,image/*" multiple>' +
+            '<small>Os arquivos ficam neste navegador e entram no backup; não são sincronizados com a nuvem.</small>' +
+            '<button type="submit" class="btn-primary">Adicionar tarefa</button></form>';
     }
-
 
     function showTaskModal() {
 
@@ -989,205 +944,126 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    function addTask() {
+    async function addTask() {
+        const nameInput = document.getElementById("taskName");
+        const subjectInput = document.getElementById("taskSubject");
+        const dateInput = document.getElementById("taskDate");
+        if (!nameInput || !subjectInput || !dateInput) return;
 
-        const nameInput =
-            document.getElementById(
-                "taskName"
-            );
+        const name = nameInput.value.trim();
+        const subject = subjectInput.value;
+        const date = dateInput.value;
+        const description = (document.getElementById("taskDescription") || {}).value || "";
+        const recurrence = (document.getElementById("taskRecurrence") || {}).value || "";
+        const stepsText = (document.getElementById("taskSteps") || {}).value || "";
+        const fileInput = document.getElementById("taskFiles");
+        const files = Array.from(fileInput && fileInput.files || []);
 
-        const subjectInput =
-            document.getElementById(
-                "taskSubject"
-            );
-
-        const dateInput =
-            document.getElementById(
-                "taskDate"
-            );
-
-
-        if (
-            !nameInput ||
-            !subjectInput ||
-            !dateInput
-        ) {
+        if (!name || !subject || !date) {
+            alert("Preencha o nome, a matéria e a data.");
+            return;
+        }
+        if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 700 * 1024) {
+            alert("Os anexos desta tarefa podem somar até 700 KB. Para arquivos maiores, use o caderno ou um link para o arquivo.");
             return;
         }
 
+        try {
+            const fileData = await Promise.all(files.map(file => new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            })));
+            const task = {
+                id: Date.now(),
+                name: name,
+                subject: subject,
+                date: date,
+                description: description.trim(),
+                steps: stepsText.split(/\r?\n/).map(step => step.trim()).filter(Boolean).slice(0, 10).map(text => ({ text: text, done: false })),
+                recurrence: recurrence,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            const taskFiles = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+            if (fileData.length) taskFiles[String(task.id)] = fileData;
+            localStorage.setItem("comfortTaskFiles", JSON.stringify(taskFiles));
 
-        const name =
-            nameInput.value.trim();
-
-        const subject =
-            subjectInput.value;
-
-        const date =
-            dateInput.value;
-
-
-        if (
-            !name ||
-            !subject ||
-            !date
-        ) {
-
-            alert(
-                "Preencha todos os campos."
-            );
-
-            return;
+            const tasks = getTasks();
+            tasks.push(task);
+            saveTasks(tasks);
+            closeModal();
+            updateEverything();
+            checkDueDateNotifications();
+            alert("Tarefa adicionada com sucesso! ✅");
+        } catch (error) {
+            console.error("ComfortStudy: não foi possível salvar a tarefa", error);
+            alert("Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
         }
-
-
-        const tasks =
-            getTasks();
-
-
-        tasks.push({
-
-            id: Date.now(),
-
-            name,
-
-            subject,
-
-            date,
-
-            completed: false,
-
-            createdAt:
-                new Date().toISOString()
-
-        });
-
-
-        saveTasks(tasks);
-
-        closeModal();
-
-        updateEverything();
-
-        /*
-         * Se a permissão já estiver ativa, a nova tarefa
-         * passa a participar imediatamente das verificações.
-         */
-        checkDueDateNotifications();
-
-
-        alert(
-            "Tarefa adicionada com sucesso! ✅"
-        );
     }
 
+    window.addTask = addTask;
 
-    window.addTask =
-        addTask;
-
-
-    [
-        "newTaskButton",
-        "dashboardAddTask",
-        "newTaskPageButton"
-    ].forEach(id => {
-
-        const button =
-            document.getElementById(id);
-
-        if (button) {
-
-            button.addEventListener(
-                "click",
-                showTaskModal
-            );
-        }
+    ["newTaskButton", "dashboardAddTask", "newTaskPageButton"].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.addEventListener("click", showTaskModal);
     });
-
 
     let currentTaskFilter =
         "all";
 
 
-    function renderTaskItem(
-        task,
-        showDelete = true
-    ) {
-
-        const subject =
-            getSubject(task.subject);
-
-
-        return `
-            <div
-                class="task-item
-                ${task.completed ? "completed" : ""}">
-
-                <div class="task-check">
-
-                    <button
-                        type="button"
-                        class="small-button"
-                        onclick="toggleTask(${Number(task.id)})"
-                        title="${
-                            task.completed
-                                ? "Desmarcar tarefa"
-                                : "Marcar como concluída"
-                        }">
-
-                        ${
-                            task.completed
-                                ? "✓"
-                                : "○"
-                        }
-
-                    </button>
-
-                </div>
-
-
-                <span
-                    class="task-subject ${subject.className}">
-
-                    ${subject.icon}
-                    ${escapeHTML(subject.name)}
-
-                </span>
-
-
-                <span class="task-title">
-
-                    ${escapeHTML(task.name)}
-
-                </span>
-
-
-                <span class="task-date">
-
-                    ${formatDate(task.date)}
-
-                </span>
-
-
-                ${
-                    showDelete
-                        ? `
-                            <button
-                                type="button"
-                                class="small-button"
-                                onclick="deleteTask(${Number(task.id)})"
-                                title="Excluir tarefa">
-
-                                🗑️
-
-                            </button>
-                        `
-                        : ""
-                }
-
-            </div>
-        `;
+    function renderTaskItem(task, showDelete = true) {
+        const subject = getSubject(task.subject);
+        let taskFiles = [];
+        try {
+            const allFiles = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+            const fileKey = task.attachmentSourceId || task.id;
+            taskFiles = Array.isArray(allFiles[String(task.id)]) ? allFiles[String(task.id)] : (Array.isArray(allFiles[String(fileKey)]) ? allFiles[String(fileKey)] : []);
+        } catch (_) {}
+        const steps = Array.isArray(task.steps) ? task.steps : [];
+        const hasDetails = task.description || steps.length || taskFiles.length || task.recurrence;
+        let html = '<div class="task-item ' + (task.completed ? "completed" : "") + '">' +
+            '<div class="task-check"><button type="button" class="small-button" onclick="toggleTask(' + Number(task.id) + ')" title="' + (task.completed ? "Desmarcar tarefa" : "Marcar como concluída") + '">' + (task.completed ? "✓" : "○") + '</button></div>' +
+            '<span class="task-subject ' + subject.className + '">' + subject.icon + " " + escapeHTML(subject.name) + '</span>' +
+            '<span class="task-title">' + escapeHTML(task.name) + '</span>' +
+            '<span class="task-date">' + formatDate(task.date) + '</span>';
+        if (task.recurrence) html += '<span class="task-recurrence">' + (task.recurrence === "daily" ? "Diária" : "Semanal") + '</span>';
+        if (showDelete) html += '<button type="button" class="small-button" onclick="deleteTask(' + Number(task.id) + ')" title="Excluir tarefa">🗑️</button>';
+        if (hasDetails) {
+            html += '<div class="task-extra"><details data-task-id="' + Number(task.id) + '"><summary>Instruções, checklist e anexos</summary>' +
+                (task.description ? '<p>' + escapeHTML(task.description) + '</p>' : "");
+            if (steps.length) {
+                html += '<div class="task-checklist">' + steps.map((step, index) =>
+                    '<label class="' + (step.done ? "task-step-done" : "") + '"><input type="checkbox" ' + (step.done ? "checked" : "") + ' onchange="toggleTaskStep(' + Number(task.id) + ',' + index + ',this.checked)"><span>' + escapeHTML(step.text) + '</span></label>'
+                ).join("") + '</div>';
+            }
+            if (taskFiles.length) {
+                html += '<div class="task-files">' + taskFiles.map(file =>
+                    '<a href="' + escapeHTML(file.dataUrl) + '" download="' + escapeHTML(file.name) + '">📎 ' + escapeHTML(file.name) + '</a>'
+                ).join("") + '</div>';
+            }
+            if (task.recurrence) html += '<p>Esta tarefa se repete ' + (task.recurrence === "daily" ? "diariamente" : "semanalmente") + ' quando for concluída.</p>';
+            html += '</details></div>';
+        }
+        html += '</div>';
+        return html;
     }
 
+    window.toggleTaskStep = function (taskId, stepIndex, checked) {
+        const tasks = getTasks();
+        const task = tasks.find(item => Number(item.id) === Number(taskId));
+        if (!task || !Array.isArray(task.steps) || !task.steps[stepIndex]) return;
+        task.steps[stepIndex].done = Boolean(checked);
+        const openedIds = new Set(Array.from(document.querySelectorAll("details[data-task-id][open]")).map(details => details.dataset.taskId));
+        saveTasks(tasks);
+        renderTasks();
+        updateDashboard();
+        document.querySelectorAll("details[data-task-id]").forEach(details => {
+            if (openedIds.has(details.dataset.taskId)) details.open = true;
+        });
+    };
 
     function renderTasks() {
 
@@ -1339,6 +1215,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
+        if (task.completed && (task.recurrence === "daily" || task.recurrence === "weekly")) {
+            const parts = String(task.date).split("-").map(Number);
+            const nextDate = new Date(parts[0], parts[1] - 1, parts[2], 12);
+            nextDate.setDate(nextDate.getDate() + (task.recurrence === "daily" ? 1 : 7));
+            const nextDateText = nextDate.getFullYear() + "-" + String(nextDate.getMonth() + 1).padStart(2, "0") + "-" + String(nextDate.getDate()).padStart(2, "0");
+            const alreadyGenerated = tasks.some(item => Number(item.recursFrom) === Number(task.id));
+            if (!alreadyGenerated) {
+                const nextId = Date.now() + Math.floor(Math.random() * 1000);
+                tasks.push({
+                    id: nextId,
+                    name: task.name,
+                    subject: task.subject,
+                    date: nextDateText,
+                    description: task.description || "",
+                    steps: (Array.isArray(task.steps) ? task.steps : []).map(step => ({ text: step.text, done: false })),
+                    recurrence: task.recurrence,
+                    recursFrom: task.id,
+                    attachmentSourceId: task.attachmentSourceId || task.id,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+
         saveTasks(tasks);
 
         updateEverything();
@@ -1350,29 +1250,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     function deleteTask(id) {
-
-        if (
-            !confirm(
-                "Deseja realmente excluir esta tarefa?"
-            )
-        ) {
-            return;
-        }
-
-
-        const tasks =
-            getTasks().filter(
-                task =>
-                    Number(task.id) !==
-                    Number(id)
-            );
-
-
+        if (!confirm("Deseja realmente excluir esta tarefa?")) return;
+        const allTasks = getTasks();
+        const removed = allTasks.find(task => Number(task.id) === Number(id));
+        const tasks = allTasks.filter(task => Number(task.id) !== Number(id));
         saveTasks(tasks);
 
+        if (removed) {
+            try {
+                const files = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+                const fileKey = String(removed.attachmentSourceId || removed.id);
+                const stillReferenced = tasks.some(task => String(task.attachmentSourceId || task.id) === fileKey);
+                if (!stillReferenced) delete files[fileKey];
+                delete files[String(removed.id)];
+                localStorage.setItem("comfortTaskFiles", JSON.stringify(files));
+            } catch (_) {}
+        }
         updateEverything();
     }
-
 
     window.deleteTask =
         deleteTask;
@@ -2316,7 +2211,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <label for="subjectContentInput">Anotações do conteúdo</label>
                         <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
                         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
-                        <label for="subjectContentFiles">Anexar PDF ou fotos (máx. 1,5 MB por arquivo)</label>
+                        <label for="subjectContentFiles">Anexar PDF ou fotos (até 700 KB por arquivo e 900 KB no total)</label>
                         <input type="file" id="subjectContentFiles" accept="application/pdf,image/*" multiple>
                         <p style="font-size:12px;color:#718096">Os arquivos ficam guardados junto ao conteúdo neste navegador. Para sincronizar anexos entre dispositivos, configure Firebase Storage.</p>
                         <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
@@ -2810,8 +2705,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     let timerInterval =
         null;
 
-    let timerRunning =
-        false;
+    let timerRunning = false;
+
+    let pendingStudyLogSeconds = 0;
+
+    function flushWeeklyStudyLog() {
+        if (!pendingStudyLogSeconds) return;
+        const log = getStorage("comfortStudyLog", {});
+        const day = getTodayString();
+        log[day] = (Number(log[day]) || 0) + pendingStudyLogSeconds;
+        localStorage.setItem("comfortStudyLog", JSON.stringify(log));
+        pendingStudyLogSeconds = 0;
+        window.dispatchEvent(new Event("comfort-data-updated"));
+    }
+
+    function recordWeeklyStudySecond() {
+        pendingStudyLogSeconds++;
+        if (pendingStudyLogSeconds >= 60) flushWeeklyStudyLog();
+    }
+
+    window.addEventListener("beforeunload", flushWeeklyStudyLog);
 
 
     function updateTimerDisplay() {
@@ -2887,6 +2800,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         getStudySeconds() +
                         1
                     );
+                    recordWeeklyStudySecond();
 
 
                     updateTimerDisplay();
@@ -2917,6 +2831,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         timerRunning =
             false;
+        flushWeeklyStudyLog();
 
 
         if (
@@ -4357,6 +4272,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateTimerDisplay();
 
         renderProfile();
+        window.dispatchEvent(new Event("comfort-data-updated"));
     }
 
 
@@ -4474,6 +4390,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 } catch (error) {
                     console.error("ComfortStudy: erro ao sair", error);
                 } finally {
+                    const signedOutAccount = getSessionUser();
+                    if (signedOutAccount.email) localStorage.setItem("comfortLegacyEmail", String(signedOutAccount.email).trim().toLowerCase());
                     localStorage.removeItem("comfortSession");
                     localStorage.removeItem("comfortAuthUser");
                     location.replace("index.html");
