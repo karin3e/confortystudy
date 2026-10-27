@@ -3,8 +3,10 @@
   const KEYS = [
     "comfortTasks", "comfortExams", "comfortNotices", "comfortStudySeconds",
     "comfortStudyLog", "comfortSubjectContents", "comfortSubjects", "comfortProfile",
-    "comfortWeeklyGoal", "comfortClassSchedule", "comfortStudyPlans", "comfortFlashcards", "comfortGrades"
+    "comfortWeeklyGoal", "comfortClassSchedule", "comfortStudyPlans", "comfortFlashcards", "comfortGrades",
+    "comfortStudyDiary", "comfortAppearance"
   ];
+  const LOCAL_ONLY_KEYS = ["comfortTaskFiles", "comfortPdfAnnotations", "comfortStudyReaderFiles", "comfortStudyNotifications", "comfortNotificationSent"];
   let activeUid = null;
   let hydrating = false;
   const timers = new Map();
@@ -103,7 +105,7 @@
       let localSubjectContents = safeParse(localStorage.getItem("comfortSubjectContents") || "{}");
       if (!legacyMatches) {
         for (const key of KEYS) originalRemove(key);
-        originalRemove("comfortTaskFiles");
+        for (const key of LOCAL_ONLY_KEYS) originalRemove(key);
         localSubjectContents = {};
       }
       const collection = await root.collection("data").get();

@@ -264,9 +264,14 @@
 
             
 
+            <section class="feature-card feature-wide dashboard-today" id="dashboardTodayCard" data-dashboard-card="today">
+                <div class="feature-card-heading"><div><h3><i class="ph ph-sun"></i> Seu Hoje</h3><p class="feature-help">As prioridades do dia e as próximas provas.</p></div><button type="button" class="small-button" data-page="planejamento">Ver meu plano</button></div>
+                <div class="today-columns"><div><h4>Até 3 tarefas importantes</h4><div id="todayPriorityTasks" class="feature-list"></div></div><div><h4>Próximas provas</h4><div id="todayUpcomingExams" class="feature-list"></div></div></div>
+            </section>
+
             <div class="dashboard-grid">
 
-                <section class="tasks-section">
+                <section class="tasks-section" data-dashboard-card="tasks">
 
                     <div class="section-header">
 
@@ -304,21 +309,14 @@
                         Seja Premium
                     </h3>
 
-                    <p>
-                        Acesse relatorios de desempenho
-                        avansados, personalizaçoes e
-                        recursos exclusivos.
-                    </p>
-
-                    <strong>
-                        R$ 5,00/mês
-                    </strong>
+                    <p>Novidades planejadas para deixar seu espaço de estudos ainda mais completo.</p>
+                    <strong>Em breve · recursos atuais grátis</strong>
 
                     <button
                         class="btn-premium"
                         data-page="premium">
 
-                        Conhecer Plano
+                        Ver novidades
 
                     </button>
 
@@ -333,7 +331,7 @@
 
                
 
-                <section class="info-card">
+                <section class="info-card" data-dashboard-card="exams">
 
                     <div class="section-header">
 
@@ -366,7 +364,7 @@
 
                 
 
-                <section class="info-card">
+                <section class="info-card" data-dashboard-card="notices">
 
                     <div class="section-header">
 
@@ -961,6 +959,56 @@
                     <h4>Avaliações registradas</h4><div id="gradeList" class="feature-list"></div>
                 </article>
 
+                <article class="feature-card">
+                    <h3>Quanto preciso tirar?</h3>
+                    <p class="feature-help">Calcule a nota necessária na próxima avaliação para alcançar sua média desejada.</p>
+                    <form id="gradeTargetForm" class="feature-form">
+                        <label for="gradeTargetSubject">Matéria</label><select id="gradeTargetSubject" required></select>
+                        <div class="feature-inline"><div><label for="gradeTargetAverage">Média desejada (%)</label><input id="gradeTargetAverage" type="number" min="0" max="100" step="0.1" value="70" required></div><div><label for="gradeTargetMaximum">Valor da próxima prova</label><input id="gradeTargetMaximum" type="number" min="0.01" step="0.01" value="10" required></div></div>
+                        <button class="btn-primary" type="submit">Calcular</button>
+                    </form>
+                    <p id="gradeTargetResult" class="feature-help" aria-live="polite"></p>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <div class="feature-card-heading"><div><h3>Agenda da semana</h3><p class="feature-help">Aulas, tarefas, provas e sessões do seu plano em um só lugar. Os avisos funcionam enquanto o app estiver aberto.</p></div><button type="button" class="small-button" id="enableStudyNotifications">Ativar avisos</button></div>
+                    <div id="weeklyAgenda" class="weekly-agenda"></div><h4>Sugestões de horários livres</h4><div id="smartStudySuggestions" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Diário de estudos</h3><p class="feature-help">Anote o que estudou e o que precisa revisar depois.</p>
+                    <form id="studyDiaryForm" class="feature-form">
+                        <label for="diarySubject">Matéria</label><select id="diarySubject" name="subject" required></select>
+                        <label for="diaryStudied">O que você estudou?</label><textarea id="diaryStudied" name="studied" rows="3" maxlength="1200" required></textarea>
+                        <label for="diaryReview">O que precisa revisar? (opcional)</label><textarea id="diaryReview" name="review" rows="2" maxlength="800"></textarea>
+                        <label for="diaryDate">Data do estudo</label><input id="diaryDate" name="date" type="date" required><button class="btn-primary" type="submit">Salvar no diário</button>
+                    </form>
+                    <h4>Revisões para hoje</h4><div id="diaryDueList" class="feature-list"></div><h4>Registros recentes</h4><div id="studyDiaryList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Relatório do mês</h3><p class="feature-help" id="monthlyReportMonth"></p><div id="monthlyReport" class="report-metrics"></div><h4>Ritmo de estudos</h4><div id="studyRhythmSummary" class="report-metrics"></div>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <h3>Leitor de PDF</h3><p class="feature-help">Abra um PDF aqui, favorite páginas e escreva suas observações. Os PDFs ficam neste navegador e entram no backup.</p>
+                    <div class="feature-inline pdf-controls"><label class="backup-file-label" for="studyPdfUpload">Adicionar PDF</label><input id="studyPdfUpload" type="file" accept="application/pdf,.pdf"><select id="studyPdfSelect" aria-label="Escolher PDF"><option value="">Escolha um PDF</option></select><button type="button" class="btn-secondary" id="removeStudyPdf">Remover PDF</button></div>
+                    <div id="studyPdfWorkspace" class="pdf-workspace" hidden><div class="pdf-viewer-wrap"><iframe id="studyPdfViewer" title="Leitor de PDF" loading="lazy"></iframe></div><div class="pdf-notes">
+                        <form id="pdfPageForm" class="feature-form"><label for="pdfPageNumber">Página</label><div class="feature-inline"><input id="pdfPageNumber" type="number" min="1" value="1"><button class="btn-secondary" type="submit">Ir para página</button></div><button type="button" class="btn-secondary" id="savePdfBookmark">Favoritar esta página</button><label for="pdfPageNote">Observação desta página</label><textarea id="pdfPageNote" rows="4" maxlength="1000" placeholder="Escreva uma anotação..."></textarea><button type="button" class="btn-primary" id="savePdfNote">Salvar observação</button></form>
+                        <h4>Páginas favoritas</h4><div id="pdfBookmarkList" class="feature-list"></div><h4>Anotações</h4><div id="pdfNoteList" class="feature-list"></div>
+                    </div></div><div id="studyPdfEmpty" class="feature-empty">Adicione um arquivo PDF para começar.</div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Personalizar meu app</h3><p class="feature-help">Ajustes simples para deixar seu espaço com a sua cara.</p>
+                    <form id="appearanceForm" class="feature-form">
+                        <label for="appearanceTheme">Cor do app</label><select id="appearanceTheme"><option value="blue">Azul (atual)</option><option value="violet">Violeta</option><option value="green">Verde</option><option value="rose">Rosa</option></select>
+                        <label for="appearanceAvatar">Avatar</label><select id="appearanceAvatar"><option value="👤">👤 Pessoa</option><option value="😊">😊 Sorriso</option><option value="🐱">🐱 Gato</option><option value="🐼">🐼 Panda</option><option value="🦊">🦊 Raposa</option><option value="⭐">⭐ Estrela</option><option value="🌻">🌻 Girassol</option></select>
+                        <fieldset class="dashboard-options"><legend>Cartões no painel</legend><label><input type="checkbox" name="dashboardCard" value="today"> Seu Hoje</label><label><input type="checkbox" name="dashboardCard" value="tasks"> Minhas tarefas</label><label><input type="checkbox" name="dashboardCard" value="exams"> Próximas provas</label><label><input type="checkbox" name="dashboardCard" value="notices"> Avisos</label></fieldset>
+                        <button class="btn-primary" type="submit">Salvar personalização</button>
+                    </form>
+                </article>
+
                 <article class="feature-card feature-wide">
                     <h3>Backup dos seus dados</h3>
                     <p class="feature-help">Baixe uma cópia para guardar com segurança ou restaure um backup anterior. O arquivo pode incluir suas anotações e anexos; não o compartilhe.</p>
@@ -988,20 +1036,11 @@
                     Estude de forma ainda mais inteligente.
                 </h2>
 
-                <p>
-                    Tenha acesso a ferramentas avansadas
-                    para organizar sua rotina e acompanhar
-                    seu desempenho.
-                </p>
+                <p>O ComfortStudy está em evolução. As ferramentas atuais continuam gratuitas para todos os estudantes.</p>
 
-                <div class="premium-price">
-                    R$ 5,00
-                    <span>/mes</span>
-                </div>
+                <div class="premium-price">Em breve <span>novidades</span></div>
 
-                <button class="btn-premium">
-                    Conhecer Plano Premium
-                </button>
+                <button class="btn-premium" type="button" disabled>Premium em breve</button>
 
             </div>
 
@@ -1013,11 +1052,11 @@
                     <i class="ph ph-chart-line-up"></i>
 
                     <h3>
-                        Relatorios avansados
+                        Relatório mensal
                     </h3>
 
                     <p>
-                        Acompanhe sua evolução.
+                        Veja seu tempo de estudo e tarefas concluídas.
                     </p>
 
                 </div>
@@ -1028,11 +1067,11 @@
                     <i class="ph ph-target"></i>
 
                     <h3>
-                        Metas de estudo
+                        Agenda inteligente
                     </h3>
 
                     <p>
-                        Crie objetivos para sua rotina.
+                        Sugestões baseadas nas suas aulas e prazos.
                     </p>
 
                 </div>
