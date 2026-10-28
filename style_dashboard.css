@@ -2024,7 +2024,7 @@ body {
   .performance-row { grid-template-columns: 75px minmax(0,1fr) 32px !important; }
 }
 
-/* ===== Mobile navigation redesign: iPhone + small screens ===== */
+
 .mobile-more-button,
 .mobile-more-menu,
 .mobile-more-backdrop { display: none; }
@@ -2141,7 +2141,7 @@ body {
 }
 
 
-/* Mobile navigation refinements: consistent on iPhone and Android */
+
 .mobile-profile-shortcut { display: none; }
 @media (max-width: 800px) {
   .sidebar {
@@ -2240,14 +2240,14 @@ body {
 }
 
 
-/* Melhorias do caderno digital e matérias personalizadas */
+
 .subject-add-card { border-style: dashed !important; background: #fbfdff !important; }
 .subject-add-card:hover { border-color: var(--primary) !important; background: #eff6ff !important; }
 #subjectContentForm textarea { width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: #fff; font: inherit; }
 #subjectContentForm input[type="text"], #subjectContentForm input[type="file"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 #subjectContentForm label { display: block; margin-top: 10px; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
 
-/* Formulários do modal rolam dentro da janela em celulares e em telas baixas. */
+
 .modal { z-index: 1200; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; align-items: flex-start; padding: 16px; }
 .modal-content { box-sizing: border-box; width: min(100%, 560px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .modal-content h2 { padding-right: 42px; }
@@ -2267,7 +2267,7 @@ body.modal-open { overflow: hidden; }
 }
 
 
-/* ComfortStudy — Sobre e Central de Suporte (mantém a identidade azul existente) */
+
 .comfort-profile-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .comfort-profile-shortcuts button{display:inline-flex;align-items:center;gap:8px}
 .comfort-about-hero{display:flex;align-items:center;gap:18px;padding:26px;margin:0 0 20px;border-radius:18px;background:linear-gradient(120deg,#e8f2ff,#f7faff);border:1px solid #d5e6fb;color:#172033}
