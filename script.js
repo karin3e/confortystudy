@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const FIXED_SUBJECTS = [
         { name: "Matemática", icon: "ph-calculator", className: "math" },
         { name: "Português", icon: "ph-book-open-text", className: "portuguese" },
-        { name: "História", icon: "ph-scroll", className: "history" },
+        { name: "História", icon: "ph-landmark", className: "history" },
         { name: "Geografia", icon: "ph-globe", className: "geography" },
         { name: "Física", icon: "ph-atom", className: "physics" },
         { name: "Química", icon: "ph-flask", className: "chemistry" },
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const SUBJECT_ICON_BY_CLASS = {
         math: "ph-calculator",
         portuguese: "ph-book-open-text",
-        history: "ph-scroll",
+        history: "ph-landmark",
         geography: "ph-globe",
         physics: "ph-atom",
         chemistry: "ph-flask",
@@ -73,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const SUBJECT_ICON_BY_TOPIC = [
         [/matem|algebra|calculo/, "ph-calculator"],
         [/portugues|literatura|redacao|gramatica/, "ph-book-open-text"],
-        [/historia/, "ph-scroll"],
+        [/historia/, "ph-landmark"],
         [/filosofia/, "ph-brain"],
         [/sociologia/, "ph-users-three"],
         [/geografia|cartografia/, "ph-globe"],
@@ -147,7 +147,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         desempenho: "Meu Desempenho",
         premium: "Premium",
         perfil: "Meu Perfil",
-        planejamento: "Meu Plano de Estudos"
+        planejamento: "Meu Plano de Estudos",
+        suporte: "Central de Suporte",
+        sobre: "Sobre o ComfortStudy"
     };
 
 
@@ -2020,14 +2022,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                         return `
             <div
-                                class="subject-card subject-${escapeHTML(subject.className || "custom")}"
+                                class="subject-card"
                                 data-subject-open="${escapeHTML(subject.name)}"
                                 role="button"
                                 tabindex="0"
                                 style="cursor:pointer;">
 
                                 <div
-                                    class="subject-color ${escapeHTML(subject.className || "custom")}">
+                                    class="subject-color ${[
+                                        "red",
+                                        "blue",
+                                        "yellow",
+                                        "green"
+                                    ][index % 4]}">
                                 </div>
 
 
@@ -2123,29 +2130,21 @@ document.addEventListener("DOMContentLoaded", async () => {
             const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
             if (selectedFiles.some(file => file.size > 10 * 1024 * 1024) || currentBytes + newBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e este conteúdo pode somar até 20 MB."); return; }
             if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
-            const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
-            const originalButtonText = submitButton ? (submitButton.textContent || submitButton.value || "") : "";
-            if (submitButton) { submitButton.disabled = true; submitButton.setAttribute("aria-busy", "true"); submitButton.textContent = "Enviando arquivos..."; }
-            try {
-                const newFiles = await Promise.all(selectedFiles.map(file => window.comfortPrepareAttachmentFile
-                    ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName + "-" + contentId)
-                    : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); })));
+            Promise.all(selectedFiles.map(file => window.comfortPrepareAttachmentFile
+                ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName + "-" + contentId)
+                : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(newFiles => {
                 const fallbackBytes = currentFiles.concat(newFiles).filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
                 if (fallbackBytes > 900 * 1024) throw new Error("Sem o Storage, os anexos locais deste conteúdo podem somar até 900 KB.");
-                updateSubjectContent(subjectName, contentId, {
+                const updated = updateSubjectContent(subjectName, contentId, {
                     topic: document.getElementById("editSubjectTopic").value.trim(),
                     title: title,
                     text: text,
                     important: document.getElementById("editSubjectImportant").checked,
                     files: currentFiles.concat(newFiles)
                 });
-                if (window.comfortCloudFlush) await window.comfortCloudFlush();
-                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O Firebase Storage não aceitou algum anexo; confira a configuração e as regras para sincronizá-lo.");
-            } catch (error) {
-                alert(error && error.message ? error.message : "Não foi possível enviar ou salvar os arquivos.");
-            } finally {
-                if (submitButton && submitButton.isConnected) { submitButton.disabled = false; submitButton.removeAttribute("aria-busy"); submitButton.textContent = originalButtonText || "Salvar alterações"; }
-            }
+                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                return updated;
+            }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
         });
     };
 
@@ -2390,24 +2389,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
                 if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB."); return; }
                 if (!cloudStorageAvailable && totalBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
-                const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
-                const originalButtonText = submitButton ? (submitButton.textContent || submitButton.value || "") : "";
-                if (submitButton) { submitButton.disabled = true; submitButton.setAttribute("aria-busy", "true"); submitButton.textContent = "Salvando conteúdo..."; }
-                try {
-                    const fileData = await Promise.all(files.map(file => window.comfortPrepareAttachmentFile
-                        ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
-                        : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); })));
+                Promise.all(files.map(file => window.comfortPrepareAttachmentFile
+                    ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
+                    : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(fileData => {
                     if (fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0) > 900 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 900 KB por anotação.");
                     addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
-                    if (window.comfortCloudFlush) await window.comfortCloudFlush();
                     renderSubjects();
                     showSubjectModal(subjectName);
-                    if (fileData.some(file => file.storagePending)) alert("O conteúdo foi salvo neste aparelho, mas algum anexo não foi enviado para a nuvem. Confira se o Firebase Storage está ativado e se as regras foram publicadas.");
-                } catch (error) {
-                    alert(error && error.message ? error.message : "Não foi possível enviar ou salvar os arquivos. Tente novamente.");
-                } finally {
-                    if (submitButton && submitButton.isConnected) { submitButton.disabled = false; submitButton.removeAttribute("aria-busy"); submitButton.textContent = originalButtonText || "Salvar conteúdo"; }
-                }
+                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
                 return;
 
 

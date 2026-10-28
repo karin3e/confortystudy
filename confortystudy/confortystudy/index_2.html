@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>ComfortStudy - Painel do Estudante</title>
+
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <link rel="stylesheet" href="style_dashboard.css">
+    <link rel="stylesheet" href="extras.css">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b1224">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ComfortStudy">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+
+<body>
+
+
+    <aside class="sidebar">
+
+        <div>
+
+            <div class="logo">
+                <i class="ph ph-graduation-cap"></i>
+                <span>ComfortStudy</span>
+            </div>
+
+            <nav class="menu">
+
+                <a href="#" class="active" data-page="dashboard">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="#" data-page="materias">
+                    <i class="ph ph-books"></i>
+                    <span>Materias</span>
+                </a>
+
+                <a href="#" data-page="calendario">
+                    <i class="ph ph-calendar-blank"></i>
+                    <span>Calendario</span>
+                </a>
+
+                <a href="#" data-page="tarefas">
+                    <i class="ph ph-check-square"></i>
+                    <span>Tarefas</span>
+                </a>
+
+                <a href="#" data-page="provas">
+                    <i class="ph ph-exam"></i>
+                    <span>Provas</span>
+                </a>
+
+                <a href="#" data-page="cronometro">
+                    <i class="ph ph-timer"></i>
+                    <span>Cronometro</span>
+                </a>
+
+                <a href="#" data-page="avisos">
+                    <i class="ph ph-bell"></i>
+                    <span>Avisos</span>
+                </a>
+
+                <a href="#" data-page="desempenho" class="mobile-hidden-link">
+                    <i class="ph ph-chart-line-up"></i>
+                    <span>Desempenho</span>
+                </a>
+
+                <a href="#" data-page="planejamento" class="mobile-hidden-link">
+                    <i class="ph ph-notebook"></i>
+                    <span>Meu Plano</span>
+                </a>
+
+                <a href="#" data-page="suporte">
+                    <i class="ph ph-headset"></i>
+                    <span>Suporte</span>
+                </a>
+
+                <a href="#" data-page="sobre">
+                    <i class="ph ph-info"></i>
+                    <span>Sobre</span>
+                </a>
+
+                <button type="button" class="mobile-more-button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu">
+                    <i class="ph ph-dots-three-circle"></i>
+                    <span>Mais</span>
+                </button>
+
+            </nav>
+
+        </div>
+
+        <div class="sidebar-bottom">
+
+            <a href="#" data-page="premium">
+                <i class="ph ph-crown"></i>
+                <span>Plano Premium</span>
+            </a>
+
+            <a href="#" data-page="perfil">
+                <i class="ph ph-user-circle"></i>
+                <span>Meu Perfil</span>
+            </a>
+
+            <div class="user-profile">
+
+                <div class="avatar">
+                    <i class="ph ph-user"></i>
+                </div>
+
+                <div class="user-info">
+
+                    <p class="name">
+                        Estudante
+                    </p>
+
+                    <span class="plan">
+                        Plano Gratuito
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+
+
+    <main class="content">
+
+
+
+        <header class="topbar">
+
+            <div>
+
+                <p class="welcome">
+                    SEU ESPAÇO DE ESTUDOS
+                </p>
+
+                <h1 id="page-title">
+                    Visão Geral
+                </h1>
+
+            </div>
+
+            <div class="global-search" id="globalSearchBox">
+                <label class="sr-only" for="globalSearchInput">Buscar em todo o ComfortStudy</label>
+                <i class="ph ph-magnifying-glass" aria-hidden="true"></i>
+                <input id="globalSearchInput" type="search" autocomplete="off" placeholder="Buscar tarefas, provas, matérias e anotações" aria-controls="globalSearchResults" aria-expanded="false">
+                <div id="globalSearchResults" class="global-search-results" role="listbox" hidden></div>
+            </div>
+
+            <div class="top-actions">
+
+                <button type="button" class="mobile-profile-shortcut" data-page="perfil" aria-label="Abrir Meu Perfil" title="Meu Perfil">
+                    <i class="ph ph-user-circle"></i>
+                    <span>Perfil</span>
+                </button>
+
+                <button
+                    class="notification-button"
+                    id="notificationButton"
+                    title="Avisos">
+
+                    <i class="ph ph-bell"></i>
+
+                    <span
+                        class="notification-count"
+                        id="notificationCount">
+                        0
+                    </span>
+
+                </button>
+
+                <button
+                    class="btn-primary"
+                    id="newTaskButton">
+
+                    <i class="ph ph-plus"></i>
+                    Nova Tarefa
+
+                </button>
+
+            </div>
+
+        </header>
+
+
+
+        <section
+            class="page-section active-page"
+            id="page-dashboard">
+
+            <!-- CARDS -->
+
+            <section class="cards-grid">
+
+                <div class="card">
+
+                    <div class="card-icon blue">
+                        <i class="ph ph-clock-afternoon"></i>
+                    </div>
+
+                    <div class="card-info">
+
+                        <h3>
+                            Prazos Proximos
+                        </h3>
+
+                        <p
+                            class="number"
+                            id="dashboard-prazos">
+                            0 Atividades
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-icon green">
+                        <i class="ph ph-check-circle"></i>
+                    </div>
+
+                    <div class="card-info">
+
+                        <h3>
+                            Conclui­das
+                        </h3>
+
+                        <p
+                            class="number"
+                            id="dashboard-concluidas">
+                            0 Tarefas
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-icon purple">
+                        <i class="ph ph-book-open"></i>
+                    </div>
+
+                    <div class="card-info">
+
+                        <h3>
+                            Materias Ativas
+                        </h3>
+
+                        <p
+                            class="number"
+                            id="dashboard-materias">
+                            8 Disciplinas
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+
+            <section class="feature-card feature-wide dashboard-today" id="dashboardTodayCard" data-dashboard-card="today">
+                <div class="feature-card-heading"><div><h3><i class="ph ph-sun"></i> Seu Hoje</h3><p class="feature-help">As prioridades do dia e as próximas provas.</p></div><button type="button" class="small-button" data-page="planejamento">Ver meu plano</button></div>
+                <div class="today-columns"><div><h4>Até 3 tarefas importantes</h4><div id="todayPriorityTasks" class="feature-list"></div></div><div><h4>Próximas provas</h4><div id="todayUpcomingExams" class="feature-list"></div></div></div>
+            </section>
+
+            <div class="dashboard-grid">
+
+                <section class="tasks-section" data-dashboard-card="tasks">
+
+                    <div class="section-header">
+
+                        <h2>
+                            <i class="ph ph-list-checks"></i>
+                            Minhas Tarefas
+                        </h2>
+
+                        <button
+                            class="small-button"
+                            id="dashboardAddTask">
+
+                            + Adicionar
+
+                        </button>
+
+                    </div>
+
+                    <div
+                        class="task-list"
+                        id="dashboardTaskList">
+
+
+
+                    </div>
+
+                </section>
+
+
+                <section class="premium-card">
+
+                    <i class="ph ph-crown"></i>
+
+                    <h3>
+                        Seja Premium
+                    </h3>
+
+                    <p>Novidades planejadas para deixar seu espaço de estudos ainda mais completo.</p>
+                    <strong>Em breve · recursos atuais grátis</strong>
+
+                    <button
+                        class="btn-premium"
+                        data-page="premium">
+
+                        Ver novidades
+
+                    </button>
+
+                </section>
+
+            </div>
+
+
+
+
+            <div class="dashboard-bottom-grid">
+
+
+
+                <section class="info-card" data-dashboard-card="exams">
+
+                    <div class="section-header">
+
+                        <h2>
+                            <i class="ph ph-exam"></i>
+                            Proximas Provas
+                        </h2>
+
+                        <button
+                            class="small-button"
+                            data-page="provas">
+
+                            Ver todas
+
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        class="exam-preview"
+                        id="dashboardExamList">
+
+
+
+                    </div>
+
+                </section>
+
+
+
+
+                <section class="info-card" data-dashboard-card="notices">
+
+                    <div class="section-header">
+
+                        <h2>
+                            <i class="ph ph-bell"></i>
+                            Avisos
+                        </h2>
+
+                        <button
+                            class="small-button"
+                            data-page="avisos">
+
+                            Ver todos
+
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="dashboardNoticeList">
+
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </section>
+
+
+
+
+        <section
+            class="page-section"
+            id="page-materias">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        ORGANIZAÇÂO
+                    </p>
+
+                    <h2>
+                        Minhas Materias
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="subject-search-bar"><label for="subjectSearch">Buscar matéria ou anotação</label><input type="search" id="subjectSearch" placeholder="Pesquise por matéria, tópico ou conteúdo"></div>
+
+            <div
+                class="subjects-grid"
+                id="subjectsGrid">
+
+
+            </div>
+
+        </section>
+
+
+
+
+        <section
+            class="page-section"
+            id="page-calendario">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        PLANEJAMENTO
+                    </p>
+
+                    <h2>
+                        Meu Calendario
+                    </h2>
+
+                </div>
+
+                <button
+                    class="btn-primary"
+                    id="calendarAddButton">
+
+                    <i class="ph ph-plus"></i>
+                    Adicionar
+
+                </button>
+
+            </div>
+
+
+            <div class="calendar-card">
+
+                <div class="calendar-top">
+
+                    <button
+                        class="calendar-arrow"
+                        id="previousMonth">
+
+                        <i class="ph ph-caret-left"></i>
+
+                    </button>
+
+
+                    <h3 id="calendarMonth">
+                        Setembro 2026
+                    </h3>
+
+
+                    <button
+                        class="calendar-arrow"
+                        id="nextMonth">
+
+                        <i class="ph ph-caret-right"></i>
+
+                    </button>
+
+                </div>
+
+
+                <div class="calendar-week">
+
+                    <span>SEG</span>
+                    <span>TER</span>
+                    <span>QUA</span>
+                    <span>QUI</span>
+                    <span>SEX</span>
+                    <span>SAB</span>
+                    <span>DOM</span>
+
+                </div>
+
+
+                <div
+                    class="calendar-days"
+                    id="calendarDays">
+
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <section
+            class="page-section"
+            id="page-tarefas">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        ORGANIZAÇÃO
+                    </p>
+
+                    <h2>
+                        Minhas Tarefas
+                    </h2>
+
+                </div>
+
+                <button
+                    class="btn-primary"
+                    id="newTaskPageButton">
+
+                    <i class="ph ph-plus"></i>
+                    Nova Tarefa
+
+                </button>
+
+            </div>
+
+
+            <div class="filter-bar">
+
+                <input
+                    type="text"
+                    id="taskSearch"
+                    placeholder=" Pesquisar tarefa..."
+                >
+
+                <button
+                    class="filter active"
+                    data-filter="all">
+                    Todas
+                </button>
+
+                <button
+                    class="filter"
+                    data-filter="pending">
+                    Pendentes
+                </button>
+
+                <button
+                    class="filter"
+                    data-filter="completed">
+                    Conclui­das
+                </button>
+
+            </div>
+
+
+            <div
+                class="full-task-list"
+                id="fullTaskList">
+
+
+
+            </div>
+
+        </section>
+
+
+
+
+        <section
+            class="page-section"
+            id="page-provas">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        AVALIAÇOES
+                    </p>
+
+                    <h2>
+                        Proximas Provas
+                    </h2>
+
+                </div>
+
+                <button
+                    class="btn-primary"
+                    id="newExamButton">
+
+                    <i class="ph ph-plus"></i>
+                    Nova Prova
+
+                </button>
+
+            </div>
+
+
+            <div
+                class="exam-list"
+                id="examList">
+
+
+
+            </div>
+
+        </section>
+
+
+
+        <section
+            class="page-section"
+            id="page-cronometro">
+
+            <div class="timer-card">
+
+                <p class="welcome">
+                    FOCO
+                </p>
+
+                <h2>
+                    Hora de Estudar
+                </h2>
+
+                <p class="timer-description">
+                    Use o cronometro para manter seu foco
+                    durante os estudos.
+                </p>
+
+
+                <div class="timer-circle">
+
+                    <span id="timerDisplay">
+                        25:00
+                    </span>
+
+                </div>
+
+                <div class="timer-subject-picker"><label for="timerStudySubject">Matéria desta sessão (opcional)</label><select id="timerStudySubject"><option value="">Sem matéria específica</option></select></div>
+
+
+                <div class="timer-buttons">
+
+                    <button
+                        class="btn-primary"
+                        id="startTimer">
+
+                        <i class="ph ph-play"></i>
+                        Iniciar
+
+                    </button>
+
+
+                    <button
+                        class="btn-secondary"
+                        id="pauseTimer">
+
+                        <i class="ph ph-pause"></i>
+                        Pausar
+
+                    </button>
+
+
+                    <button
+                        class="btn-secondary"
+                        id="resetTimer">
+
+                        <i class="ph ph-arrow-counter-clockwise"></i>
+                        Reiniciar
+
+                    </button>
+
+                </div>
+
+
+                <div class="timer-presets">
+
+                    <button data-time="25">
+                        25 min
+                    </button>
+
+                    <button data-time="50">
+                        50 min
+                    </button>
+
+                    <button data-time="60">
+                        60 min
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+
+        <section
+            class="page-section"
+            id="page-avisos">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        LEMBRETES
+                    </p>
+
+                    <h2>
+                        Meus Avisos
+                    </h2>
+
+                </div>
+
+                <button
+                    class="btn-primary"
+                    id="newNoticeButton">
+
+                    <i class="ph ph-plus"></i>
+                    Novo Aviso
+
+                </button>
+
+            </div>
+
+
+            <div
+                class="notice-list"
+                id="noticeList">
+
+
+
+            </div>
+
+        </section>
+
+
+
+        <section
+            class="page-section"
+            id="page-desempenho">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        SEU PROGRESSO
+                    </p>
+
+                    <h2>
+                        Desempenho
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="performance-cards">
+
+                <div class="performance-card">
+
+                    <i class="ph ph-check-circle"></i>
+
+                    <span>
+                        Tarefas conclui­das
+                    </span>
+
+                    <strong id="performanceTasks">
+                        0
+                    </strong>
+
+                </div>
+
+
+                <div class="performance-card">
+
+                    <i class="ph ph-timer"></i>
+
+                    <span>
+                        Tempo de estudo
+                    </span>
+
+                    <strong>
+                        0min
+                    </strong>
+
+                </div>
+
+
+                <div class="performance-card">
+
+                    <i class="ph ph-trend-up"></i>
+
+                    <span>
+                        Evolusão
+                    </span>
+
+                    <strong>
+                        +0%
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="performance-section">
+
+                <h3>
+                    Progresso por materia
+                </h3>
+
+
+                <div
+                    class="performance-rows"
+                    id="performanceSubjectList">
+
+
+
+                </div>
+
+                <h3 class="performance-subheading">Tempo de estudo por matéria</h3>
+                <div id="subjectStudyTimeList" class="subject-study-time-list"></div>
+
+            </div>
+
+        </section>
+
+
+
+
+        <section class="page-section" id="page-planejamento">
+            <div class="page-header">
+                <div>
+                    <p class="welcome">ROTINA E REVISÃO</p>
+                    <h2>Meu Plano de Estudos</h2>
+                    <p>Organize sua semana, prepare-se para provas e acompanhe suas notas.</p>
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <h3>Meta semanal de estudo</h3>
+                    <p class="feature-help">O progresso começa a contar o tempo do cronômetro a partir desta versão.</p>
+                    <form id="weeklyGoalForm" class="feature-form">
+                        <label for="weeklyGoalHours">Meta em horas por semana</label>
+                        <div class="feature-inline">
+                            <input id="weeklyGoalHours" type="number" min="0.5" max="100" step="0.5" required>
+                            <button class="btn-primary" type="submit">Salvar meta</button>
+                        </div>
+                    </form>
+                    <div class="goal-track"><span id="weeklyGoalBar"></span></div>
+                    <p id="weeklyGoalText" class="feature-help"></p>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Meta diária de estudo</h3>
+                    <p class="feature-help">Acompanhe o tempo de hoje junto com a meta da semana.</p>
+                    <form id="dailyGoalForm" class="feature-form">
+                        <label for="dailyGoalMinutes">Meta em minutos por dia</label>
+                        <div class="feature-inline"><input id="dailyGoalMinutes" type="number" min="10" max="720" step="5" required><button class="btn-primary" type="submit">Salvar meta</button></div>
+                    </form>
+                    <div class="goal-track"><span id="dailyGoalBar"></span></div><p id="dailyGoalText" class="feature-help"></p>
+                </article>
+
+                <article class="feature-card feature-wide quick-study-card">
+                    <h3>Plano rápido de estudo</h3>
+                    <p class="feature-help">Escolha quanto tempo você tem e receba uma sugestão com tarefas, provas e revisões pendentes.</p>
+                    <form id="quickStudyForm" class="feature-form quick-study-form">
+                        <label for="quickStudyMinutes">Quanto tempo você tem?</label>
+                        <div class="feature-inline">
+                            <select id="quickStudyMinutes" name="minutes">
+                                <option value="15">15 minutos</option><option value="25">25 minutos</option><option value="30">30 minutos</option>
+                                <option value="45" selected>45 minutos</option><option value="60">1 hora</option><option value="90">1 hora e 30 minutos</option><option value="120">2 horas</option>
+                            </select>
+                            <button class="btn-primary" type="submit">Montar meu plano</button>
+                        </div>
+                    </form>
+                    <div id="quickStudySuggestions" class="quick-study-results" aria-live="polite"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Horário das aulas</h3>
+                    <p class="feature-help">Monte sua grade semanal de aulas.</p>
+                    <form id="classScheduleForm" class="feature-form">
+                        <label for="classDay">Dia</label>
+                        <select id="classDay" name="day" required>
+                            <option value="1">Segunda-feira</option><option value="2">Terça-feira</option>
+                            <option value="3">Quarta-feira</option><option value="4">Quinta-feira</option>
+                            <option value="5">Sexta-feira</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                        </select>
+                        <label for="classSubject">Matéria</label>
+                        <select id="classSubject" name="subject" required></select>
+                        <div class="feature-inline">
+                            <div><label for="classStart">Início</label><input id="classStart" name="start" type="time" required></div>
+                            <div><label for="classEnd">Término</label><input id="classEnd" name="end" type="time" required></div>
+                        </div>
+                        <label for="classLabel">Sala ou observação (opcional)</label>
+                        <input id="classLabel" name="label" maxlength="80" placeholder="Ex.: sala 12">
+                        <button class="btn-primary" type="submit">Adicionar aula</button>
+                    </form>
+                    <div id="classScheduleList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Plano para uma prova</h3>
+                    <p class="feature-help">Cria sessões de estudo nos dias anteriores à prova.</p>
+                    <form id="studyPlanForm" class="feature-form">
+                        <label for="studyPlanExam">Prova</label>
+                        <select id="studyPlanExam" required></select>
+                        <label for="studyPlanDays">Quantos dias antes começar?</label>
+                        <input id="studyPlanDays" type="number" min="1" max="30" value="7" required>
+                        <button class="btn-primary" type="submit">Montar plano</button>
+                    </form>
+                    <div id="studyPlanList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <div class="feature-card-heading">
+                        <div><h3>Flashcards</h3><p class="feature-help">Revise perguntas e respostas em intervalos.</p></div>
+                        <span id="flashcardDueCount" class="feature-badge">0 para revisar</span>
+                    </div>
+                    <form id="flashcardForm" class="feature-form">
+                        <label for="flashcardSubject">Matéria</label>
+                        <select id="flashcardSubject" name="subject" required></select>
+                        <label for="flashcardFront">Pergunta</label>
+                        <textarea id="flashcardFront" name="front" rows="2" maxlength="500" required></textarea>
+                        <label for="flashcardBack">Resposta</label>
+                        <textarea id="flashcardBack" name="back" rows="3" maxlength="1000" required></textarea>
+                        <button class="btn-primary" type="submit">Criar flashcard</button>
+                    </form>
+                    <button type="button" class="btn-secondary" id="startFlashcardReview">Revisar pendentes</button>
+                    <div id="flashcardReview" class="review-panel" hidden>
+                        <strong id="flashcardQuestion"></strong>
+                        <p id="flashcardAnswer" hidden></p>
+                        <button type="button" class="btn-secondary" id="saveFlashcardAnswer">Mostrar resposta</button>
+                        <div id="flashcardGradeButtons" class="feature-inline" hidden>
+                            <button type="button" class="btn-secondary" id="flashcardForgot">Errei</button>
+                            <button type="button" class="btn-primary" id="flashcardRemembered">Acertei</button>
+                        </div>
+                    </div>
+                    <div id="flashcardList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <h3>Simulados</h3>
+                    <p class="feature-help">Cadastre questões objetivas por matéria e faça um simulado com correção automática.</p>
+                    <form id="quizQuestionForm" class="feature-form">
+                        <label for="quizSubject">Matéria</label><select id="quizSubject" name="subject" required></select>
+                        <label for="quizPrompt">Pergunta</label><textarea id="quizPrompt" name="prompt" rows="2" maxlength="600" required></textarea>
+                        <div class="quiz-options-grid">
+                            <div><label for="quizOption0">Alternativa A</label><input id="quizOption0" name="option0" maxlength="300" required></div>
+                            <div><label for="quizOption1">Alternativa B</label><input id="quizOption1" name="option1" maxlength="300" required></div>
+                            <div><label for="quizOption2">Alternativa C</label><input id="quizOption2" name="option2" maxlength="300" required></div>
+                            <div><label for="quizOption3">Alternativa D</label><input id="quizOption3" name="option3" maxlength="300" required></div>
+                        </div>
+                        <label for="quizCorrect">Resposta correta</label><select id="quizCorrect" name="correct" required><option value="0">Alternativa A</option><option value="1">Alternativa B</option><option value="2">Alternativa C</option><option value="3">Alternativa D</option></select>
+                        <button class="btn-primary" type="submit">Salvar questão</button>
+                    </form>
+                    <div class="quiz-bank-heading"><h4>Banco de questões</h4><button type="button" class="btn-secondary" id="startQuizSimulation">Começar simulado</button></div>
+                    <div id="quizQuestionList" class="feature-list"></div>
+                    <div id="quizSessionPanel" class="review-panel" hidden><div id="quizSessionBody"></div></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Notas por matéria</h3>
+                    <p class="feature-help">Registre avaliações e acompanhe a média percentual.</p>
+                    <form id="gradeForm" class="feature-form">
+                        <label for="gradeSubject">Matéria</label>
+                        <select id="gradeSubject" name="subject" required></select>
+                        <label for="gradeTitle">Avaliação</label>
+                        <input id="gradeTitle" name="title" maxlength="100" placeholder="Ex.: Prova do bimestre" required>
+                        <div class="feature-inline">
+                            <div><label for="gradeScore">Sua nota</label><input id="gradeScore" name="score" type="number" min="0" step="0.01" required></div>
+                            <div><label for="gradeMaximum">Nota máxima</label><input id="gradeMaximum" name="maximum" type="number" min="0.01" step="0.01" value="10" required></div>
+                        </div>
+                        <label for="gradeDate">Data</label>
+                        <input id="gradeDate" name="date" type="date" required>
+                        <button class="btn-primary" type="submit">Salvar nota</button>
+                    </form>
+                    <h4>Médias</h4><div id="gradeAverages" class="feature-list"></div>
+                    <h4>Avaliações registradas</h4><div id="gradeList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Quanto preciso tirar?</h3>
+                    <p class="feature-help">Calcule a nota necessária na próxima avaliação para alcançar sua média desejada.</p>
+                    <form id="gradeTargetForm" class="feature-form">
+                        <label for="gradeTargetSubject">Matéria</label><select id="gradeTargetSubject" required></select>
+                        <div class="feature-inline"><div><label for="gradeTargetAverage">Média desejada (%)</label><input id="gradeTargetAverage" type="number" min="0" max="100" step="0.1" value="70" required></div><div><label for="gradeTargetMaximum">Valor da próxima prova</label><input id="gradeTargetMaximum" type="number" min="0.01" step="0.01" value="10" required></div></div>
+                        <button class="btn-primary" type="submit">Calcular</button>
+                    </form>
+                    <p id="gradeTargetResult" class="feature-help" aria-live="polite"></p>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <div class="feature-card-heading"><div><h3>Agenda da semana</h3><p class="feature-help">Aulas, tarefas, provas e sessões do seu plano em um só lugar. Os avisos funcionam enquanto o app estiver aberto.</p></div><button type="button" class="small-button" id="enableStudyNotifications">Ativar avisos</button></div>
+                    <div id="weeklyAgenda" class="weekly-agenda"></div><h4>Sugestões de horários livres</h4><div id="smartStudySuggestions" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <h3>Lembretes configuráveis</h3>
+                    <p class="feature-help">Escolha com quantos dias de antecedência quer ver avisos de tarefas, provas e revisões. Ao marcar um aviso como lido, ele sai da lista principal.</p>
+                    <form id="reminderSettingsForm" class="feature-form reminder-settings-form">
+                        <fieldset class="reminder-group"><legend>Tarefas</legend><label><input type="checkbox" name="reminderTasksDays" value="0"> No dia</label><label><input type="checkbox" name="reminderTasksDays" value="1"> 1 dia antes</label><label><input type="checkbox" name="reminderTasksDays" value="3"> 3 dias antes</label></fieldset>
+                        <fieldset class="reminder-group"><legend>Provas</legend><label><input type="checkbox" name="reminderExamsDays" value="0"> No dia</label><label><input type="checkbox" name="reminderExamsDays" value="1"> 1 dia antes</label><label><input type="checkbox" name="reminderExamsDays" value="3"> 3 dias antes</label><label><input type="checkbox" name="reminderExamsDays" value="7"> 7 dias antes</label></fieldset>
+                        <fieldset class="reminder-group"><legend>Revisões</legend><label><input type="checkbox" name="reminderReviewsDays" value="0"> No dia</label><label><input type="checkbox" name="reminderReviewsDays" value="1"> 1 dia antes</label><label><input type="checkbox" name="reminderReviewsDays" value="3"> 3 dias antes</label></fieldset>
+                        <label class="reminder-toggle"><input type="checkbox" id="reminderBrowserEnabled"> Mostrar avisos do navegador (opcional)</label>
+                        <button type="submit" class="btn-primary">Salvar lembretes</button>
+                        <p id="reminderSettingsStatus" class="feature-help" role="status" aria-live="polite"></p>
+                    </form>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Diário de estudos</h3><p class="feature-help">Anote o que estudou e o que precisa revisar depois.</p>
+                    <form id="studyDiaryForm" class="feature-form">
+                        <label for="diarySubject">Matéria</label><select id="diarySubject" name="subject" required></select>
+                        <label for="diaryStudied">O que você estudou?</label><textarea id="diaryStudied" name="studied" rows="3" maxlength="1200" required></textarea>
+                        <label for="diaryReview">O que precisa revisar? (opcional)</label><textarea id="diaryReview" name="review" rows="2" maxlength="800"></textarea>
+                        <label for="diaryDate">Data do estudo</label><input id="diaryDate" name="date" type="date" required><button class="btn-primary" type="submit">Salvar no diário</button>
+                    </form>
+                    <h4>Revisões para hoje</h4><div id="diaryDueList" class="feature-list"></div><h4>Registros recentes</h4><div id="studyDiaryList" class="feature-list"></div>
+                </article>
+
+                <article class="feature-card">
+                    <h3>Relatório do mês</h3><p class="feature-help" id="monthlyReportMonth"></p><div id="monthlyReport" class="report-metrics"></div><h4>Ritmo de estudos</h4><div id="studyRhythmSummary" class="report-metrics"></div><h4>Conquistas</h4><div id="studyAchievements" class="achievement-list"></div>
+                </article>
+
+                <article class="feature-card feature-wide">
+                    <h3>Leitor de PDF</h3><p class="feature-help">Abra um PDF aqui, favorite páginas e escreva observações. Com Firebase Storage ativado, o arquivo também fica disponível nos outros aparelhos; o backup continua disponível.</p>
+                    <div class="feature-inline pdf-controls"><label class="backup-file-label" for="studyPdfUpload">Adicionar PDF</label><input id="studyPdfUpload" type="file" accept="application/pdf,.pdf"><select id="studyPdfSelect" aria-label="Escolher PDF"><option value="">Escolha um PDF</option></select><button type="button" class="btn-secondary" id="removeStudyPdf">Remover PDF</button></div>
+                    <div id="studyPdfWorkspace" class="pdf-workspace" hidden><div class="pdf-viewer-wrap"><iframe id="studyPdfViewer" title="Leitor de PDF" loading="lazy"></iframe></div><div class="pdf-notes">
+                        <form id="pdfPageForm" class="feature-form"><label for="pdfPageNumber">Página</label><div class="feature-inline"><input id="pdfPageNumber" type="number" min="1" value="1"><button class="btn-secondary" type="submit">Ir para página</button></div><button type="button" class="btn-secondary" id="savePdfBookmark">Favoritar esta página</button><label for="pdfPageNote">Observação desta página</label><textarea id="pdfPageNote" rows="4" maxlength="1000" placeholder="Escreva uma anotação..."></textarea><button type="button" class="btn-primary" id="savePdfNote">Salvar observação</button></form>
+                        <h4>Páginas favoritas</h4><div id="pdfBookmarkList" class="feature-list"></div><h4>Anotações</h4><div id="pdfNoteList" class="feature-list"></div>
+                    </div></div><div id="studyPdfEmpty" class="feature-empty">Adicione um arquivo PDF para começar.</div>
+                </article>
+
+
+
+                <article class="feature-card feature-wide">
+                    <h3>Backup dos seus dados</h3>
+                    <p class="feature-help">Baixe uma cópia para guardar com segurança ou restaure um backup anterior. O arquivo pode incluir suas anotações e anexos; não o compartilhe.</p>
+                    <div class="feature-inline">
+                        <button type="button" class="btn-primary" id="exportBackup">Baixar backup</button>
+                        <label class="backup-file-label" for="importBackup">Restaurar backup</label>
+                        <input id="importBackup" type="file" accept="application/json,.json">
+                    </div>
+                </article>
+            </div>
+        </section>
+        <section
+            class="page-section"
+            id="page-premium">
+
+            <div class="premium-page">
+
+                <i class="ph ph-crown"></i>
+
+                <p class="welcome">
+                    COMFORTSTUDY PREMIUM
+                </p>
+
+                <h2>
+                    Estude de forma ainda mais inteligente.
+                </h2>
+
+                <p>O ComfortStudy está em evolução. As ferramentas atuais continuam gratuitas para todos os estudantes.</p>
+
+                <div class="premium-price">Em breve <span>novidades</span></div>
+
+                <button class="btn-premium" type="button" disabled>Premium em breve</button>
+
+            </div>
+
+
+            <div class="premium-features">
+
+                <div>
+
+                    <i class="ph ph-chart-line-up"></i>
+
+                    <h3>
+                        Relatório mensal
+                    </h3>
+
+                    <p>
+                        Veja seu tempo de estudo e tarefas concluídas.
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <i class="ph ph-target"></i>
+
+                    <h3>
+                        Agenda inteligente
+                    </h3>
+
+                    <p>
+                        Sugestões baseadas nas suas aulas e prazos.
+                    </p>
+
+                </div>
+
+
+                <div>
+
+                    <i class="ph ph-palette"></i>
+
+                    <h3>
+                        Personalização
+                    </h3>
+
+                    <p>
+                        Deixe o ComfortStudy com sua cara.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <section
+            class="page-section"
+            id="page-perfil">
+
+            <div class="page-header">
+
+                <div>
+
+                    <p class="welcome">
+                        MINHA CONTA
+                    </p>
+
+                    <h2>
+                        Perfil do Estudante
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <div class="profile-card">
+
+                <div class="big-avatar">
+                    <i class="ph ph-user"></i>
+                </div>
+
+                <div class="profile-info">
+
+                    <h2 id="profileNameDisplay">
+                        Estudante
+                    </h2>
+
+                    <p id="profileEmailDisplay">
+                        Plano Gratuito
+                    </p>
+
+                    <p class="profile-hint">Atualize seus dados e preferências quando quiser.</p>
+                    <div class="comfort-profile-shortcuts">
+                        <button type="button" class="btn-secondary" data-page="suporte"><i class="ph ph-headset"></i> Central de Suporte</button>
+                        <button type="button" class="btn-secondary" data-page="sobre"><i class="ph ph-info"></i> Sobre o ComfortStudy</button>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <form id="profileSettingsForm" class="profile-settings-form">
+                <section class="profile-settings-section" aria-labelledby="profilePersonalHeading">
+                    <div class="profile-settings-heading">
+                        <h3 id="profilePersonalHeading">Dados pessoais</h3>
+                        <p>Essas informações ficam salvas no seu perfil deste dispositivo/conta.</p>
+                    </div>
+                    <div class="profile-fields-grid">
+                        <div class="profile-field"><label for="profileName">Nome</label><input id="profileName" name="name" type="text" maxlength="80" placeholder="Como podemos chamar você?" required></div>
+                        <div class="profile-field"><label for="profileEmail">E-mail</label><input id="profileEmail" name="email" type="email" maxlength="120" placeholder="seuemail@email.com"></div>
+                        <div class="profile-field profile-field-wide"><label for="profilePhotoFile">Foto do perfil</label><input id="profilePhotoFile" type="file" accept=".png,.jpg,.jpeg,.webp,.gif,image/png,image/jpeg,image/webp,image/gif" aria-describedby="profilePhotoHelp"><small id="profilePhotoHelp">JPG, PNG, WEBP ou GIF de até 350 KB. A foto será salva junto ao seu perfil.</small><button type="button" class="btn-secondary" id="removeProfilePhoto">Remover foto</button></div>
+                        <div class="profile-field"><label for="profileSchool">Escola</label><input id="profileSchool" name="school" type="text" maxlength="120" placeholder="Nome da escola"></div>
+                        <div class="profile-field"><label for="profileCourse">Curso / série</label><input id="profileCourse" name="course" type="text" maxlength="80" placeholder="Ex.: 3ª série"></div>
+                        <div class="profile-field profile-field-wide"><label for="profileBio">Sobre você</label><textarea id="profileBio" name="bio" rows="4" maxlength="500" placeholder="Conte um pouco sobre seus objetivos de estudo..."></textarea></div>
+                    </div>
+                    <div class="profile-form-actions"><span id="profileSaveStatus" class="profile-save-status" role="status" aria-live="polite"></span><div><button type="button" class="btn-secondary" id="cancelProfileChanges">Cancelar</button><button type="submit" class="btn-primary">Salvar alterações</button></div></div>
+                </section>
+            </form>
+
+            <article class="feature-card profile-appearance-card">
+                    <h3>Personalizar meu app</h3><p class="feature-help">Ajustes simples para deixar seu espaço com a sua cara.</p>
+                    <form id="appearanceForm" class="feature-form">
+                        <label for="appearanceTheme">Cor do app</label><select id="appearanceTheme"><option value="blue">Azul (atual)</option><option value="violet">Violeta</option><option value="green">Verde</option><option value="rose">Rosa</option></select>
+                        <label for="appearanceAvatar">Avatar</label><select id="appearanceAvatar"><option value="👤">👤 Pessoa</option><option value="😊">😊 Sorriso</option><option value="🐱">🐱 Gato</option><option value="🐼">🐼 Panda</option><option value="🦊">🦊 Raposa</option><option value="⭐">⭐ Estrela</option><option value="🌻">🌻 Girassol</option></select>
+                        <fieldset class="dashboard-options"><legend>Cartões no painel</legend><label><input type="checkbox" name="dashboardCard" value="today"> Seu Hoje</label><label><input type="checkbox" name="dashboardCard" value="tasks"> Minhas tarefas</label><label><input type="checkbox" name="dashboardCard" value="exams"> Próximas provas</label><label><input type="checkbox" name="dashboardCard" value="notices"> Avisos</label></fieldset>
+                        <button class="btn-primary" type="submit">Salvar personalização</button>
+                    </form>
+                </article>
+
+        </section>
+
+    <section class="page-section" id="page-sobre">
+        <div class="page-header"><div><p class="welcome">NOSSA HISTÓRIA</p><h2>Sobre o ComfortStudy</h2></div></div>
+        <article class="comfort-about-hero">
+            <div class="comfort-about-mark"><i class="ph ph-graduation-cap"></i></div>
+            <div><h2>ComfortStudy</h2><p>Organize seus estudos. Construa seu futuro.</p></div>
+        </article>
+        <div class="comfort-about-grid">
+            <article class="feature-card comfort-about-card"><h3><i class="ph ph-heart"></i> Muito mais que um trabalho escolar</h3>
+                <p>Meu nome é <strong>Karine Vitória Sousa</strong>, tenho 17 anos e sou estudante da 3ª série do ensino médio técnico, em Acauã, no Piauí.</p>
+                <p>A história do ComfortStudy começou quando meu professor pediu que minha turma desenvolvesse um projeto escolar. O que deveria ser apenas um trabalho acabou se tornando algo muito maior do que eu imaginava.</p>
+                <p>Eu levei aquela proposta a sério. Comecei a pensar em uma ideia que pudesse se transformar em algo útil de verdade, e assim nasceu o ComfortStudy: um espaço pensado para ajudar estudantes a organizar suas tarefas, provas, matérias e rotina de estudos.</p>
+                <p>Desenvolvi o projeto por conta própria, aprendendo durante o processo e contando com a ajuda da inteligência artificial em algumas etapas. Ainda não sou uma desenvolvedora profissional, mas isso nunca me impediu de tentar, aprender, corrigir erros e continuar.</p>
+                <p>Cada parte desse projeto representa um pouco da minha dedicação, das minhas ideias e da vontade de fazer algo que pudesse ir além da sala de aula.</p>
+                <p><strong>O ComfortStudy é de minha autoria, nasceu de uma ideia minha e foi construído com muito esforço, aprendizado e dedicação.</strong></p>
+                <p>Espero, de coração, que você goste do aplicativo. Coloquei muito de mim nele e quero continuar aprendendo para torná-lo cada vez melhor.</p>
+                <p>O que começou como um trabalho escolar acabou se transformando em um projeto que carrega uma parte de quem eu sou e do que ainda quero conquistar.</p>
+                <p>Obrigada por conhecer e fazer parte dessa história.</p>
+                <p class="comfort-signature">Com carinho e dedicação, Karine Vitória Sousa.</p>
+            </article>
+            <article class="feature-card comfort-about-card"><h3><i class="ph ph-target"></i> Nossa missão</h3><p>Tornar a rotina escolar mais organizada, acessível e prática, reunindo tarefas, provas, matérias e acompanhamento dos estudos em um só lugar.</p>
+                <h3><i class="ph ph-users-three"></i> Colaboradores</h3><p>Espaço reservado para reconhecer pessoas que contribuíram com ideias, testes, desenvolvimento, design e melhorias. Os nomes serão adicionados futuramente, de acordo com as contribuições reais.</p>
+                <h3><i class="ph ph-envelope-simple"></i> Suporte oficial</h3><p><a href="mailto:karinevitoriasousa6@gmail.com">karinevitoriasousa6@gmail.com</a></p>
+            </article>
+        </div>
+    </section>
+
+    <section class="page-section" id="page-suporte">
+        <div class="page-header"><div><p class="welcome">ESTAMOS AQUI PARA AJUDAR</p><h2>Central de Suporte</h2><p class="comfort-muted">Envie sua solicitação e acompanhe o protocolo pelo seu e-mail.</p></div></div>
+        <div class="comfort-support-layout">
+            <article class="feature-card comfort-support-form-card">
+                <h3><i class="ph ph-chat-circle-dots"></i> Como podemos ajudar?</h3>
+                <p class="comfort-muted">O pedido será associado à sua conta conectada. Nunca informe sua senha neste formulário.</p>
+                <form id="comfortSupportForm" class="comfort-support-form">
+                    <label for="supportCategory">Categoria</label>
+                    <select id="supportCategory" name="category" required>
+                        <option value="">Selecione uma categoria</option>
+                        <option>Relatar erros</option><option>Dúvidas de uso</option><option>Sugestões de melhorias</option><option>Problemas com arquivos e sincronização</option><option>Problemas de login</option>
+                    </select>
+                    <label for="supportSubject">Assunto</label><input id="supportSubject" name="subject" maxlength="120" required placeholder="Resuma o que aconteceu">
+                    <label for="supportDescription">Descrição</label><textarea id="supportDescription" name="description" rows="6" maxlength="4000" required placeholder="Conte os detalhes para podermos ajudar..."></textarea>
+                    <p class="comfort-muted comfort-small">Por segurança, anexos não estão habilitados nesta versão. Não inclua senhas ou códigos de acesso.</p>
+                    <p id="comfortSupportStatus" class="comfort-support-status" role="status" aria-live="polite"></p>
+                    <button class="btn-primary" type="submit" id="comfortSupportSubmit"><i class="ph ph-paper-plane-tilt"></i> Enviar solicitação</button>
+                </form>
+            </article>
+            <article class="feature-card comfort-support-history-card">
+                <h3><i class="ph ph-clipboard-text"></i> Minhas solicitações</h3>
+                <p class="comfort-muted">Veja os protocolos enviados por esta conta. As respostas e atualizações também serão enviadas por e-mail.</p>
+                <div id="comfortSupportHistory" class="comfort-support-history"><p class="comfort-muted">Carregando solicitações...</p></div>
+                <div class="comfort-support-contact"><strong>Precisa de contato por e-mail?</strong><a href="mailto:karinevitoriasousa6@gmail.com">karinevitoriasousa6@gmail.com</a></div>
+            </article>
+        </div>
+    </section>
+
+    </main>
+
+
+
+    <div
+        class="modal"
+        id="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden="true"
+        aria-labelledby="modalTitle">
+
+        <div class="modal-content" tabindex="-1">
+
+            <button
+                class="modal-close"
+                id="closeModal"
+                type="button"
+                aria-label="Fechar formulário">
+
+                <i class="ph ph-x"></i>
+
+            </button>
+
+            <h2 id="modalTitle">
+                Nova Tarefa
+            </h2>
+
+            <div id="modalBody">
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+    <div class="mobile-more-backdrop" id="mobileMoreBackdrop" hidden></div>
+    <nav class="mobile-more-menu" id="mobileMoreMenu" aria-label="Mais opções" hidden>
+        <div class="mobile-more-heading">
+            <strong>Mais opçoes</strong>
+            <button type="button" id="closeMobileMore" aria-label="Fechar menu"><i class="ph ph-x"></i></button>
+        </div>
+        <a href="#" data-page="calendario"><i class="ph ph-calendar-blank"></i><span>Calendario</span></a>
+        <a href="#" data-page="cronometro"><i class="ph ph-timer"></i><span>Cronometro</span></a>
+        <a href="#" data-page="avisos"><i class="ph ph-bell"></i><span>Avisos</span></a>
+        <a href="#" data-page="planejamento"><i class="ph ph-notebook"></i><span>Meu Plano</span></a>
+        <a href="#" data-page="desempenho"><i class="ph ph-chart-line-up"></i><span>Desempenho</span></a>
+        <a href="#" data-page="premium"><i class="ph ph-crown"></i><span>Plano Premium</span></a>
+        <a href="#" data-page="perfil"><i class="ph ph-user-circle"></i><span>Meu Perfil</span></a>
+        <a href="#" data-page="suporte"><i class="ph ph-headset"></i><span>Suporte</span></a>
+        <a href="#" data-page="sobre"><i class="ph ph-info"></i><span>Sobre</span></a>
+    </nav>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+    <script src="firebase-config-v2.js"></script>
+    <script src="firebase-init.js"></script>
+    <script src="cloud-sync.js"></script>
+    <script src="script.js"></script>
+    <script src="extras.js"></script>
+    <script src="support.js"></script>
+
+</body>
+
+</html>
