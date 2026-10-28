@@ -585,6 +585,10 @@ body {
 }
 
 .task-subject {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     padding: 5px 9px;
 
     border-radius: 7px;
@@ -596,6 +600,8 @@ body {
 
     text-align: center;
 }
+
+.task-subject .subject-symbol { font-size: 13px; flex: 0 0 auto; }
 
 .task-subject.math {
     background: #fef2f2;
@@ -785,6 +791,9 @@ body {
     font-size: 22px;
 }
 
+.exam-icon i { font-size: 23px; }
+.small-button .ph { font-size: 15px; vertical-align: -1px; }
+
 .exam-preview strong {
     font-size: 13px;
 }
@@ -940,6 +949,21 @@ body {
 
     margin-top: 5px;
 }
+
+.subject-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0 10px;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.subject-icon .subject-symbol { font-size: 25px; }
+.subject-modal-icon { color: #2563eb; font-size: 42px; line-height: 1; }
 
 .progress-info {
     display: flex;

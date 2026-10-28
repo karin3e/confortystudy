@@ -49,15 +49,65 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const FIXED_SUBJECTS = [
-        { name: "Matemática", icon: "📐", className: "math" },
-        { name: "Português", icon: "📚", className: "portuguese" },
-        { name: "História", icon: "🏛️", className: "history" },
-        { name: "Geografia", icon: "🌎", className: "geography" },
-        { name: "Física", icon: "⚡", className: "physics" },
-        { name: "Química", icon: "🧪", className: "chemistry" },
-        { name: "Biologia", icon: "🧬", className: "biology" },
-        { name: "Inglês", icon: "🇺🇸", className: "english" }
+        { name: "Matemática", icon: "ph-calculator", className: "math" },
+        { name: "Português", icon: "ph-book-open-text", className: "portuguese" },
+        { name: "História", icon: "ph-landmark", className: "history" },
+        { name: "Geografia", icon: "ph-globe", className: "geography" },
+        { name: "Física", icon: "ph-atom", className: "physics" },
+        { name: "Química", icon: "ph-flask", className: "chemistry" },
+        { name: "Biologia", icon: "ph-dna", className: "biology" },
+        { name: "Inglês", icon: "ph-translate", className: "english" }
     ];
+
+    const SUBJECT_ICON_BY_CLASS = {
+        math: "ph-calculator",
+        portuguese: "ph-book-open-text",
+        history: "ph-landmark",
+        geography: "ph-globe",
+        physics: "ph-atom",
+        chemistry: "ph-flask",
+        biology: "ph-dna",
+        english: "ph-translate"
+    };
+
+    const SUBJECT_ICON_BY_TOPIC = [
+        [/matem|algebra|calculo/, "ph-calculator"],
+        [/portugues|literatura|redacao|gramatica/, "ph-book-open-text"],
+        [/historia/, "ph-landmark"],
+        [/filosofia/, "ph-brain"],
+        [/sociologia/, "ph-users-three"],
+        [/geografia|cartografia/, "ph-globe"],
+        [/fisica|astronomia/, "ph-atom"],
+        [/quimica/, "ph-flask"],
+        [/biologia|anatomia|ciencias/, "ph-dna"],
+        [/ingles|espanhol|frances|idioma|lingua/, "ph-translate"],
+        [/arte|desenho/, "ph-palette"],
+        [/programacao|computacao|informatica|tecnologia/, "ph-code"],
+        [/musica/, "ph-music-notes"],
+        [/educacao fisica|esporte/, "ph-person-simple-run"]
+    ];
+
+    function subjectIconMarkup(subject) {
+        const name = String(subject && subject.name || "")
+            .trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const iconClass = SUBJECT_ICON_BY_CLASS[subject && subject.className]
+            || (SUBJECT_ICON_BY_TOPIC.find(([pattern]) => pattern.test(name)) || [null, "ph-notebook"])[1];
+        return '<i class="ph ' + iconClass + ' subject-symbol" aria-hidden="true"></i>';
+    }
+
+    async function validateAttachmentFiles(files) {
+        const allowed = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"]);
+        const types = await Promise.all(files.map(file => window.comfortInspectAttachmentType
+            ? window.comfortInspectAttachmentType(file)
+            : Promise.resolve(file.type)));
+        const invalidIndex = types.findIndex(type => !allowed.has(type));
+        if (invalidIndex >= 0) {
+            const file = files[invalidIndex];
+            const isHeic = /\.hei[cf]$/i.test(String(file.name || "")) || /image\/hei[cf]/i.test(String(file.type || ""));
+            throw new Error(isHeic ? "Esta foto está em HEIC. Salve ou exporte como JPG para anexá-la." : "Não reconheci um dos arquivos. Use um PDF, PNG, JPG, WEBP ou GIF válido.");
+        }
+        return types;
+    }
 
     function getCustomSubjects() {
         const items = getStorage(STORAGE.subjects, []);
@@ -81,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert('Essa matéria já existe.'); return false;
         }
         const items = getCustomSubjects();
-        items.push({ name: clean, icon: '📘', className: 'custom' });
+        items.push({ name: clean, icon: 'ph-notebook', className: 'custom' });
         setStorage(STORAGE.subjects, items);
         return true;
     }
@@ -363,14 +413,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         form.addEventListener("input", () => { form.dataset.dirty = "true"; if (status) status.textContent = ""; });
         form.addEventListener("change", () => { form.dataset.dirty = "true"; if (status) status.textContent = ""; });
         const photoInput = document.getElementById("profilePhotoFile");
-        photoInput?.addEventListener("change", () => {
+        photoInput?.addEventListener("change", async () => {
             const file = photoInput.files && photoInput.files[0];
             if (!file) return;
-            if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type) || file.size > 350 * 1024) {
+            let imageType = "";
+            try { imageType = window.comfortInspectAttachmentType ? await window.comfortInspectAttachmentType(file) : file.type; }
+            catch (_) { imageType = ""; }
+            if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(imageType) || file.size > 350 * 1024) {
                 photoInput.value = "";
-                if (status) status.textContent = "Escolha uma imagem de até 350 KB.";
+                const isHeic = /\.hei[cf]$/i.test(String(file.name || "")) || /image\/hei[cf]/i.test(String(file.type || ""));
+                if (status) status.textContent = isHeic ? "Esta foto está em HEIC. Escolha ou exporte uma versão JPG de até 350 KB." : "Escolha uma imagem JPG, PNG, WEBP ou GIF válida de até 350 KB.";
                 return;
             }
+            const normalizedFile = file.type === imageType ? file : new File([file], file.name || "foto", { type: imageType });
             const reader = new FileReader();
             reader.onload = () => {
                 if (typeof reader.result !== "string" || !/^data:image\/(png|jpeg|webp|gif);base64,/i.test(reader.result)) {
@@ -383,7 +438,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (status) status.textContent = "Foto selecionada. Salve as alterações para confirmar.";
             };
             reader.onerror = () => { if (status) status.textContent = "Não foi possível abrir essa imagem."; };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(normalizedFile);
         });
         document.getElementById("removeProfilePhoto")?.addEventListener("click", () => {
             form.dataset.photoData = "";
@@ -496,8 +551,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 String(subjectName).toLowerCase()
         ) || {
             name: subjectName,
-            icon: "📚",
-            className: "portuguese"
+            icon: "ph-notebook",
+            className: "custom"
         };
     }
 
@@ -821,8 +876,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             '<textarea id="taskSteps" rows="3" maxlength="1000" placeholder="Ler o capítulo&#10;Resolver os exercícios"></textarea>' +
             '<label for="taskRecurrence">Repetição</label>' +
             '<select id="taskRecurrence"><option value="">Não repetir</option><option value="daily">Todos os dias</option><option value="weekly">Toda semana</option></select>' +
-            '<label for="taskFiles">Anexar PDF ou imagem (até 10 MB por arquivo com Firebase Storage)</label>' +
-            '<input type="file" id="taskFiles" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>' +
+            '<label for="taskFiles">Anexar PDF ou imagem (JPG, PNG, WEBP ou GIF)</label>' +
+            '<input type="file" id="taskFiles" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>' +
             '<small>Com Firebase Storage configurado, os anexos ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 700 KB no total.</small>' +
             '<button type="submit" class="btn-primary">Adicionar tarefa</button></form>';
     }
@@ -842,7 +897,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (form) {
 
-            form.addEventListener(
+        form.addEventListener(
                 "submit",
                 event => {
 
@@ -874,10 +929,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert("Preencha o nome, a matéria e a data.");
             return;
         }
-        if (files.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) {
-            alert("Anexe apenas arquivos PDF ou imagens PNG, JPG, WEBP e GIF.");
-            return;
-        }
+        try { await validateAttachmentFiles(files); }
+        catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
         const totalFileBytes = files.reduce((sum, file) => sum + file.size, 0);
         const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
         if (files.some(file => file.size > 10 * 1024 * 1024) || totalFileBytes > 20 * 1024 * 1024) {
@@ -889,6 +942,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        const submitButton = document.querySelector("#taskForm [type='submit']");
+        if (submitButton) submitButton.disabled = true;
         try {
             const taskId = Date.now();
             const fileData = await Promise.all(files.map(file => window.comfortPrepareAttachmentFile
@@ -923,7 +978,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (error) {
             console.error("ComfortStudy: não foi possível salvar a tarefa", error);
             alert(error && error.message ? error.message : "Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
-        }
+        } finally { if (submitButton) submitButton.disabled = false; }
     }
 
     window.addTask = addTask;
@@ -949,11 +1004,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         const hasDetails = task.description || steps.length || taskFiles.length || task.recurrence;
         let html = '<div class="task-item ' + (task.completed ? "completed" : "") + '" data-task-id="' + Number(task.id) + '">' +
             '<div class="task-check"><button type="button" class="small-button" onclick="toggleTask(' + Number(task.id) + ')" title="' + (task.completed ? "Desmarcar tarefa" : "Marcar como concluída") + '">' + (task.completed ? "✓" : "○") + '</button></div>' +
-            '<span class="task-subject ' + subject.className + '">' + subject.icon + " " + escapeHTML(subject.name) + '</span>' +
+            '<span class="task-subject ' + subject.className + '">' + subjectIconMarkup(subject) + escapeHTML(subject.name) + '</span>' +
             '<span class="task-title">' + escapeHTML(task.name) + '</span>' +
             '<span class="task-date">' + formatDate(task.date) + '</span>';
         if (task.recurrence) html += '<span class="task-recurrence">' + (task.recurrence === "daily" ? "Diária" : "Semanal") + '</span>';
-        if (showDelete) html += '<button type="button" class="small-button" onclick="deleteTask(' + Number(task.id) + ')" title="Excluir tarefa">🗑️</button>';
+        if (showDelete) html += '<button type="button" class="small-button" onclick="deleteTask(' + Number(task.id) + ')" title="Excluir tarefa"><i class="ph ph-trash" aria-hidden="true"></i></button>';
         if (hasDetails) {
             html += '<div class="task-extra"><details data-task-id="' + Number(task.id) + '"><summary>Instruções, checklist e anexos</summary>' +
                 (task.description ? '<p>' + escapeHTML(task.description) + '</p>' : "");
@@ -964,7 +1019,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             if (taskFiles.length) {
                 html += '<div class="task-files">' + taskFiles.map(file =>
-                    safeAttachmentDataUrl(file.dataUrl || file.storageUrl) ? '<a href="' + escapeHTML(safeAttachmentDataUrl(file.dataUrl || file.storageUrl)) + '" download="' + escapeHTML(file.name) + '" target="_blank" rel="noopener">📎 ' + escapeHTML(file.name) + '</a>' : ''
+                    safeAttachmentDataUrl(file.dataUrl || file.storageUrl) ? '<a href="' + escapeHTML(safeAttachmentDataUrl(file.dataUrl || file.storageUrl)) + '" download="' + escapeHTML(file.name) + '" target="_blank" rel="noopener"><i class="ph ph-paperclip" aria-hidden="true"></i> ' + escapeHTML(file.name) + '</a>' : ''
                 ).join("") + '</div>';
             }
             if (task.recurrence) html += '<p>Esta tarefa se repete ' + (task.recurrence === "daily" ? "diariamente" : "semanalmente") + ' quando for concluída.</p>';
@@ -1084,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             list.innerHTML =
                 emptyMessage(
-                    "📝",
+                    '<i class="ph ph-check-square" aria-hidden="true"></i>',
                     "Nenhuma tarefa encontrada",
                     search
                         ? "Tente pesquisar outro termo."
@@ -1671,7 +1726,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 data-exam-id="${Number(exam.id)}">
 
                 <div class="exam-icon">
-                    ${exam.completed ? "✓" : "📝"}
+                    <i class="ph ${exam.completed ? "ph-check-circle" : "ph-exam"}" aria-hidden="true"></i>
                 </div>
 
 
@@ -1735,8 +1790,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     ${
                         exam.completed
-                            ? "↩️"
-                            : "✓"
+                            ? '<i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>'
+                            : '<i class="ph ph-check" aria-hidden="true"></i>'
                     }
 
                 </button>
@@ -1751,7 +1806,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 onclick="deleteExam(${Number(exam.id)})"
                                 title="Excluir prova">
 
-                                🗑️
+                                <i class="ph ph-trash" aria-hidden="true"></i>
 
                             </button>
                         `
@@ -1789,7 +1844,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             list.innerHTML =
                 emptyMessage(
-                    "📝",
+                    '<i class="ph ph-exam" aria-hidden="true"></i>',
                     "Nenhuma prova cadastrada",
                     "Adicione uma prova para começar."
                 );
@@ -1983,7 +2038,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 <div class="subject-icon">
 
-                                    ${subject.icon}
+                                    ${subjectIconMarkup(subject)}
 
                                 </div>
 
@@ -2056,16 +2111,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             <label for="editSubjectTitle">Título / assunto</label><input id="editSubjectTitle" type="text" maxlength="120" value="${escapeHTML(item.title || "Anotação")}" required>
             <label for="editSubjectText">Anotações</label><textarea id="editSubjectText" rows="6" maxlength="10000" required>${escapeHTML(item.text || "")}</textarea>
             <label class="checkbox-label"><input id="editSubjectImportant" type="checkbox"${item.important ? " checked" : ""}> Marcar como importante para revisar</label>
-            <label for="editSubjectFiles">Adicionar mais PDFs ou fotos</label><input id="editSubjectFiles" type="file" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
+            <label for="editSubjectFiles">Adicionar mais PDFs ou fotos</label><input id="editSubjectFiles" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
             <small>Arquivos atuais serão mantidos. Com Firebase Storage, o total pode chegar a 20 MB.</small>
             <button type="submit" class="btn-primary">Salvar alterações</button></form>`);
         const form = document.getElementById("editSubjectContentForm");
-        form?.addEventListener("submit", event => {
+        form?.addEventListener("submit", async event => {
             event.preventDefault();
             const title = document.getElementById("editSubjectTitle").value.trim();
             const text = document.getElementById("editSubjectText").value.trim();
             const selectedFiles = Array.from(document.getElementById("editSubjectFiles").files || []);
-            if (selectedFiles.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) { alert("Anexe apenas PDFs ou imagens PNG, JPG, WEBP e GIF."); return; }
+            try { await validateAttachmentFiles(selectedFiles); }
+            catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
             const currentFiles = Array.isArray(item.files) ? item.files : [];
             const currentBytes = currentFiles.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
             const newBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
@@ -2145,7 +2201,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         openModal(
-            `${subject.icon} ${subject.name}`,
+            subject.name,
 
             `
                 <div>
@@ -2156,12 +2212,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                             margin-bottom:20px;
                         ">
 
-                        <div
-                            style="
-                                font-size:45px;
-                            ">
+                        <div class="subject-modal-icon">
 
-                            ${subject.icon}
+                            ${subjectIconMarkup(subject)}
 
                         </div>
 
@@ -2190,7 +2243,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
                         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
                         <label for="subjectContentFiles">Anexar PDF ou fotos (até 10 MB por arquivo com Firebase Storage)</label>
-                        <input type="file" id="subjectContentFiles" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
+                        <input type="file" id="subjectContentFiles" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
                         <p style="font-size:12px;color:#718096">Com Firebase Storage configurado, fotos e PDFs ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 900 KB por conteúdo.</p>
                         <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
                     </form>
@@ -2202,7 +2255,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ">
 
                         <h4>
-                            📚 Conteúdos
+                            <i class="ph ph-notebook" aria-hidden="true"></i> Conteúdos
                         </h4>
 
                         ${contents.length ? '<label for="subjectContentSearch" class="subject-search-label">Buscar anotações</label><input type="search" id="subjectContentSearch" class="subject-content-search" placeholder="Pesquise por tópico, título ou texto">' : ''}
@@ -2232,14 +2285,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                 ">
 
                                                 <div style="flex:1;min-width:0">
-                                                    <strong>${content.important ? '⭐ ' : '📖 '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
+                                                    <strong>${content.important ? '<i class="ph ph-star" aria-hidden="true"></i> ' : '<i class="ph ph-book-open-text" aria-hidden="true"></i> '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
                                                     ${content.topic ? `<small class="subject-note-topic">${escapeHTML(content.topic)}</small>` : ''}
                                                     <p style="white-space:pre-wrap;margin:6px 0">${escapeHTML(content.text || '')}</p>
-                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl || file.storageUrl); if (!url) return ''; const image = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(file.name || '') || /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener">📎 ${escapeHTML(file.name)}</a></p>`; }).join('')}
-                                                    <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}">✏️ Editar</button>
-                                                    <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}">🧠 Revisar</button>
+                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl || file.storageUrl); if (!url) return ''; const image = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(file.name || '') || /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener"><i class="ph ph-paperclip" aria-hidden="true"></i> ${escapeHTML(file.name)}</a></p>`; }).join('')}
+                                                    <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-pencil-simple" aria-hidden="true"></i> Editar</button>
+                                                    <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-brain" aria-hidden="true"></i> Revisar</button>
                                                 </div>
-                                                <button type="button" class="small-button" data-subject-action="delete" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}" aria-label="Excluir conteúdo">🗑️</button>
+                                                <button type="button" class="small-button" data-subject-action="delete" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}" aria-label="Excluir conteúdo"><i class="ph ph-trash" aria-hidden="true"></i></button>
 
                                             </article>
                                         `
@@ -2256,7 +2309,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ">
 
                         <p>
-                            📝
+                            <i class="ph ph-check-square" aria-hidden="true"></i>
                             ${
                                 tasks.length
                             }
@@ -2264,7 +2317,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </p>
 
                         <p>
-                            📚
+                            <i class="ph ph-exam" aria-hidden="true"></i>
                             ${
                                 exams.length
                             }
@@ -2309,9 +2362,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!form) return;
 
 
-        form.addEventListener(
+            form.addEventListener(
             "submit",
-            event => {
+            async event => {
 
                 event.preventDefault();
 
@@ -2328,7 +2381,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const fileInput = document.getElementById("subjectContentFiles");
                 const files = Array.from(fileInput.files || []);
                 if (!title || !content) { alert("Preencha o título e as anotações."); return; }
-                if (files.some(file => !["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"].includes(file.type))) { alert("Anexe apenas PDFs ou imagens PNG, JPG, WEBP e GIF."); return; }
+                try { await validateAttachmentFiles(files); }
+                catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
                 const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
                 const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
                 if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB."); return; }
@@ -3361,7 +3415,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 content += `
                     <h4>
-                        📝 Tarefas
+                        <i class="ph ph-check-square" aria-hidden="true"></i> Tarefas
                     </h4>
                 `;
 
@@ -3414,7 +3468,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             margin-top:20px;
                         ">
 
-                        📚 Provas
+                        <i class="ph ph-exam" aria-hidden="true"></i> Provas
 
                     </h4>
                 `;
@@ -3699,7 +3753,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             container.innerHTML = notices.length
                 ? notices.map(renderNotice).join("")
-                : emptyMessage("🔔", "Tudo em dia", "Não há avisos novos para você.");
+                : emptyMessage('<i class="ph ph-bell" aria-hidden="true"></i>', "Tudo em dia", "Não há avisos novos para você.");
             if (history.length) {
                 container.insertAdjacentHTML("beforeend", '<details class="notice-history"><summary>Histórico (' + history.length + ')</summary><div class="notice-history-list">' + history.slice(0, 30).map(renderReadNotice).join("") + '</div></details>');
             }
@@ -3718,7 +3772,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 dashboardContainer.innerHTML =
                     emptyMessage(
-                        "🔔",
+                        '<i class="ph ph-bell" aria-hidden="true"></i>',
                         "Nenhum aviso",
                         "Você não possui avisos no momento."
                     );
@@ -3877,7 +3931,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                             alert(
-                                "Aviso publicado com sucesso! 🔔"
+                                "Aviso publicado com sucesso!"
                             );
                         }
                     );
@@ -3963,7 +4017,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "granted"
             ) {
                 alert(
-                    "Notificações ativadas! 🔔 Você receberá lembretes de tarefas e provas."
+                    "Notificações ativadas! Você receberá lembretes de tarefas e provas."
                 );
 
                 checkDueDateNotifications();
@@ -4014,7 +4068,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     {
                         body,
                         icon:
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236c63ff'/%3E%3Ctext x='50' y='65' text-anchor='middle' font-size='55'%3E📚%3C/text%3E%3C/svg%3E",
+                            "./icons/icon-192.png",
                         tag:
                             notificationId,
                         renotify: false
@@ -4124,8 +4178,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const prefix =
                     item.notificationType ===
                     "prova"
-                        ? "📚 Prova"
-                        : "📝 Tarefa";
+                        ? "Prova"
+                        : "Tarefa";
 
                 const when =
                     days === 0

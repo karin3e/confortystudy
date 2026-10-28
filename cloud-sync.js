@@ -22,7 +22,35 @@
   const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
   const LOCAL_ATTACHMENT_BYTES = 700 * 1024;
   const allowedTypes = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"]);
+  const signatureTypes = {
+    "application/pdf": bytes => Array.from(bytes.slice(0, 1024), byte => String.fromCharCode(byte)).join("").includes("%PDF-"),
+    "image/png": bytes => bytes.length >= 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => bytes[index] === byte),
+    "image/jpeg": bytes => bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255,
+    "image/gif": bytes => bytes.length >= 6 && ["GIF87a", "GIF89a"].includes(Array.from(bytes.slice(0, 6), byte => String.fromCharCode(byte)).join("")),
+    "image/webp": bytes => bytes.length >= 12 && Array.from(bytes.slice(0, 4), byte => String.fromCharCode(byte)).join("") === "RIFF" && Array.from(bytes.slice(8, 12), byte => String.fromCharCode(byte)).join("") === "WEBP"
+  };
   const storageReady = uid => Boolean(window.comfortStorage && uid && window.comfortAuth && window.comfortAuth.currentUser && window.comfortAuth.currentUser.uid === uid && navigator.onLine !== false);
+
+  async function inspectAttachmentType(file) {
+    if (!file || typeof file.slice !== "function" || !file.size) return "";
+    let bytes;
+    try {
+      const header = file.slice(0, 1024);
+      const buffer = header.arrayBuffer
+        ? await header.arrayBuffer()
+        : await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(header);
+          });
+      bytes = new Uint8Array(buffer);
+    } catch (_) { return ""; }
+    for (const [type, matches] of Object.entries(signatureTypes)) if (matches(bytes)) return type;
+    return "";
+  }
+
+  window.comfortInspectAttachmentType = inspectAttachmentType;
 
   function safeFileName(name) {
     return String(name || "arquivo").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "_").slice(-120) || "arquivo";
@@ -50,20 +78,25 @@
   }
 
   window.comfortPrepareAttachmentFile = async function (file, category) {
-    if (!file || !allowedTypes.has(file.type)) throw new Error("Anexe somente PDFs ou imagens PNG, JPG, WEBP e GIF.");
+    const detectedType = await inspectAttachmentType(file);
+    if (!allowedTypes.has(detectedType)) {
+      const isHeic = /\.hei[cf]$/i.test(String(file && file.name || "")) || /image\/hei[cf]/i.test(String(file && file.type || ""));
+      throw new Error(isHeic ? "Esta foto está em HEIC. Salve ou exporte como JPG para anexá-la." : "Não reconheci o arquivo. Use um PDF, PNG, JPG, WEBP ou GIF válido.");
+    }
     if (file.size > MAX_ATTACHMENT_BYTES) throw new Error("Cada anexo pode ter até 10 MB.");
+    const normalizedFile = file.type === detectedType ? file : new File([file], file.name || "arquivo", { type: detectedType });
     const uid = activeUid;
     if (storageReady(uid)) {
-      try { return await uploadFile(file, category, uid); }
+      try { return await uploadFile(normalizedFile, category, uid); }
       catch (error) {
         console.error("ComfortStudy: falha ao enviar anexo ao Firebase Storage", error);
         if (file.size > LOCAL_ATTACHMENT_BYTES) throw new Error("Não foi possível enviar ao Firebase Storage. Confira se o Storage está ativado e se as regras foram publicadas.");
-        const localData = await readFileAsDataUrl(file);
-        return { name: String(file.name || "arquivo"), type: file.type, size: Number(file.size) || 0, dataUrl: localData, storagePending: true };
+        const localData = await readFileAsDataUrl(normalizedFile);
+        return { name: String(file.name || "arquivo"), type: detectedType, size: Number(file.size) || 0, dataUrl: localData, storagePending: true };
       }
     }
     if (file.size > LOCAL_ATTACHMENT_BYTES) throw new Error("Anexos acima de 700 KB precisam do Firebase Storage ativado e de conexão com a internet.");
-    return { name: String(file.name || "arquivo"), type: file.type, size: Number(file.size) || 0, dataUrl: await readFileAsDataUrl(file), storagePending: Boolean(uid && navigator.onLine !== false) };
+    return { name: String(file.name || "arquivo"), type: detectedType, size: Number(file.size) || 0, dataUrl: await readFileAsDataUrl(normalizedFile), storagePending: Boolean(uid && navigator.onLine !== false) };
   };
 
   window.comfortDeleteAttachment = function (file) {

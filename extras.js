@@ -114,7 +114,7 @@
     });
     if (!rows.length) { host.innerHTML = empty("Seu horário ainda está vazio."); return; }
     host.innerHTML = rows.map(function (item) {
-      return '<div class="feature-row"><div><strong>' + esc(DAY_NAMES[Number(item.day)] || "") + " • " + esc(item.start) + "–" + esc(item.end) + "</strong><span>" + esc(item.subject) + (item.label ? " · " + esc(item.label) : "") + '</span></div><button type="button" class="small-button" data-extra-action="delete-class" data-id="' + Number(item.id) + '" aria-label="Excluir aula">🗑️</button></div>';
+      return '<div class="feature-row"><div><strong>' + esc(DAY_NAMES[Number(item.day)] || "") + " • " + esc(item.start) + "–" + esc(item.end) + "</strong><span>" + esc(item.subject) + (item.label ? " · " + esc(item.label) : "") + '</span></div><button type="button" class="small-button" data-extra-action="delete-class" data-id="' + Number(item.id) + '" aria-label="Excluir aula"><i class="ph ph-trash" aria-hidden="true"></i></button></div>';
     }).join("");
   }
 
@@ -131,7 +131,7 @@
     const plans = list("comfortStudyPlans").sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
     if (!plans.length) { host.innerHTML = empty("Gere um plano a partir de uma prova cadastrada."); return; }
     host.innerHTML = plans.map(function (session) {
-      return '<div class="feature-row' + (session.done ? " feature-done" : "") + '"><label><input type="checkbox" data-extra-action="toggle-plan" data-id="' + esc(session.id) + '"' + (session.done ? " checked" : "") + '> <span><strong>' + esc(session.title) + "</strong><small>" + esc(session.subject) + " · " + niceDate(session.date) + "</small></span></label><button type=\"button\" class=\"small-button\" data-extra-action=\"delete-plan\" data-id=\"" + esc(session.id) + '" aria-label="Excluir sessão">🗑️</button></div>';
+      return '<div class="feature-row' + (session.done ? " feature-done" : "") + '"><label><input type="checkbox" data-extra-action="toggle-plan" data-id="' + esc(session.id) + '"' + (session.done ? " checked" : "") + '> <span><strong>' + esc(session.title) + "</strong><small>" + esc(session.subject) + " · " + niceDate(session.date) + "</small></span></label><button type=\"button\" class=\"small-button\" data-extra-action=\"delete-plan\" data-id=\"" + esc(session.id) + '" aria-label="Excluir sessão"><i class="ph ph-trash" aria-hidden="true"></i></button></div>';
     }).join("");
   }
 
@@ -144,7 +144,7 @@
     dueCount.textContent = due + " para revisar";
     if (!cards.length) { host.innerHTML = empty("Você ainda não criou flashcards."); return; }
     host.innerHTML = cards.map(function (card) {
-      return '<div class="feature-row"><div><strong>' + esc(card.front) + '</strong><span>' + esc(card.subject) + " · revisão " + niceDate(card.dueAt || today()) + '</span></div><button type="button" class="small-button" data-extra-action="delete-card" data-id="' + Number(card.id) + '" aria-label="Excluir flashcard">🗑️</button></div>';
+      return '<div class="feature-row"><div><strong>' + esc(card.front) + '</strong><span>' + esc(card.subject) + " · revisão " + niceDate(card.dueAt || today()) + '</span></div><button type="button" class="small-button" data-extra-action="delete-card" data-id="' + Number(card.id) + '" aria-label="Excluir flashcard"><i class="ph ph-trash" aria-hidden="true"></i></button></div>';
     }).join("");
   }
 
@@ -155,7 +155,7 @@
     const questions = list("comfortQuizQuestions").filter(item => item && Array.isArray(item.options) && item.options.length === 4 && Number.isInteger(Number(item.correct)) && Number(item.correct) >= 0 && Number(item.correct) < 4);
     if (start) start.disabled = !questions.length;
     host.innerHTML = questions.length ? questions.map(function (item) {
-      return '<div class="feature-row"><div><strong>' + esc(item.prompt) + '</strong><span>' + esc(item.subject) + ' · ' + (Array.isArray(item.options) ? item.options.length : 0) + ' alternativas</span></div><button type="button" class="small-button" data-extra-action="delete-quiz-question" data-id="' + Number(item.id) + '" aria-label="Excluir questão">🗑️</button></div>';
+      return '<div class="feature-row"><div><strong>' + esc(item.prompt) + '</strong><span>' + esc(item.subject) + ' · ' + (Array.isArray(item.options) ? item.options.length : 0) + ' alternativas</span></div><button type="button" class="small-button" data-extra-action="delete-quiz-question" data-id="' + Number(item.id) + '" aria-label="Excluir questão"><i class="ph ph-trash" aria-hidden="true"></i></button></div>';
     }).join("") : empty("Adicione questões ao seu banco para montar um simulado.");
   }
 
@@ -321,7 +321,7 @@
     if (!grades.length) { host.innerHTML = empty("Nenhuma nota registrada."); return; }
     host.innerHTML = grades.map(function (grade) {
       const percent = Number(grade.score) / Number(grade.maximum) * 100;
-      return '<div class="feature-row"><div><strong>' + esc(grade.title) + " · " + esc(grade.subject) + '</strong><span>' + esc(grade.score) + "/" + esc(grade.maximum) + " (" + percent.toFixed(1).replace(".", ",") + "%) · " + niceDate(grade.date) + '</span></div><button type="button" class="small-button" data-extra-action="delete-grade" data-id="' + Number(grade.id) + '" aria-label="Excluir nota">🗑️</button></div>';
+      return '<div class="feature-row"><div><strong>' + esc(grade.title) + " · " + esc(grade.subject) + '</strong><span>' + esc(grade.score) + "/" + esc(grade.maximum) + " (" + percent.toFixed(1).replace(".", ",") + "%) · " + niceDate(grade.date) + '</span></div><button type="button" class="small-button" data-extra-action="delete-grade" data-id="' + Number(grade.id) + '" aria-label="Excluir nota"><i class="ph ph-trash" aria-hidden="true"></i></button></div>';
     }).join("");
   }
 
@@ -418,7 +418,7 @@
     });
     if (notesChanged) write("comfortSubjectContents", contents);
     dueHost.innerHTML = due.length ? due.map(item => '<div class="feature-row"><div><strong>' + esc(item.subject) + '</strong><span>' + esc(item.text) + ' · ' + niceDate(item.date) + '</span></div><button type="button" class="small-button" data-extra-action="review-' + item.kind + '" data-id="' + Number(item.id) + '" data-subject="' + esc(item.subject) + '">Marcar revisada</button></div>').join("") : empty("Sem revisões pendentes para hoje.");
-    host.innerHTML = entries.length ? entries.slice(0, 8).map(item => '<div class="feature-row"><div><strong>' + esc(item.subject) + ' · ' + niceDate(item.date) + '</strong><span>' + esc(item.studied) + (item.review ? ' · Revisar: ' + esc(item.review) : "") + '</span></div><button type="button" class="small-button" data-extra-action="delete-diary" data-id="' + Number(item.id) + '" aria-label="Excluir registro">🗑️</button></div>').join("") : empty("Seus registros de estudo aparecerão aqui.");
+    host.innerHTML = entries.length ? entries.slice(0, 8).map(item => '<div class="feature-row"><div><strong>' + esc(item.subject) + ' · ' + niceDate(item.date) + '</strong><span>' + esc(item.studied) + (item.review ? ' · Revisar: ' + esc(item.review) : "") + '</span></div><button type="button" class="small-button" data-extra-action="delete-diary" data-id="' + Number(item.id) + '" aria-label="Excluir registro"><i class="ph ph-trash" aria-hidden="true"></i></button></div>').join("") : empty("Seus registros de estudo aparecerão aqui.");
   }
 
   function renderReports() {
@@ -541,7 +541,8 @@
   }
   async function addPdf(file) {
     if (!file) return;
-    if (file.type !== "application/pdf") { window.alert("Escolha um arquivo PDF válido."); return; }
+    const detectedType = window.comfortInspectAttachmentType ? await window.comfortInspectAttachmentType(file) : file.type;
+    if (detectedType !== "application/pdf") { window.alert("Não reconheci esse arquivo como PDF. Escolha um PDF válido."); return; }
     const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
     if (file.size > 10 * 1024 * 1024) { window.alert("Cada PDF pode ter até 10 MB."); return; }
     if (!cloudStorageAvailable && file.size > 700 * 1024) { window.alert("Para PDFs acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
