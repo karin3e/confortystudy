@@ -2265,3 +2265,35 @@ body.modal-open { overflow: hidden; }
   .modal-content h2 { margin-bottom: 14px; }
   .modal-form { gap: 10px; }
 }
+
+
+/* ComfortStudy — ícones de matérias com cores semânticas */
+.subject-card .subject-color { background: #64748b; }
+.subject-card.subject-math .subject-color, .subject-color.math { background: #ef4444; }
+.subject-card.subject-portuguese .subject-color, .subject-color.portuguese { background: #3b82f6; }
+.subject-card.subject-history .subject-color, .subject-color.history { background: #d97706; }
+.subject-card.subject-geography .subject-color, .subject-color.geography { background: #16a34a; }
+.subject-card.subject-physics .subject-color, .subject-color.physics { background: #7c3aed; }
+.subject-card.subject-chemistry .subject-color, .subject-color.chemistry { background: #0891b2; }
+.subject-card.subject-biology .subject-color, .subject-color.biology { background: #059669; }
+.subject-card.subject-english .subject-color, .subject-color.english { background: #db2777; }
+.subject-card.subject-custom .subject-color, .subject-color.custom { background: #64748b; }
+
+.subject-card .subject-icon {
+    background: #f1f5f9;
+    color: #334155;
+    transition: background-color .2s ease, color .2s ease, transform .2s ease;
+}
+.subject-card:hover .subject-icon { transform: translateY(-1px); }
+.subject-card.subject-math .subject-icon { background: #fff1f2; color: #dc2626; }
+.subject-card.subject-portuguese .subject-icon { background: #eff6ff; color: #2563eb; }
+.subject-card.subject-history .subject-icon { background: #fffbeb; color: #b45309; }
+.subject-card.subject-geography .subject-icon { background: #f0fdf4; color: #15803d; }
+.subject-card.subject-physics .subject-icon { background: #f5f3ff; color: #6d28d9; }
+.subject-card.subject-chemistry .subject-icon { background: #ecfeff; color: #0e7490; }
+.subject-card.subject-biology .subject-icon { background: #ecfdf5; color: #047857; }
+.subject-card.subject-english .subject-icon { background: #fdf2f8; color: #be185d; }
+.subject-card.subject-custom .subject-icon { background: #f1f5f9; color: #475569; }
+.subject-card .subject-symbol { display: inline-block; font-size: 25px; line-height: 1; }
+.subject-content-form button[aria-busy="true"],
+.modal-form button[aria-busy="true"] { opacity: .7; cursor: progress; }
