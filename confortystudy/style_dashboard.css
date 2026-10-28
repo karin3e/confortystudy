@@ -585,6 +585,10 @@ body {
 }
 
 .task-subject {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     padding: 5px 9px;
 
     border-radius: 7px;
@@ -596,6 +600,8 @@ body {
 
     text-align: center;
 }
+
+.task-subject .subject-symbol { font-size: 13px; flex: 0 0 auto; }
 
 .task-subject.math {
     background: #fef2f2;
@@ -785,6 +791,9 @@ body {
     font-size: 22px;
 }
 
+.exam-icon i { font-size: 23px; }
+.small-button .ph { font-size: 15px; vertical-align: -1px; }
+
 .exam-preview strong {
     font-size: 13px;
 }
@@ -940,6 +949,21 @@ body {
 
     margin-top: 5px;
 }
+
+.subject-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0 10px;
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.subject-icon .subject-symbol { font-size: 25px; }
+.subject-modal-icon { color: #2563eb; font-size: 42px; line-height: 1; }
 
 .progress-info {
     display: flex;
@@ -1535,6 +1559,41 @@ body {
     margin: 5px 0 15px;
 
     font-size: 13px;
+}
+
+.profile-hint { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+.big-avatar.profile-photo-avatar { overflow: hidden; padding: 0; }
+.big-avatar.profile-photo-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.profile-settings-form { margin-top: 22px; }
+.subject-search-bar { display: grid; gap: 7px; max-width: 600px; margin: 18px 0; }
+.subject-search-bar label { font-size: 13px; font-weight: 700; color: #475569; }
+.subject-search-bar input { box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: #fff; font: inherit; }
+.profile-settings-section { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px; box-shadow: var(--shadow); }
+.profile-settings-heading h3 { margin: 0 0 6px; font-size: 18px; }
+.profile-settings-heading p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.profile-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 22px; }
+.profile-field { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.profile-field-wide { grid-column: 1 / -1; }
+.profile-field label { font-size: 13px; font-weight: 700; color: #475569; }
+.profile-field input, .profile-field textarea { width: 100%; min-width: 0; padding: 12px 13px; border: 1px solid var(--border); border-radius: 10px; color: #1e293b; background: #fafcff; font: inherit; font-size: 14px; }
+.profile-field input[type="file"] { padding: 8px; }
+.profile-field small { color: var(--muted); font-size: 12px; line-height: 1.45; }
+.subject-attachment { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.subject-attachment img { display: block; max-width: min(100%, 260px); max-height: 180px; border-radius: 9px; object-fit: contain; background: #f1f5f9; }
+.profile-field textarea { resize: vertical; min-height: 100px; }
+.profile-field input:focus, .profile-field textarea:focus { outline: 3px solid rgba(59,130,246,.13); border-color: var(--primary); }
+.profile-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--border); margin-top: 22px; padding-top: 18px; }
+.profile-form-actions > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-save-status { color: #15803d; font-size: 13px; min-height: 1em; }
+.profile-form-actions button { min-height: 44px; }
+
+@media (max-width: 640px) {
+    .profile-settings-section { padding: 20px 16px; }
+    .profile-fields-grid { grid-template-columns: 1fr; gap: 14px; }
+    .profile-field-wide { grid-column: auto; }
+    .profile-form-actions { align-items: stretch; flex-direction: column; }
+    .profile-form-actions > div { display: grid; grid-template-columns: 1fr 1fr; }
+    .profile-form-actions button { width: 100%; }
 }
 
 
@@ -2187,3 +2246,53 @@ body {
 #subjectContentForm textarea { width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: #fff; font: inherit; }
 #subjectContentForm input[type="text"], #subjectContentForm input[type="file"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 #subjectContentForm label { display: block; margin-top: 10px; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
+
+/* Formulários do modal rolam dentro da janela em celulares e em telas baixas. */
+.modal { z-index: 1200; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; align-items: flex-start; padding: 16px; }
+.modal-content { box-sizing: border-box; width: min(100%, 560px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.modal-content h2 { padding-right: 42px; }
+.modal-close { position: sticky; top: 0; right: auto; z-index: 2; display: block; margin: -8px -8px -34px auto; }
+.modal-form { min-width: 0; }
+.modal-form input, .modal-form select, .modal-form textarea { box-sizing: border-box; min-width: 0; }
+.modal-form input[type="checkbox"], .modal-form input[type="radio"] { flex: 0 0 20px; width: 20px; min-width: 20px; min-height: 20px; height: 20px; padding: 0; margin: 0; }
+.modal-form input[type="file"] { max-width: 100%; font-size: 13px; }
+.modal-form button[type="submit"] { width: 100%; min-height: 46px; }
+body.modal-open { overflow: hidden; }
+
+@media (max-height: 620px) {
+  .modal { padding-top: max(8px, env(safe-area-inset-top)); padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .modal-content { max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); padding: 20px; }
+  .modal-content h2 { margin-bottom: 14px; }
+  .modal-form { gap: 10px; }
+}
+
+
+/* ComfortStudy — Sobre e Central de Suporte (mantém a identidade azul existente) */
+.comfort-profile-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.comfort-profile-shortcuts button{display:inline-flex;align-items:center;gap:8px}
+.comfort-about-hero{display:flex;align-items:center;gap:18px;padding:26px;margin:0 0 20px;border-radius:18px;background:linear-gradient(120deg,#e8f2ff,#f7faff);border:1px solid #d5e6fb;color:#172033}
+.comfort-about-mark{width:62px;height:62px;flex:0 0 62px;display:grid;place-items:center;border-radius:16px;background:#2563eb;color:#fff;font-size:32px}
+.comfort-about-hero h2{font-size:clamp(22px,3vw,30px);margin:0 0 5px;color:#1d4ed8}
+.comfort-about-hero p{margin:0;color:#526782}
+.comfort-about-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:18px;align-items:start}
+.comfort-about-card,.comfort-support-form-card,.comfort-support-history-card{min-width:0;padding:22px}
+.comfort-about-card h3,.comfort-support-form-card h3,.comfort-support-history-card h3{display:flex;align-items:center;gap:9px;color:var(--primary-dark);margin:0 0 14px}
+.comfort-about-card h3:not(:first-child){margin-top:24px}
+.comfort-about-card p{line-height:1.75;margin:0 0 14px;overflow-wrap:anywhere}
+.comfort-signature{color:var(--primary-dark);font-weight:650;font-style:italic}
+.comfort-about-card a,.comfort-support-contact a{color:var(--primary-dark);overflow-wrap:anywhere}
+.comfort-support-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:18px;align-items:start}
+.comfort-support-form{display:grid;gap:9px;margin-top:18px}
+.comfort-support-form label{font-weight:600;font-size:14px;color:var(--text)}
+.comfort-support-form input,.comfort-support-form select,.comfort-support-form textarea{width:100%;min-width:0;padding:12px 13px;border:1px solid var(--border);border-radius:10px;background:var(--white);color:var(--text);font:inherit;line-height:1.45}
+.comfort-support-form textarea{resize:vertical;min-height:130px}
+.comfort-support-form input:focus,.comfort-support-form select:focus,.comfort-support-form textarea:focus{outline:2px solid #93c5fd;outline-offset:1px;border-color:var(--primary)}
+.comfort-muted{color:var(--muted);line-height:1.6}.comfort-small{font-size:12px}
+.comfort-support-status{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.comfort-support-history{display:grid;gap:12px;margin-top:16px}
+.comfort-support-item{border:1px solid var(--border);border-radius:12px;padding:13px;min-width:0}
+.comfort-support-item h4{margin:0 0 7px;overflow-wrap:anywhere}.comfort-support-item p{margin:5px 0;line-height:1.5;overflow-wrap:anywhere;font-size:13px}
+.comfort-support-badge{display:inline-block;border-radius:999px;background:#e8f2ff;color:#1d4ed8;padding:4px 9px;font-size:12px;font-weight:650}
+.comfort-support-contact{display:grid;gap:7px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);overflow-wrap:anywhere}
+@media(max-width:800px){.comfort-about-grid,.comfort-support-layout{grid-template-columns:minmax(0,1fr)}.comfort-about-hero{padding:19px;align-items:flex-start}.comfort-about-card,.comfort-support-form-card,.comfort-support-history-card{padding:17px}.comfort-profile-shortcuts{display:grid;grid-template-columns:minmax(0,1fr)}.comfort-profile-shortcuts button{justify-content:center;min-height:44px}}
+@media(max-width:420px){.comfort-about-hero{gap:12px}.comfort-about-mark{width:48px;height:48px;flex-basis:48px;font-size:25px}.comfort-about-hero h2{font-size:22px}.comfort-support-form input,.comfort-support-form select,.comfort-support-form textarea{font-size:16px}}

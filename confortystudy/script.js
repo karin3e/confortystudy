@@ -49,15 +49,65 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     const FIXED_SUBJECTS = [
-        { name: "Matemática", icon: "📐", className: "math" },
-        { name: "Português", icon: "📚", className: "portuguese" },
-        { name: "História", icon: "🏛️", className: "history" },
-        { name: "Geografia", icon: "🌎", className: "geography" },
-        { name: "Física", icon: "⚡", className: "physics" },
-        { name: "Química", icon: "🧪", className: "chemistry" },
-        { name: "Biologia", icon: "🧬", className: "biology" },
-        { name: "Inglês", icon: "🇺🇸", className: "english" }
+        { name: "Matemática", icon: "ph-calculator", className: "math" },
+        { name: "Português", icon: "ph-book-open-text", className: "portuguese" },
+        { name: "História", icon: "ph-landmark", className: "history" },
+        { name: "Geografia", icon: "ph-globe", className: "geography" },
+        { name: "Física", icon: "ph-atom", className: "physics" },
+        { name: "Química", icon: "ph-flask", className: "chemistry" },
+        { name: "Biologia", icon: "ph-dna", className: "biology" },
+        { name: "Inglês", icon: "ph-translate", className: "english" }
     ];
+
+    const SUBJECT_ICON_BY_CLASS = {
+        math: "ph-calculator",
+        portuguese: "ph-book-open-text",
+        history: "ph-landmark",
+        geography: "ph-globe",
+        physics: "ph-atom",
+        chemistry: "ph-flask",
+        biology: "ph-dna",
+        english: "ph-translate"
+    };
+
+    const SUBJECT_ICON_BY_TOPIC = [
+        [/matem|algebra|calculo/, "ph-calculator"],
+        [/portugues|literatura|redacao|gramatica/, "ph-book-open-text"],
+        [/historia/, "ph-landmark"],
+        [/filosofia/, "ph-brain"],
+        [/sociologia/, "ph-users-three"],
+        [/geografia|cartografia/, "ph-globe"],
+        [/fisica|astronomia/, "ph-atom"],
+        [/quimica/, "ph-flask"],
+        [/biologia|anatomia|ciencias/, "ph-dna"],
+        [/ingles|espanhol|frances|idioma|lingua/, "ph-translate"],
+        [/arte|desenho/, "ph-palette"],
+        [/programacao|computacao|informatica|tecnologia/, "ph-code"],
+        [/musica/, "ph-music-notes"],
+        [/educacao fisica|esporte/, "ph-person-simple-run"]
+    ];
+
+    function subjectIconMarkup(subject) {
+        const name = String(subject && subject.name || "")
+            .trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const iconClass = SUBJECT_ICON_BY_CLASS[subject && subject.className]
+            || (SUBJECT_ICON_BY_TOPIC.find(([pattern]) => pattern.test(name)) || [null, "ph-notebook"])[1];
+        return '<i class="ph ' + iconClass + ' subject-symbol" aria-hidden="true"></i>';
+    }
+
+    async function validateAttachmentFiles(files) {
+        const allowed = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp", "image/gif"]);
+        const types = await Promise.all(files.map(file => window.comfortInspectAttachmentType
+            ? window.comfortInspectAttachmentType(file)
+            : Promise.resolve(file.type)));
+        const invalidIndex = types.findIndex(type => !allowed.has(type));
+        if (invalidIndex >= 0) {
+            const file = files[invalidIndex];
+            const isHeic = /\.hei[cf]$/i.test(String(file.name || "")) || /image\/hei[cf]/i.test(String(file.type || ""));
+            throw new Error(isHeic ? "Esta foto está em HEIC. Salve ou exporte como JPG para anexá-la." : "Não reconheci um dos arquivos. Use um PDF, PNG, JPG, WEBP ou GIF válido.");
+        }
+        return types;
+    }
 
     function getCustomSubjects() {
         const items = getStorage(STORAGE.subjects, []);
@@ -81,7 +131,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             alert('Essa matéria já existe.'); return false;
         }
         const items = getCustomSubjects();
-        items.push({ name: clean, icon: '📘', className: 'custom' });
+        items.push({ name: clean, icon: 'ph-notebook', className: 'custom' });
         setStorage(STORAGE.subjects, items);
         return true;
     }
@@ -96,7 +146,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         avisos: "Avisos",
         desempenho: "Meu Desempenho",
         premium: "Premium",
-        perfil: "Meu Perfil"
+        perfil: "Meu Perfil",
+        planejamento: "Meu Plano de Estudos",
+        suporte: "Central de Suporte",
+        sobre: "Sobre o ComfortStudy"
     };
 
 
@@ -191,8 +244,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const allContents = getSubjectContents();
         if (!Array.isArray(allContents[subjectName])) allContents[subjectName] = [];
         const record = typeof content === 'string'
-            ? { id: Date.now(), title: content.slice(0, 90), text: content, important: false, files: [], createdAt: new Date().toISOString() }
-            : { id: Date.now(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString() };
+            ? { id: Date.now(), topic: "", title: content.slice(0, 90), text: content, important: false, files: [], createdAt: new Date().toISOString() }
+            : { id: Date.now(), topic: String(content.topic || "").trim(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString() };
         allContents[subjectName].push(record);
         saveSubjectContents(allContents);
     }
@@ -219,6 +272,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
         }
 
+        const removed = allContents[subjectName].find(content => Number(content.id) === Number(contentId));
+        (removed && Array.isArray(removed.files) ? removed.files : []).forEach(file => window.comfortDeleteAttachment?.(file));
         allContents[subjectName] =
             allContents[subjectName].filter(
                 content =>
@@ -262,6 +317,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         setStorage(STORAGE.profile, profile);
     }
 
+    function renderProfileAvatar(photoData, name) {
+        const avatar = document.querySelector(".big-avatar");
+        if (!avatar) return;
+        const safeImage = typeof photoData === "string" && /^data:image\/(png|jpeg|webp|gif);base64,/i.test(photoData);
+        if (safeImage) {
+            const image = document.createElement("img");
+            image.src = photoData;
+            image.alt = "Foto de perfil de " + (name || "estudante");
+            avatar.replaceChildren(image);
+            avatar.classList.add("profile-photo-avatar");
+            avatar.classList.remove("emoji-avatar");
+        } else {
+            const appearance = getStorage("comfortAppearance", {});
+            avatar.textContent = appearance.avatar || "👤";
+            avatar.classList.add("emoji-avatar");
+            avatar.classList.remove("profile-photo-avatar");
+        }
+    }
+
 
     function renderProfile() {
 
@@ -270,13 +344,10 @@ document.addEventListener("DOMContentLoaded", async () => {
        
 
         const fields = {
-            profileName: profile.name,
+            profileNameDisplay: profile.name,
+            profileEmailDisplay: profile.email || "Plano Gratuito",
             userName: profile.name,
-            profileEmail: profile.email,
             userEmail: profile.email,
-            profileSchool: profile.school,
-            profileCourse: profile.course,
-            profileBio: profile.bio
         };
 
         Object.entries(fields).forEach(
@@ -302,209 +373,82 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         
 
-        const profilePage =
-            document.getElementById("page-perfil");
-
-        if (!profilePage) return;
-
-
-        let editButton =
-            document.getElementById(
-                "editProfileButton"
-            );
-
-
-        if (!editButton) {
-
-            editButton =
-                document.createElement("button");
-
-            editButton.id =
-                "editProfileButton";
-
-            editButton.type =
-                "button";
-
-            editButton.className =
-                "btn-primary";
-
-            editButton.textContent =
-                "✏️ Editar perfil";
-
-
-            
-
-            profilePage.prepend(editButton);
-
-            editButton.addEventListener(
-                "click",
-                showProfileModal
-            );
+        const form = document.getElementById("profileSettingsForm");
+        if (form) {
+            if (form.dataset.dirty !== "true") {
+                ["name", "email", "school", "course", "bio"].forEach(key => {
+                    const field = form.elements.namedItem(key);
+                    if (field) field.value = profile[key] || "";
+                });
+                form.dataset.photoData = profile.photoData || "";
+                const photoInput = document.getElementById("profilePhotoFile");
+                if (photoInput) photoInput.value = "";
+            }
         }
+        const draftName = form?.dataset.dirty === "true" ? form.elements.namedItem("name")?.value.trim() : profile.name;
+        const draftPhoto = form?.dataset.dirty === "true" ? form.dataset.photoData : profile.photoData;
+        renderProfileAvatar(draftPhoto, draftName);
     }
 
-
-    function profileForm() {
-
-        const profile = getProfile();
-
-        return `
-            <form
-                id="profileForm"
-                class="modal-form">
-
-                <label for="profileFormName">
-                    Nome
-                </label>
-
-                <input
-                    type="text"
-                    id="profileFormName"
-                    value="${escapeHTML(profile.name)}"
-                    placeholder="Seu nome"
-                    required
-                >
-
-                <label for="profileFormEmail">
-                    E-mail
-                </label>
-
-                <input
-                    type="email"
-                    id="profileFormEmail"
-                    value="${escapeHTML(profile.email)}"
-                    placeholder="seuemail@email.com"
-                >
-
-                <label for="profileFormSchool">
-                    Escola
-                </label>
-
-                <input
-                    type="text"
-                    id="profileFormSchool"
-                    value="${escapeHTML(profile.school)}"
-                    placeholder="Nome da escola"
-                >
-
-                <label for="profileFormCourse">
-                    Curso / Série
-                </label>
-
-                <input
-                    type="text"
-                    id="profileFormCourse"
-                    value="${escapeHTML(profile.course)}"
-                    placeholder="Ex: 3ª série"
-                >
-
-                <label for="profileFormBio">
-                    Sobre você
-                </label>
-
-                <textarea
-                    id="profileFormBio"
-                    rows="4"
-                    placeholder="Escreva algo sobre você..."
-                >${escapeHTML(profile.bio)}</textarea>
-
-                <button
-                    type="submit"
-                    class="btn-primary">
-
-                    Salvar perfil
-
-                </button>
-
-            </form>
-        `;
-    }
-
-
-    function showProfileModal() {
-
-        openModal(
-            "Editar meu perfil",
-            profileForm()
-        );
-
-        const form =
-            document.getElementById(
-                "profileForm"
-            );
-
-        if (!form) return;
-
-        form.addEventListener(
-            "submit",
-            event => {
-
-                event.preventDefault();
-
-                const profile = {
-                    name:
-                        document
-                            .getElementById(
-                                "profileFormName"
-                            )
-                            .value
-                            .trim(),
-
-                    email:
-                        document
-                            .getElementById(
-                                "profileFormEmail"
-                            )
-                            .value
-                            .trim(),
-
-                    school:
-                        document
-                            .getElementById(
-                                "profileFormSchool"
-                            )
-                            .value
-                            .trim(),
-
-                    course:
-                        document
-                            .getElementById(
-                                "profileFormCourse"
-                            )
-                            .value
-                            .trim(),
-
-                    bio:
-                        document
-                            .getElementById(
-                                "profileFormBio"
-                            )
-                            .value
-                            .trim()
-                };
-
-
-                if (!profile.name) {
-
-                    alert(
-                        "Digite pelo menos o seu nome."
-                    );
-
+    function initializeProfileSettings() {
+        const form = document.getElementById("profileSettingsForm");
+        if (!form || form.dataset.ready === "true") return;
+        form.dataset.ready = "true";
+        const status = document.getElementById("profileSaveStatus");
+        form.addEventListener("submit", event => {
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+            const profile = Object.fromEntries(["name", "email", "school", "course", "bio"].map(key => [key, form.elements.namedItem(key).value.trim()]));
+            if (!profile.name) { form.elements.namedItem("name").focus(); return; }
+            profile.photoData = form.dataset.photoData || "";
+            saveProfile({ ...getProfile(), ...profile });
+            form.dataset.dirty = "false";
+            renderProfile();
+            window.dispatchEvent(new Event("comfort-data-updated"));
+            if (status) status.textContent = "Alterações salvas.";
+        });
+        document.getElementById("cancelProfileChanges")?.addEventListener("click", () => {
+            form.dataset.dirty = "false";
+            renderProfile();
+            if (status) status.textContent = "Alterações descartadas.";
+        });
+        form.addEventListener("input", () => { form.dataset.dirty = "true"; if (status) status.textContent = ""; });
+        form.addEventListener("change", () => { form.dataset.dirty = "true"; if (status) status.textContent = ""; });
+        const photoInput = document.getElementById("profilePhotoFile");
+        photoInput?.addEventListener("change", async () => {
+            const file = photoInput.files && photoInput.files[0];
+            if (!file) return;
+            let imageType = "";
+            try { imageType = window.comfortInspectAttachmentType ? await window.comfortInspectAttachmentType(file) : file.type; }
+            catch (_) { imageType = ""; }
+            if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(imageType) || file.size > 350 * 1024) {
+                photoInput.value = "";
+                const isHeic = /\.hei[cf]$/i.test(String(file.name || "")) || /image\/hei[cf]/i.test(String(file.type || ""));
+                if (status) status.textContent = isHeic ? "Esta foto está em HEIC. Escolha ou exporte uma versão JPG de até 350 KB." : "Escolha uma imagem JPG, PNG, WEBP ou GIF válida de até 350 KB.";
+                return;
+            }
+            const normalizedFile = file.type === imageType ? file : new File([file], file.name || "foto", { type: imageType });
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (typeof reader.result !== "string" || !/^data:image\/(png|jpeg|webp|gif);base64,/i.test(reader.result)) {
+                    if (status) status.textContent = "Formato de imagem não compatível.";
                     return;
                 }
-
-
-                saveProfile(profile);
-
-                closeModal();
-
-                renderProfile();
-
-                alert(
-                    "Perfil atualizado com sucesso! ✅"
-                );
-            }
-        );
+                form.dataset.photoData = reader.result;
+                form.dataset.dirty = "true";
+                renderProfileAvatar(reader.result, form.elements.namedItem("name").value.trim());
+                if (status) status.textContent = "Foto selecionada. Salve as alterações para confirmar.";
+            };
+            reader.onerror = () => { if (status) status.textContent = "Não foi possível abrir essa imagem."; };
+            reader.readAsDataURL(normalizedFile);
+        });
+        document.getElementById("removeProfilePhoto")?.addEventListener("click", () => {
+            form.dataset.photoData = "";
+            form.dataset.dirty = "true";
+            if (photoInput) photoInput.value = "";
+            renderProfileAvatar("", form.elements.namedItem("name").value.trim());
+            if (status) status.textContent = "A foto será removida ao salvar.";
+        });
     }
 
 
@@ -517,6 +461,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
+    }
+
+    function safeAttachmentDataUrl(value) {
+        if (typeof value !== "string") return "";
+        if (/^data:(application\/pdf|image\/(png|jpeg|webp|gif));base64,[A-Za-z0-9+/=]+$/i.test(value)) return value;
+        try {
+            const url = new URL(value);
+            const bucket = window.COMFORT_FIREBASE_CONFIG && window.COMFORT_FIREBASE_CONFIG.storageBucket;
+            const path = decodeURIComponent(url.pathname);
+            if (url.protocol === "https:" && url.hostname === "firebasestorage.googleapis.com" && bucket && path.startsWith("/v0/b/" + bucket + "/o/users/")) return url.href;
+        } catch (_) {}
+        return "";
     }
 
 
@@ -597,8 +553,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 String(subjectName).toLowerCase()
         ) || {
             name: subjectName,
-            icon: "📚",
-            className: "portuguese"
+            icon: "ph-notebook",
+            className: "custom"
         };
     }
 
@@ -812,6 +768,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             "closeModal"
         );
 
+    let modalPreviousFocus = null;
+
 
     function openModal(
         title,
@@ -819,6 +777,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     ) {
 
         if (!modal) return;
+
+        if (!modal.classList.contains("show")) {
+            modalPreviousFocus = document.activeElement;
+        }
 
         if (modalTitle) {
             modalTitle.textContent =
@@ -833,6 +795,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         modal.classList.add("show");
         modal.style.display =
             "flex";
+        modal.setAttribute("aria-hidden", "false");
+        document.body.classList.add("modal-open");
+        modal.querySelector(".modal-content")?.focus({ preventScroll: true });
     }
 
 
@@ -843,6 +808,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         modal.classList.remove("show");
         modal.style.display =
             "none";
+        modal.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("modal-open");
+        if (modalPreviousFocus?.isConnected) modalPreviousFocus.focus({ preventScroll: true });
+        modalPreviousFocus = null;
     }
 
 
@@ -893,73 +862,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     
     function taskForm() {
-
-        return `
-            <form
-                id="taskForm"
-                class="modal-form">
-
-                <label for="taskName">
-                    Nome da tarefa
-                </label>
-
-                <input
-                    type="text"
-                    id="taskName"
-                    placeholder="Ex: Fazer exercícios de matemática"
-                    required
-                >
-
-                <label for="taskSubject">
-                    Matéria
-                </label>
-
-                <select
-                    id="taskSubject"
-                    required>
-
-                    <option value="">
-                        Selecione a matéria
-                    </option>
-
-                    ${getAllSubjects().map(
-                        subject => `
-                            <option
-                                value="${escapeHTML(subject.name)}">
-
-                                ${escapeHTML(
-                                    subject.name
-                                )}
-
-                            </option>
-                        `
-                    ).join("")}
-
-                </select>
-
-                <label for="taskDate">
-                    Data
-                </label>
-
-                <input
-                    type="date"
-                    id="taskDate"
-                    min="${getTodayString()}"
-                    required
-                >
-
-                <button
-                    type="submit"
-                    class="btn-primary">
-
-                    Adicionar tarefa
-
-                </button>
-
-            </form>
-        `;
+        const options = getAllSubjects().map(subject =>
+            '<option value="' + escapeHTML(subject.name) + '">' + escapeHTML(subject.name) + '</option>'
+        ).join("");
+        return '<form id="taskForm" class="modal-form">' +
+            '<label for="taskName">Nome da tarefa</label>' +
+            '<input type="text" id="taskName" placeholder="Ex: Fazer exercícios de matemática" required>' +
+            '<label for="taskSubject">Matéria</label>' +
+            '<select id="taskSubject" required><option value="">Selecione a matéria</option>' + options + '</select>' +
+            '<label for="taskDate">Data de entrega</label>' +
+            '<input type="date" id="taskDate" min="' + getTodayString() + '" required>' +
+            '<label for="taskDescription">Instruções (opcional)</label>' +
+            '<textarea id="taskDescription" rows="3" maxlength="1200" placeholder="Anote o que precisa fazer"></textarea>' +
+            '<label for="taskSteps">Checklist (uma etapa por linha)</label>' +
+            '<textarea id="taskSteps" rows="3" maxlength="1000" placeholder="Ler o capítulo&#10;Resolver os exercícios"></textarea>' +
+            '<label for="taskRecurrence">Repetição</label>' +
+            '<select id="taskRecurrence"><option value="">Não repetir</option><option value="daily">Todos os dias</option><option value="weekly">Toda semana</option></select>' +
+            '<label for="taskFiles">Anexar PDF ou imagem (JPG, PNG, WEBP ou GIF)</label>' +
+            '<input type="file" id="taskFiles" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>' +
+            '<small>Com Firebase Storage configurado, os anexos ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 700 KB no total.</small>' +
+            '<button type="submit" class="btn-primary">Adicionar tarefa</button></form>';
     }
-
 
     function showTaskModal() {
 
@@ -976,7 +899,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (form) {
 
-            form.addEventListener(
+        form.addEventListener(
                 "submit",
                 event => {
 
@@ -989,205 +912,138 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    function addTask() {
+    async function addTask() {
+        const nameInput = document.getElementById("taskName");
+        const subjectInput = document.getElementById("taskSubject");
+        const dateInput = document.getElementById("taskDate");
+        if (!nameInput || !subjectInput || !dateInput) return;
 
-        const nameInput =
-            document.getElementById(
-                "taskName"
-            );
+        const name = nameInput.value.trim();
+        const subject = subjectInput.value;
+        const date = dateInput.value;
+        const description = (document.getElementById("taskDescription") || {}).value || "";
+        const recurrence = (document.getElementById("taskRecurrence") || {}).value || "";
+        const stepsText = (document.getElementById("taskSteps") || {}).value || "";
+        const fileInput = document.getElementById("taskFiles");
+        const files = Array.from(fileInput && fileInput.files || []);
 
-        const subjectInput =
-            document.getElementById(
-                "taskSubject"
-            );
-
-        const dateInput =
-            document.getElementById(
-                "taskDate"
-            );
-
-
-        if (
-            !nameInput ||
-            !subjectInput ||
-            !dateInput
-        ) {
+        if (!name || !subject || !date) {
+            alert("Preencha o nome, a matéria e a data.");
+            return;
+        }
+        try { await validateAttachmentFiles(files); }
+        catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
+        const totalFileBytes = files.reduce((sum, file) => sum + file.size, 0);
+        const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+        if (files.some(file => file.size > 10 * 1024 * 1024) || totalFileBytes > 20 * 1024 * 1024) {
+            alert("Cada arquivo pode ter até 10 MB e os anexos da tarefa podem somar até 20 MB.");
+            return;
+        }
+        if (!cloudStorageAvailable && totalFileBytes > 700 * 1024) {
+            alert("Para anexos acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet.");
             return;
         }
 
+        const submitButton = document.querySelector("#taskForm [type='submit']");
+        if (submitButton) submitButton.disabled = true;
+        try {
+            const taskId = Date.now();
+            const fileData = await Promise.all(files.map(file => window.comfortPrepareAttachmentFile
+                ? window.comfortPrepareAttachmentFile(file, "tarefas-" + taskId)
+                : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); })));
+            const fallbackBytes = fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+            if (fallbackBytes > 700 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 700 KB.");
+            const task = {
+                id: taskId,
+                name: name,
+                subject: subject,
+                date: date,
+                description: description.trim(),
+                steps: stepsText.split(/\r?\n/).map(step => step.trim()).filter(Boolean).slice(0, 10).map(text => ({ text: text, done: false })),
+                recurrence: recurrence,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            const taskFiles = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+            if (fileData.length) taskFiles[String(task.id)] = fileData;
+            localStorage.setItem("comfortTaskFiles", JSON.stringify(taskFiles));
 
-        const name =
-            nameInput.value.trim();
-
-        const subject =
-            subjectInput.value;
-
-        const date =
-            dateInput.value;
-
-
-        if (
-            !name ||
-            !subject ||
-            !date
-        ) {
-
-            alert(
-                "Preencha todos os campos."
-            );
-
-            return;
-        }
-
-
-        const tasks =
-            getTasks();
-
-
-        tasks.push({
-
-            id: Date.now(),
-
-            name,
-
-            subject,
-
-            date,
-
-            completed: false,
-
-            createdAt:
-                new Date().toISOString()
-
-        });
-
-
-        saveTasks(tasks);
-
-        closeModal();
-
-        updateEverything();
-
-        /*
-         * Se a permissão já estiver ativa, a nova tarefa
-         * passa a participar imediatamente das verificações.
-         */
-        checkDueDateNotifications();
-
-
-        alert(
-            "Tarefa adicionada com sucesso! ✅"
-        );
+            const tasks = getTasks();
+            tasks.push(task);
+            saveTasks(tasks);
+            closeModal();
+            updateEverything();
+            checkDueDateNotifications();
+            alert(fileData.some(file => file.storagePending)
+                ? "Tarefa salva neste aparelho. O Firebase Storage não aceitou o anexo; confira a configuração e as regras para sincronizá-lo."
+                : "Tarefa adicionada com sucesso! ✅");
+        } catch (error) {
+            console.error("ComfortStudy: não foi possível salvar a tarefa", error);
+            alert(error && error.message ? error.message : "Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
+        } finally { if (submitButton) submitButton.disabled = false; }
     }
 
+    window.addTask = addTask;
 
-    window.addTask =
-        addTask;
-
-
-    [
-        "newTaskButton",
-        "dashboardAddTask",
-        "newTaskPageButton"
-    ].forEach(id => {
-
-        const button =
-            document.getElementById(id);
-
-        if (button) {
-
-            button.addEventListener(
-                "click",
-                showTaskModal
-            );
-        }
+    ["newTaskButton", "dashboardAddTask", "newTaskPageButton"].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.addEventListener("click", showTaskModal);
     });
-
 
     let currentTaskFilter =
         "all";
 
 
-    function renderTaskItem(
-        task,
-        showDelete = true
-    ) {
-
-        const subject =
-            getSubject(task.subject);
-
-
-        return `
-            <div
-                class="task-item
-                ${task.completed ? "completed" : ""}">
-
-                <div class="task-check">
-
-                    <button
-                        type="button"
-                        class="small-button"
-                        onclick="toggleTask(${Number(task.id)})"
-                        title="${
-                            task.completed
-                                ? "Desmarcar tarefa"
-                                : "Marcar como concluída"
-                        }">
-
-                        ${
-                            task.completed
-                                ? "✓"
-                                : "○"
-                        }
-
-                    </button>
-
-                </div>
-
-
-                <span
-                    class="task-subject ${subject.className}">
-
-                    ${subject.icon}
-                    ${escapeHTML(subject.name)}
-
-                </span>
-
-
-                <span class="task-title">
-
-                    ${escapeHTML(task.name)}
-
-                </span>
-
-
-                <span class="task-date">
-
-                    ${formatDate(task.date)}
-
-                </span>
-
-
-                ${
-                    showDelete
-                        ? `
-                            <button
-                                type="button"
-                                class="small-button"
-                                onclick="deleteTask(${Number(task.id)})"
-                                title="Excluir tarefa">
-
-                                🗑️
-
-                            </button>
-                        `
-                        : ""
-                }
-
-            </div>
-        `;
+    function renderTaskItem(task, showDelete = true) {
+        const subject = getSubject(task.subject);
+        let taskFiles = [];
+        try {
+            const allFiles = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+            const fileKey = task.attachmentSourceId || task.id;
+            taskFiles = Array.isArray(allFiles[String(task.id)]) ? allFiles[String(task.id)] : (Array.isArray(allFiles[String(fileKey)]) ? allFiles[String(fileKey)] : []);
+        } catch (_) {}
+        const steps = Array.isArray(task.steps) ? task.steps : [];
+        const hasDetails = task.description || steps.length || taskFiles.length || task.recurrence;
+        let html = '<div class="task-item ' + (task.completed ? "completed" : "") + '" data-task-id="' + Number(task.id) + '">' +
+            '<div class="task-check"><button type="button" class="small-button" onclick="toggleTask(' + Number(task.id) + ')" title="' + (task.completed ? "Desmarcar tarefa" : "Marcar como concluída") + '">' + (task.completed ? "✓" : "○") + '</button></div>' +
+            '<span class="task-subject ' + subject.className + '">' + subjectIconMarkup(subject) + escapeHTML(subject.name) + '</span>' +
+            '<span class="task-title">' + escapeHTML(task.name) + '</span>' +
+            '<span class="task-date">' + formatDate(task.date) + '</span>';
+        if (task.recurrence) html += '<span class="task-recurrence">' + (task.recurrence === "daily" ? "Diária" : "Semanal") + '</span>';
+        if (showDelete) html += '<button type="button" class="small-button" onclick="deleteTask(' + Number(task.id) + ')" title="Excluir tarefa"><i class="ph ph-trash" aria-hidden="true"></i></button>';
+        if (hasDetails) {
+            html += '<div class="task-extra"><details data-task-id="' + Number(task.id) + '"><summary>Instruções, checklist e anexos</summary>' +
+                (task.description ? '<p>' + escapeHTML(task.description) + '</p>' : "");
+            if (steps.length) {
+                html += '<div class="task-checklist">' + steps.map((step, index) =>
+                    '<label class="' + (step.done ? "task-step-done" : "") + '"><input type="checkbox" ' + (step.done ? "checked" : "") + ' onchange="toggleTaskStep(' + Number(task.id) + ',' + index + ',this.checked)"><span>' + escapeHTML(step.text) + '</span></label>'
+                ).join("") + '</div>';
+            }
+            if (taskFiles.length) {
+                html += '<div class="task-files">' + taskFiles.map(file =>
+                    safeAttachmentDataUrl(file.dataUrl || file.storageUrl) ? '<a href="' + escapeHTML(safeAttachmentDataUrl(file.dataUrl || file.storageUrl)) + '" download="' + escapeHTML(file.name) + '" target="_blank" rel="noopener"><i class="ph ph-paperclip" aria-hidden="true"></i> ' + escapeHTML(file.name) + '</a>' : ''
+                ).join("") + '</div>';
+            }
+            if (task.recurrence) html += '<p>Esta tarefa se repete ' + (task.recurrence === "daily" ? "diariamente" : "semanalmente") + ' quando for concluída.</p>';
+            html += '</details></div>';
+        }
+        html += '</div>';
+        return html;
     }
 
+    window.toggleTaskStep = function (taskId, stepIndex, checked) {
+        const tasks = getTasks();
+        const task = tasks.find(item => Number(item.id) === Number(taskId));
+        if (!task || !Array.isArray(task.steps) || !task.steps[stepIndex]) return;
+        task.steps[stepIndex].done = Boolean(checked);
+        const openedIds = new Set(Array.from(document.querySelectorAll("details[data-task-id][open]")).map(details => details.dataset.taskId));
+        saveTasks(tasks);
+        renderTasks();
+        updateDashboard();
+        document.querySelectorAll("details[data-task-id]").forEach(details => {
+            if (openedIds.has(details.dataset.taskId)) details.open = true;
+        });
+    };
 
     function renderTasks() {
 
@@ -1208,9 +1064,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const search =
             searchInput
-                ? searchInput.value
-                    .trim()
-                    .toLowerCase()
+                ? searchInput.value.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 : "";
 
 
@@ -1224,13 +1078,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                 tasks.filter(task =>
 
                     String(task.name)
-                        .toLowerCase()
+                        .toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                         .includes(search)
 
                     ||
 
                     String(task.subject)
-                        .toLowerCase()
+                        .toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                         .includes(search)
 
                 );
@@ -1287,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             list.innerHTML =
                 emptyMessage(
-                    "📝",
+                    '<i class="ph ph-check-square" aria-hidden="true"></i>',
                     "Nenhuma tarefa encontrada",
                     search
                         ? "Tente pesquisar outro termo."
@@ -1339,6 +1193,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
+        if (task.completed && (task.recurrence === "daily" || task.recurrence === "weekly")) {
+            const parts = String(task.date).split("-").map(Number);
+            const nextDate = new Date(parts[0], parts[1] - 1, parts[2], 12);
+            nextDate.setDate(nextDate.getDate() + (task.recurrence === "daily" ? 1 : 7));
+            const nextDateText = nextDate.getFullYear() + "-" + String(nextDate.getMonth() + 1).padStart(2, "0") + "-" + String(nextDate.getDate()).padStart(2, "0");
+            const alreadyGenerated = tasks.some(item => Number(item.recursFrom) === Number(task.id));
+            if (!alreadyGenerated) {
+                const nextId = Date.now() + Math.floor(Math.random() * 1000);
+                tasks.push({
+                    id: nextId,
+                    name: task.name,
+                    subject: task.subject,
+                    date: nextDateText,
+                    description: task.description || "",
+                    steps: (Array.isArray(task.steps) ? task.steps : []).map(step => ({ text: step.text, done: false })),
+                    recurrence: task.recurrence,
+                    recursFrom: task.id,
+                    attachmentSourceId: task.attachmentSourceId || task.id,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
+        }
+
         saveTasks(tasks);
 
         updateEverything();
@@ -1350,29 +1228,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     function deleteTask(id) {
-
-        if (
-            !confirm(
-                "Deseja realmente excluir esta tarefa?"
-            )
-        ) {
-            return;
-        }
-
-
-        const tasks =
-            getTasks().filter(
-                task =>
-                    Number(task.id) !==
-                    Number(id)
-            );
-
-
+        if (!confirm("Deseja realmente excluir esta tarefa?")) return;
+        const allTasks = getTasks();
+        const removed = allTasks.find(task => Number(task.id) === Number(id));
+        const tasks = allTasks.filter(task => Number(task.id) !== Number(id));
         saveTasks(tasks);
 
+        if (removed) {
+            try {
+                const files = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+                const fileKey = String(removed.attachmentSourceId || removed.id);
+                const stillReferenced = tasks.some(task => String(task.attachmentSourceId || task.id) === fileKey);
+                if (!stillReferenced) {
+                    (Array.isArray(files[fileKey]) ? files[fileKey] : []).forEach(file => window.comfortDeleteAttachment?.(file));
+                    delete files[fileKey];
+                }
+                (Array.isArray(files[String(removed.id)]) ? files[String(removed.id)] : []).forEach(file => window.comfortDeleteAttachment?.(file));
+                delete files[String(removed.id)];
+                localStorage.setItem("comfortTaskFiles", JSON.stringify(files));
+            } catch (_) {}
+        }
         updateEverything();
     }
-
 
     window.deleteTask =
         deleteTask;
@@ -1811,7 +1688,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         alert(
-            "Prova adicionada com sucesso! 📚"
+            "Prova adicionada com sucesso! "
         );
     }
 
@@ -1847,10 +1724,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         return `
             <div
                 class="exam-preview
-                ${exam.completed ? "completed" : ""}">
+                ${exam.completed ? "completed" : ""}"
+                data-exam-id="${Number(exam.id)}">
 
                 <div class="exam-icon">
-                    ${exam.completed ? "✓" : "📝"}
+                    <i class="ph ${exam.completed ? "ph-check-circle" : "ph-exam"}" aria-hidden="true"></i>
                 </div>
 
 
@@ -1914,8 +1792,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                     ${
                         exam.completed
-                            ? "↩️"
-                            : "✓"
+                            ? '<i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>'
+                            : '<i class="ph ph-check" aria-hidden="true"></i>'
                     }
 
                 </button>
@@ -1930,7 +1808,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 onclick="deleteExam(${Number(exam.id)})"
                                 title="Excluir prova">
 
-                                🗑️
+                                <i class="ph ph-trash" aria-hidden="true"></i>
 
                             </button>
                         `
@@ -1968,7 +1846,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             list.innerHTML =
                 emptyMessage(
-                    "📝",
+                    '<i class="ph ph-exam" aria-hidden="true"></i>',
                     "Nenhuma prova cadastrada",
                     "Adicione uma prova para começar."
                 );
@@ -2111,11 +1989,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!grid) return;
 
+        const searchInput = document.getElementById("subjectSearch");
+        if (searchInput && searchInput.dataset.ready !== "true") {
+            searchInput.dataset.ready = "true";
+            searchInput.addEventListener("input", renderSubjects);
+        }
+        const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+        const visibleSubjects = getAllSubjects().filter(subject => {
+            if (!query || subject.name.toLowerCase().includes(query)) return true;
+            return getContentsForSubject(subject.name).some(content => [content.topic, content.title, content.text].some(value => String(value || "").toLowerCase().includes(query)));
+        });
+
 
         grid.innerHTML = `
-            <div class="subject-card subject-add-card" role="button" tabindex="0" onclick="promptAddSubject()" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:150px;border:2px dashed #cbd5e1;box-shadow:none;">
+            <div class="subject-card subject-add-card" role="button" tabindex="0" onclick="promptAddSubject()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();promptAddSubject()}" style="cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:150px;border:2px dashed #cbd5e1;box-shadow:none;">
                 <div style="text-align:center"><div style="font-size:32px">＋</div><h3>Adicionar matéria</h3><p>Personalize conforme sua escola</p></div>
-            </div>` + getAllSubjects()
+            </div>` + (visibleSubjects.length ? visibleSubjects
                 .map(
                     (subject, index) => {
 
@@ -2132,9 +2021,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                         return `
-                            <div
+            <div
                                 class="subject-card"
-                                onclick="showSubjectModal('${escapeHTML(subject.name)}')"
+                                data-subject-open="${escapeHTML(subject.name)}"
+                                role="button"
+                                tabindex="0"
                                 style="cursor:pointer;">
 
                                 <div
@@ -2149,7 +2040,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                                 <div class="subject-icon">
 
-                                    ${subject.icon}
+                                    ${subjectIconMarkup(subject)}
 
                                 </div>
 
@@ -2199,7 +2090,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                         `;
                     }
                 )
-                .join("");
+                .join("") : query ? `<p class="feature-empty subject-search-empty">Nenhuma matéria ou anotação encontrada para “${escapeHTML(query)}”.</p>` : "");
+        grid.querySelectorAll("[data-subject-open]").forEach(card => {
+            card.addEventListener("click", () => showSubjectModal(card.dataset.subjectOpen));
+            card.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") { event.preventDefault(); showSubjectModal(card.dataset.subjectOpen); }
+            });
+        });
     }
 
 
@@ -2211,12 +2108,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.editSubjectContent = function (subjectName, contentId) {
         const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
         if (!item) return;
-        const title = prompt("Título do conteúdo:", item.title || "Anotação");
-        if (title === null) return;
-        const text = prompt("Anotações:", item.text || "");
-        if (text === null) return;
-        const important = confirm("Marcar este conteúdo como importante? OK = sim, Cancelar = não");
-        updateSubjectContent(subjectName, contentId, { title: title.trim() || "Anotação", text: text.trim(), important });
+        openModal("Editar conteúdo", `<form id="editSubjectContentForm" class="modal-form">
+            <label for="editSubjectTopic">Tópico (opcional)</label><input id="editSubjectTopic" type="text" maxlength="100" value="${escapeHTML(item.topic || "")}" placeholder="Ex.: Capítulo 2">
+            <label for="editSubjectTitle">Título / assunto</label><input id="editSubjectTitle" type="text" maxlength="120" value="${escapeHTML(item.title || "Anotação")}" required>
+            <label for="editSubjectText">Anotações</label><textarea id="editSubjectText" rows="6" maxlength="10000" required>${escapeHTML(item.text || "")}</textarea>
+            <label class="checkbox-label"><input id="editSubjectImportant" type="checkbox"${item.important ? " checked" : ""}> Marcar como importante para revisar</label>
+            <label for="editSubjectFiles">Adicionar mais PDFs ou fotos</label><input id="editSubjectFiles" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
+            <small>Arquivos atuais serão mantidos. Com Firebase Storage, o total pode chegar a 20 MB.</small>
+            <button type="submit" class="btn-primary">Salvar alterações</button></form>`);
+        const form = document.getElementById("editSubjectContentForm");
+        form?.addEventListener("submit", async event => {
+            event.preventDefault();
+            const title = document.getElementById("editSubjectTitle").value.trim();
+            const text = document.getElementById("editSubjectText").value.trim();
+            const selectedFiles = Array.from(document.getElementById("editSubjectFiles").files || []);
+            try { await validateAttachmentFiles(selectedFiles); }
+            catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
+            const currentFiles = Array.isArray(item.files) ? item.files : [];
+            const currentBytes = currentFiles.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+            const newBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+            const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+            if (selectedFiles.some(file => file.size > 10 * 1024 * 1024) || currentBytes + newBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e este conteúdo pode somar até 20 MB."); return; }
+            if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+            Promise.all(selectedFiles.map(file => window.comfortPrepareAttachmentFile
+                ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName + "-" + contentId)
+                : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(newFiles => {
+                const fallbackBytes = currentFiles.concat(newFiles).filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0);
+                if (fallbackBytes > 900 * 1024) throw new Error("Sem o Storage, os anexos locais deste conteúdo podem somar até 900 KB.");
+                const updated = updateSubjectContent(subjectName, contentId, {
+                    topic: document.getElementById("editSubjectTopic").value.trim(),
+                    title: title,
+                    text: text,
+                    important: document.getElementById("editSubjectImportant").checked,
+                    files: currentFiles.concat(newFiles)
+                });
+                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                return updated;
+            }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
+        });
     };
 
     window.generateSubjectReview = function (subjectName, contentId) {
@@ -2274,7 +2203,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         openModal(
-            `${subject.icon} ${subject.name}`,
+            subject.name,
 
             `
                 <div>
@@ -2285,12 +2214,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                             margin-bottom:20px;
                         ">
 
-                        <div
-                            style="
-                                font-size:45px;
-                            ">
+                        <div class="subject-modal-icon">
 
-                            ${subject.icon}
+                            ${subjectIconMarkup(subject)}
 
                         </div>
 
@@ -2311,14 +2237,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                     <form id="subjectContentForm" class="modal-form">
+                        <label for="subjectContentTopic">Tópico (opcional)</label>
+                        <input type="text" id="subjectContentTopic" maxlength="100" placeholder="Ex.: Capítulo 2">
                         <label for="subjectContentTitle">Título / assunto</label>
                         <input type="text" id="subjectContentTitle" placeholder="Ex.: Ligações químicas" required>
                         <label for="subjectContentInput">Anotações do conteúdo</label>
                         <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
                         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
-                        <label for="subjectContentFiles">Anexar PDF ou fotos (máx. 1,5 MB por arquivo)</label>
-                        <input type="file" id="subjectContentFiles" accept="application/pdf,image/*" multiple>
-                        <p style="font-size:12px;color:#718096">Os arquivos ficam guardados junto ao conteúdo neste navegador. Para sincronizar anexos entre dispositivos, configure Firebase Storage.</p>
+                        <label for="subjectContentFiles">Anexar PDF ou fotos (até 10 MB por arquivo com Firebase Storage)</label>
+                        <input type="file" id="subjectContentFiles" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
+                        <p style="font-size:12px;color:#718096">Com Firebase Storage configurado, fotos e PDFs ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 900 KB por conteúdo.</p>
                         <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
                     </form>
 
@@ -2329,8 +2257,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ">
 
                         <h4>
-                            📚 Conteúdos
+                            <i class="ph ph-notebook" aria-hidden="true"></i> Conteúdos
                         </h4>
+
+                        ${contents.length ? '<label for="subjectContentSearch" class="subject-search-label">Buscar anotações</label><input type="search" id="subjectContentSearch" class="subject-content-search" placeholder="Pesquise por tópico, título ou texto">' : ''}
 
 
                         ${
@@ -2346,7 +2276,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 : contents
                                     .map(
                                         content => `
-                                            <div
+                                            <article class="subject-note-card" data-note-search="${escapeHTML([content.topic, content.title, content.text, subjectName, ...(Array.isArray(content.files) ? content.files.map(file => file.name) : [])].join(" ").toLowerCase())}"
                                                 style="
                                                     display:flex;
                                                     align-items:center;
@@ -2357,15 +2287,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                 ">
 
                                                 <div style="flex:1;min-width:0">
-                                                    <strong>${content.important ? '⭐ ' : '📖 '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
+                                                    <strong>${content.important ? '<i class="ph ph-star" aria-hidden="true"></i> ' : '<i class="ph ph-book-open-text" aria-hidden="true"></i> '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
+                                                    ${content.topic ? `<small class="subject-note-topic">${escapeHTML(content.topic)}</small>` : ''}
                                                     <p style="white-space:pre-wrap;margin:6px 0">${escapeHTML(content.text || '')}</p>
-                                                    ${(content.files || []).map(file => file.dataUrl ? `<p><a href="${file.dataUrl}" download="${escapeHTML(file.name)}" target="_blank">📎 ${escapeHTML(file.name)}</a></p>` : '').join('')}
-                                                    <button type="button" class="small-button" onclick="editSubjectContent('${escapeHTML(subjectName)}',${Number(content.id)})">✏️ Editar</button>
-                                                    <button type="button" class="small-button" onclick="generateSubjectReview('${escapeHTML(subjectName)}',${Number(content.id)})">🧠 Revisar</button>
+                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl || file.storageUrl); if (!url) return ''; const image = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(file.name || '') || /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener"><i class="ph ph-paperclip" aria-hidden="true"></i> ${escapeHTML(file.name)}</a></p>`; }).join('')}
+                                                    <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-pencil-simple" aria-hidden="true"></i> Editar</button>
+                                                    <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-brain" aria-hidden="true"></i> Revisar</button>
                                                 </div>
-                                                <button type="button" class="small-button" onclick="deleteSubjectContent('${escapeHTML(subjectName)}',${Number(content.id)})" aria-label="Excluir conteúdo">🗑️</button>
+                                                <button type="button" class="small-button" data-subject-action="delete" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}" aria-label="Excluir conteúdo"><i class="ph ph-trash" aria-hidden="true"></i></button>
 
-                                            </div>
+                                            </article>
                                         `
                                     )
                                     .join("")
@@ -2380,7 +2311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         ">
 
                         <p>
-                            📝
+                            <i class="ph ph-check-square" aria-hidden="true"></i>
                             ${
                                 tasks.length
                             }
@@ -2388,7 +2319,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         </p>
 
                         <p>
-                            📚
+                            <i class="ph ph-exam" aria-hidden="true"></i>
                             ${
                                 exams.length
                             }
@@ -2407,13 +2338,35 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "subjectContentForm"
             );
 
+        if (modalBody && modalBody.dataset.subjectActionHandler !== "true") {
+            modalBody.dataset.subjectActionHandler = "true";
+            modalBody.addEventListener("click", event => {
+                const button = event.target.closest("[data-subject-action]");
+                if (!button) return;
+                const name = button.dataset.subject;
+                const id = Number(button.dataset.contentId);
+                if (button.dataset.subjectAction === "edit") window.editSubjectContent(name, id);
+                if (button.dataset.subjectAction === "review") window.generateSubjectReview(name, id);
+                if (button.dataset.subjectAction === "delete") window.deleteSubjectContent(name, id);
+            });
+        }
+
+        const searchInput = document.getElementById("subjectContentSearch");
+        if (searchInput) searchInput.addEventListener("input", () => {
+            const normalize = value => String(value || "").trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const query = normalize(searchInput.value);
+            document.querySelectorAll(".subject-note-card").forEach(note => {
+                note.hidden = Boolean(query) && !normalize(note.dataset.noteSearch || "").includes(query);
+            });
+        });
+
 
         if (!form) return;
 
 
-        form.addEventListener(
+            form.addEventListener(
             "submit",
-            event => {
+            async event => {
 
                 event.preventDefault();
 
@@ -2424,22 +2377,27 @@ document.addEventListener("DOMContentLoaded", async () => {
                     );
 
 
+                const topic = document.getElementById("subjectContentTopic").value.trim();
                 const title = document.getElementById("subjectContentTitle").value.trim();
                 const content = input.value.trim();
                 const fileInput = document.getElementById("subjectContentFiles");
                 const files = Array.from(fileInput.files || []);
                 if (!title || !content) { alert("Preencha o título e as anotações."); return; }
-                if (files.some(file => file.size > 700 * 1024) || files.reduce((sum, file) => sum + file.size, 0) > 900 * 1024) { alert("Para evitar erro de armazenamento, cada arquivo deve ter até 700 KB e o total por anotação até 900 KB. Para arquivos maiores, será necessário configurar o Firebase Storage."); return; }
-                Promise.all(files.map(file => new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve({ name: file.name, type: file.type, dataUrl: reader.result });
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                }))).then(fileData => {
-                    addSubjectContent(subjectName, { title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
+                try { await validateAttachmentFiles(files); }
+                catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
+                const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+                const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+                if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB."); return; }
+                if (!cloudStorageAvailable && totalBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+                Promise.all(files.map(file => window.comfortPrepareAttachmentFile
+                    ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
+                    : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(fileData => {
+                    if (fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0) > 900 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 900 KB por anotação.");
+                    addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
                     renderSubjects();
                     showSubjectModal(subjectName);
-                }).catch(() => alert("Não foi possível ler um dos arquivos."));
+                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
                 return;
 
 
@@ -2810,8 +2768,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     let timerInterval =
         null;
 
-    let timerRunning =
-        false;
+    let timerRunning = false;
+
+    let pendingStudyLogSeconds = 0;
+    let pendingSubjectStudySeconds = {};
+    let activeTimerSubject = "";
+
+    function flushWeeklyStudyLog() {
+        if (!pendingStudyLogSeconds) return;
+        const log = getStorage("comfortStudyLog", {});
+        const day = getTodayString();
+        log[day] = (Number(log[day]) || 0) + pendingStudyLogSeconds;
+        localStorage.setItem("comfortStudyLog", JSON.stringify(log));
+        const subjects = getStorage("comfortStudySubjectLog", {});
+        subjects[day] = subjects[day] && typeof subjects[day] === "object" ? subjects[day] : {};
+        Object.entries(pendingSubjectStudySeconds).forEach(([subject, seconds]) => {
+            subjects[day][subject] = (Number(subjects[day][subject]) || 0) + Number(seconds || 0);
+        });
+        if (Object.keys(pendingSubjectStudySeconds).length) localStorage.setItem("comfortStudySubjectLog", JSON.stringify(subjects));
+        pendingStudyLogSeconds = 0;
+        pendingSubjectStudySeconds = {};
+        window.dispatchEvent(new Event("comfort-data-updated"));
+    }
+
+    function recordWeeklyStudySecond() {
+        pendingStudyLogSeconds++;
+        if (activeTimerSubject) pendingSubjectStudySeconds[activeTimerSubject] = (pendingSubjectStudySeconds[activeTimerSubject] || 0) + 1;
+        if (pendingStudyLogSeconds >= 60) flushWeeklyStudyLog();
+    }
+
+    window.addEventListener("beforeunload", flushWeeklyStudyLog);
 
 
     function updateTimerDisplay() {
@@ -2864,6 +2850,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         timerRunning =
             true;
 
+        activeTimerSubject = document.getElementById("timerStudySubject")?.value || "";
+
 
         timerInterval =
             setInterval(
@@ -2887,6 +2875,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         getStudySeconds() +
                         1
                     );
+                    recordWeeklyStudySecond();
 
 
                     updateTimerDisplay();
@@ -2917,6 +2906,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         timerRunning =
             false;
+        flushWeeklyStudyLog();
 
 
         if (
@@ -3427,7 +3417,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 content += `
                     <h4>
-                        📝 Tarefas
+                        <i class="ph ph-check-square" aria-hidden="true"></i> Tarefas
                     </h4>
                 `;
 
@@ -3480,7 +3470,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             margin-top:20px;
                         ">
 
-                        📚 Provas
+                        <i class="ph ph-exam" aria-hidden="true"></i> Provas
 
                     </h4>
                 `;
@@ -3631,7 +3621,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 class="btn-primary"
                                 id="calendarAddTask">
 
-                                📝 Adicionar tarefa
+                                 Adicionar tarefa
 
                             </button>
 
@@ -3641,7 +3631,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 class="btn-secondary"
                                 id="calendarAddExam">
 
-                                📚 Adicionar prova
+                                 Adicionar prova
 
                             </button>
 
@@ -3714,7 +3704,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const total =
-            getNotices().length;
+            getNotices().filter(notice => !(notice && (notice.readAt || notice.seenAt))).length;
 
 
         count.textContent =
@@ -3742,69 +3732,39 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
 
-        const notices =
-            getNotices();
+        const allNotices = getNotices();
+        const notices = allNotices.filter(notice => !(notice && (notice.readAt || notice.seenAt)));
+        const history = allNotices.filter(notice => notice && (notice.readAt || notice.seenAt));
+        const renderNotice = notice => `
+            <div class="notice" data-notice-id="${escapeHTML(String(notice.id))}" role="button" tabindex="0" aria-label="Aviso: ${escapeHTML(notice.title)}. Toque para marcar como lido.">
+                <i class="ph ph-bell" aria-hidden="true"></i>
+                <div class="notice-copy">
+                    <strong>${escapeHTML(notice.title || "Aviso")}</strong>
+                    <p>${escapeHTML(notice.message || "")}</p>
+                    <small>Toque para marcar como lido</small>
+                </div>
+            </div>`;
+        const renderReadNotice = notice => `
+            <div class="notice is-read">
+                <i class="ph ph-check-circle" aria-hidden="true"></i>
+                <div class="notice-copy"><strong>${escapeHTML(notice.title || "Aviso")}</strong><p>${escapeHTML(notice.message || "")}</p></div>
+            </div>`;
 
 
         if (container) {
 
-            if (
-                notices.length ===
-                0
-            ) {
-
-                container.innerHTML =
-                    emptyMessage(
-                        "🔔",
-                        "Nenhum aviso",
-                        "Você não possui avisos no momento."
-                    );
-
-            } else {
-
-                container.innerHTML =
-                    notices
-                        .map(
-                            notice => `
-
-                                <div
-                                    class="notice">
-
-                                    <i
-                                        class="ph ph-bell">
-                                    </i>
-
-
-                                    <div>
-
-                                        <strong>
-                                            ${escapeHTML(
-                                                notice.title
-                                            )}
-                                        </strong>
-
-
-                                        <p>
-                                            ${escapeHTML(
-                                                notice.message
-                                            )}
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            `
-                        )
-                        .join("");
+            container.innerHTML = notices.length
+                ? notices.map(renderNotice).join("")
+                : emptyMessage('<i class="ph ph-bell" aria-hidden="true"></i>', "Tudo em dia", "Não há avisos novos para você.");
+            if (history.length) {
+                container.insertAdjacentHTML("beforeend", '<details class="notice-history"><summary>Histórico (' + history.length + ')</summary><div class="notice-history-list">' + history.slice(0, 30).map(renderReadNotice).join("") + '</div></details>');
             }
         }
 
 
         if (dashboardContainer) {
 
-            const latest =
-                notices.slice(0, 3);
+            const latest = notices.slice(0, 3);
 
 
             if (
@@ -3814,48 +3774,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 dashboardContainer.innerHTML =
                     emptyMessage(
-                        "🔔",
+                        '<i class="ph ph-bell" aria-hidden="true"></i>',
                         "Nenhum aviso",
                         "Você não possui avisos no momento."
                     );
 
             } else {
 
-                dashboardContainer.innerHTML =
-                    latest
-                        .map(
-                            notice => `
-
-                                <div
-                                    class="notice">
-
-                                    <i
-                                        class="ph ph-bell">
-                                    </i>
-
-
-                                    <div>
-
-                                        <strong>
-                                            ${escapeHTML(
-                                                notice.title
-                                            )}
-                                        </strong>
-
-
-                                        <p>
-                                            ${escapeHTML(
-                                                notice.message
-                                            )}
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            `
-                        )
-                        .join("");
+                dashboardContainer.innerHTML = latest.map(renderNotice).join("");
             }
         }
 
@@ -4007,7 +3933,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
                             alert(
-                                "Aviso publicado com sucesso! 🔔"
+                                "Aviso publicado com sucesso!"
                             );
                         }
                     );
@@ -4093,7 +4019,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 "granted"
             ) {
                 alert(
-                    "Notificações ativadas! 🔔 Você receberá lembretes de tarefas e provas."
+                    "Notificações ativadas! Você receberá lembretes de tarefas e provas."
                 );
 
                 checkDueDateNotifications();
@@ -4144,7 +4070,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     {
                         body,
                         icon:
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236c63ff'/%3E%3Ctext x='50' y='65' text-anchor='middle' font-size='55'%3E📚%3C/text%3E%3C/svg%3E",
+                            "./icons/icon-192.png",
                         tag:
                             notificationId,
                         renotify: false
@@ -4194,6 +4120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         ) {
             return;
         }
+        // As preferências novas são atendidas por extras.js, inclusive revisões; evita duplicar os avisos nativos antigos.
+        if (localStorage.getItem("comfortReminderSettings")) return;
 
         const today =
             getTodayString();
@@ -4252,8 +4180,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const prefix =
                     item.notificationType ===
                     "prova"
-                        ? "📚 Prova"
-                        : "📝 Tarefa";
+                        ? "Prova"
+                        : "Tarefa";
 
                 const when =
                     days === 0
@@ -4318,17 +4246,36 @@ document.addEventListener("DOMContentLoaded", async () => {
             "notificationButton"
         );
 
+    function markNoticeAsRead(event) {
+        const card = event.target.closest(".notice[data-notice-id]");
+        if (!card) return;
+        const notices = getNotices();
+        const notice = notices.find(item => String(item.id) === String(card.dataset.noticeId));
+        if (!notice || notice.readAt || notice.seenAt) return;
+        notice.readAt = new Date().toISOString();
+        saveNotices(notices);
+        renderNotices();
+    }
+
+    ["noticeList", "dashboardNoticeList"].forEach(id => {
+        const host = document.getElementById(id);
+        host?.addEventListener("click", markNoticeAsRead);
+        host?.addEventListener("keydown", event => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            const card = event.target.closest(".notice[data-notice-id]");
+            if (!card) return;
+            event.preventDefault();
+            markNoticeAsRead(event);
+        });
+    });
+    window.addEventListener("comfort-notices-updated", renderNotices);
+
 
     if (notificationButton) {
 
         notificationButton.addEventListener(
             "click",
-            async () => {
-
-                await requestNotificationPermission();
-
-                checkDueDateNotifications();
-
+            () => {
                 openPage(
                     "avisos"
                 );
@@ -4357,6 +4304,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         updateTimerDisplay();
 
         renderProfile();
+        window.dispatchEvent(new Event("comfort-data-updated"));
     }
 
 
@@ -4432,6 +4380,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     updateTimerDisplay();
 
+    initializeProfileSettings();
     renderProfile();
 
     /*
@@ -4470,13 +4419,24 @@ document.addEventListener("DOMContentLoaded", async () => {
             btn.addEventListener("click", async () => {
                 btn.disabled = true;
                 try {
+                    if (typeof window.comfortCloudFlush === "function") {
+                        const synced = await window.comfortCloudFlush();
+                        if (!synced) {
+                            alert("Não consegui confirmar a sincronização. Verifique a conexão e tente sair novamente para evitar perder alterações recentes.");
+                            btn.disabled = false;
+                            return;
+                        }
+                    }
                     if (window.comfortAuth && window.comfortAuth.currentUser) await window.comfortAuth.signOut();
+                    if (typeof window.comfortClearLocalUserData === "function" && !window.comfortClearLocalUserData()) {
+                        throw new Error("Há alterações aguardando sincronização; os dados locais foram mantidos.");
+                    }
+                    location.replace("index.html");
                 } catch (error) {
                     console.error("ComfortStudy: erro ao sair", error);
-                } finally {
-                    localStorage.removeItem("comfortSession");
-                    localStorage.removeItem("comfortAuthUser");
-                    location.replace("index.html");
+                    alert("Não foi possível encerrar e limpar esta sessão com segurança. Verifique a conexão e tente novamente.");
+                    if (window.comfortAuth && !window.comfortAuth.currentUser) location.replace("index.html");
+                    else btn.disabled = false;
                 }
             });
             profileArea.appendChild(btn);
