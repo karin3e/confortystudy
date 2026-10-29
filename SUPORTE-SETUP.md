@@ -14,7 +14,7 @@ Pré-requisitos: Firebase CLI, plano Firebase que permita Cloud Functions, Node.
 
 ```bash
 firebase init functions
-
+# Se já existir a pasta functions, preserve os arquivos deste pacote.
 cd functions
 npm install
 cd ..

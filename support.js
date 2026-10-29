@@ -1,4 +1,4 @@
-
+/* ComfortStudy Support — authenticated Firestore requests; e-mail delivery is handled by Cloud Functions. */
 (() => {
   const $ = (id) => document.getElementById(id);
   const form = $('comfortSupportForm');
