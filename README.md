@@ -27,8 +27,3 @@ Consulte [PLANO_DE_EVOLUCAO.md](PLANO_DE_EVOLUCAO.md) para acompanhar as etapas 
 Use CONFIGURAR_FIREBASE.md e COMO_INSTALAR.txt. As páginas carregam firebase-config-v2.js. Inclua extras.js, extras.css e os ícones na publicação.
 
 Os cadastros permanecem abertos para que outras pessoas também possam usar o app. Cada conta acessa seus dados usando o UID autenticado; as regras do Firestore e do Storage negam acesso aos dados de outras contas. Ao sair, o app confirma a sincronização e limpa o cache de dados daquele usuário neste navegador. O Premium está marcado como "Em breve"; os recursos atuais são gratuitos. Os avisos do navegador funcionam enquanto o app está aberto. Notificações com o app fechado exigem Web Push e um serviço de envio no servidor.
-
-
-## Créditos e Central de Suporte
-
-Veja `SUPORTE-SETUP.md` antes de publicar as novas regras e funções de e-mail. A página Sobre e a Central de Suporte estão integradas ao `index_2.html` e usam a paleta azul existente.

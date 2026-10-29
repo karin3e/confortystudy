@@ -2024,7 +2024,7 @@ body {
   .performance-row { grid-template-columns: 75px minmax(0,1fr) 32px !important; }
 }
 
-
+/* ===== Mobile navigation redesign: iPhone + small screens ===== */
 .mobile-more-button,
 .mobile-more-menu,
 .mobile-more-backdrop { display: none; }
@@ -2141,7 +2141,7 @@ body {
 }
 
 
-
+/* Mobile navigation refinements: consistent on iPhone and Android */
 .mobile-profile-shortcut { display: none; }
 @media (max-width: 800px) {
   .sidebar {
@@ -2240,14 +2240,14 @@ body {
 }
 
 
-
+/* Melhorias do caderno digital e matérias personalizadas */
 .subject-add-card { border-style: dashed !important; background: #fbfdff !important; }
 .subject-add-card:hover { border-color: var(--primary) !important; background: #eff6ff !important; }
 #subjectContentForm textarea { width: 100%; min-height: 120px; resize: vertical; padding: 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: #fff; font: inherit; }
 #subjectContentForm input[type="text"], #subjectContentForm input[type="file"] { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 #subjectContentForm label { display: block; margin-top: 10px; margin-bottom: 6px; font-size: 13px; font-weight: 700; }
 
-
+/* Formulários do modal rolam dentro da janela em celulares e em telas baixas. */
 .modal { z-index: 1200; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; align-items: flex-start; padding: 16px; }
 .modal-content { box-sizing: border-box; width: min(100%, 560px); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin: auto; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .modal-content h2 { padding-right: 42px; }
@@ -2265,34 +2265,3 @@ body.modal-open { overflow: hidden; }
   .modal-content h2 { margin-bottom: 14px; }
   .modal-form { gap: 10px; }
 }
-
-
-
-.comfort-profile-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-.comfort-profile-shortcuts button{display:inline-flex;align-items:center;gap:8px}
-.comfort-about-hero{display:flex;align-items:center;gap:18px;padding:26px;margin:0 0 20px;border-radius:18px;background:linear-gradient(120deg,#e8f2ff,#f7faff);border:1px solid #d5e6fb;color:#172033}
-.comfort-about-mark{width:62px;height:62px;flex:0 0 62px;display:grid;place-items:center;border-radius:16px;background:#2563eb;color:#fff;font-size:32px}
-.comfort-about-hero h2{font-size:clamp(22px,3vw,30px);margin:0 0 5px;color:#1d4ed8}
-.comfort-about-hero p{margin:0;color:#526782}
-.comfort-about-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,1fr);gap:18px;align-items:start}
-.comfort-about-card,.comfort-support-form-card,.comfort-support-history-card{min-width:0;padding:22px}
-.comfort-about-card h3,.comfort-support-form-card h3,.comfort-support-history-card h3{display:flex;align-items:center;gap:9px;color:var(--primary-dark);margin:0 0 14px}
-.comfort-about-card h3:not(:first-child){margin-top:24px}
-.comfort-about-card p{line-height:1.75;margin:0 0 14px;overflow-wrap:anywhere}
-.comfort-signature{color:var(--primary-dark);font-weight:650;font-style:italic}
-.comfort-about-card a,.comfort-support-contact a{color:var(--primary-dark);overflow-wrap:anywhere}
-.comfort-support-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:18px;align-items:start}
-.comfort-support-form{display:grid;gap:9px;margin-top:18px}
-.comfort-support-form label{font-weight:600;font-size:14px;color:var(--text)}
-.comfort-support-form input,.comfort-support-form select,.comfort-support-form textarea{width:100%;min-width:0;padding:12px 13px;border:1px solid var(--border);border-radius:10px;background:var(--white);color:var(--text);font:inherit;line-height:1.45}
-.comfort-support-form textarea{resize:vertical;min-height:130px}
-.comfort-support-form input:focus,.comfort-support-form select:focus,.comfort-support-form textarea:focus{outline:2px solid #93c5fd;outline-offset:1px;border-color:var(--primary)}
-.comfort-muted{color:var(--muted);line-height:1.6}.comfort-small{font-size:12px}
-.comfort-support-status{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
-.comfort-support-history{display:grid;gap:12px;margin-top:16px}
-.comfort-support-item{border:1px solid var(--border);border-radius:12px;padding:13px;min-width:0}
-.comfort-support-item h4{margin:0 0 7px;overflow-wrap:anywhere}.comfort-support-item p{margin:5px 0;line-height:1.5;overflow-wrap:anywhere;font-size:13px}
-.comfort-support-badge{display:inline-block;border-radius:999px;background:#e8f2ff;color:#1d4ed8;padding:4px 9px;font-size:12px;font-weight:650}
-.comfort-support-contact{display:grid;gap:7px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border);overflow-wrap:anywhere}
-@media(max-width:800px){.comfort-about-grid,.comfort-support-layout{grid-template-columns:minmax(0,1fr)}.comfort-about-hero{padding:19px;align-items:flex-start}.comfort-about-card,.comfort-support-form-card,.comfort-support-history-card{padding:17px}.comfort-profile-shortcuts{display:grid;grid-template-columns:minmax(0,1fr)}.comfort-profile-shortcuts button{justify-content:center;min-height:44px}}
-@media(max-width:420px){.comfort-about-hero{gap:12px}.comfort-about-mark{width:48px;height:48px;flex-basis:48px;font-size:25px}.comfort-about-hero h2{font-size:22px}.comfort-support-form input,.comfort-support-form select,.comfort-support-form textarea{font-size:16px}}

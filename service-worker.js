@@ -1,7 +1,7 @@
 const CACHE_NAME = "comfortstudy-v12";
 const APP_SHELL = [
   "./", "./index.html", "./index_2.html", "./cadastro.html",
-  "./recuperar-senha.html", "./style_dashboard.css", "./script.js", "./support.js",
+  "./recuperar-senha.html", "./style_dashboard.css", "./script.js",
   "./auth.js", "./extras.js", "./extras.css", "./firebase-config-v2.js", "./firebase-init.js", "./cloud-sync.js",
   "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"
 ];
@@ -16,7 +16,7 @@ self.addEventListener("fetch", event => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  
+  // NavegaÃ§Ãµes tentam a versÃ£o publicada primeiro para evitar HTML antigo preso no cache.
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(response => {
       const copy = response.clone(); caches.open(CACHE_NAME).then(cache => cache.put(request, copy)).catch(() => {}); return response;

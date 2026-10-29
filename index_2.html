@@ -80,16 +80,6 @@
                     <span>Meu Plano</span>
                 </a>
 
-                <a href="#" data-page="suporte">
-                    <i class="ph ph-headset"></i>
-                    <span>Suporte</span>
-                </a>
-
-                <a href="#" data-page="sobre">
-                    <i class="ph ph-info"></i>
-                    <span>Sobre</span>
-                </a>
-
                 <button type="button" class="mobile-more-button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu">
                     <i class="ph ph-dots-three-circle"></i>
                     <span>Mais</span>
@@ -1210,10 +1200,6 @@
                     </p>
 
                     <p class="profile-hint">Atualize seus dados e preferências quando quiser.</p>
-                    <div class="comfort-profile-shortcuts">
-                        <button type="button" class="btn-secondary" data-page="suporte"><i class="ph ph-headset"></i> Central de Suporte</button>
-                        <button type="button" class="btn-secondary" data-page="sobre"><i class="ph ph-info"></i> Sobre o ComfortStudy</button>
-                    </div>
 
                 </div>
 
@@ -1248,60 +1234,6 @@
                 </article>
 
         </section>
-
-    <section class="page-section" id="page-sobre">
-        <div class="page-header"><div><p class="welcome">NOSSA HISTÓRIA</p><h2>Sobre o ComfortStudy</h2></div></div>
-        <article class="comfort-about-hero">
-            <div class="comfort-about-mark"><i class="ph ph-graduation-cap"></i></div>
-            <div><h2>ComfortStudy</h2><p>Organize seus estudos. Construa seu futuro.</p></div>
-        </article>
-        <div class="comfort-about-grid">
-            <article class="feature-card comfort-about-card"><h3><i class="ph ph-heart"></i> Muito mais que um trabalho escolar</h3>
-                <p>Meu nome é <strong>Karine Vitória Sousa</strong>, tenho 17 anos e sou estudante da 3ª série do ensino médio técnico, em Acauã, no Piauí.</p>
-                <p>A história do ComfortStudy começou quando meu professor pediu que minha turma desenvolvesse um projeto escolar. O que deveria ser apenas um trabalho acabou se tornando algo muito maior do que eu imaginava.</p>
-                <p>Eu levei aquela proposta a sério. Comecei a pensar em uma ideia que pudesse se transformar em algo útil de verdade, e assim nasceu o ComfortStudy: um espaço pensado para ajudar estudantes a organizar suas tarefas, provas, matérias e rotina de estudos.</p>
-                <p>Desenvolvi o projeto por conta própria, aprendendo durante o processo e contando com a ajuda da inteligência artificial em algumas etapas. Ainda não sou uma desenvolvedora profissional, mas isso nunca me impediu de tentar, aprender, corrigir erros e continuar.</p>
-                <p>Cada parte desse projeto representa um pouco da minha dedicação, das minhas ideias e da vontade de fazer algo que pudesse ir além da sala de aula.</p>
-                <p><strong>O ComfortStudy é de minha autoria, nasceu de uma ideia minha e foi construído com muito esforço, aprendizado e dedicação.</strong></p>
-                <p>Espero, de coração, que você goste do aplicativo. Coloquei muito de mim nele e quero continuar aprendendo para torná-lo cada vez melhor.</p>
-                <p>O que começou como um trabalho escolar acabou se transformando em um projeto que carrega uma parte de quem eu sou e do que ainda quero conquistar.</p>
-                <p>Obrigada por conhecer e fazer parte dessa história.</p>
-                <p class="comfort-signature">Com carinho e dedicação, Karine Vitória Sousa.</p>
-            </article>
-            <article class="feature-card comfort-about-card"><h3><i class="ph ph-target"></i> Nossa missão</h3><p>Tornar a rotina escolar mais organizada, acessível e prática, reunindo tarefas, provas, matérias e acompanhamento dos estudos em um só lugar.</p>
-                <h3><i class="ph ph-users-three"></i> Colaboradores</h3><p>Espaço reservado para reconhecer pessoas que contribuíram com ideias, testes, desenvolvimento, design e melhorias. Os nomes serão adicionados futuramente, de acordo com as contribuições reais.</p>
-                <h3><i class="ph ph-envelope-simple"></i> Suporte oficial</h3><p><a href="mailto:karinevitoriasousa6@gmail.com">karinevitoriasousa6@gmail.com</a></p>
-            </article>
-        </div>
-    </section>
-
-    <section class="page-section" id="page-suporte">
-        <div class="page-header"><div><p class="welcome">ESTAMOS AQUI PARA AJUDAR</p><h2>Central de Suporte</h2><p class="comfort-muted">Envie sua solicitação e acompanhe o protocolo pelo seu e-mail.</p></div></div>
-        <div class="comfort-support-layout">
-            <article class="feature-card comfort-support-form-card">
-                <h3><i class="ph ph-chat-circle-dots"></i> Como podemos ajudar?</h3>
-                <p class="comfort-muted">O pedido será associado à sua conta conectada. Nunca informe sua senha neste formulário.</p>
-                <form id="comfortSupportForm" class="comfort-support-form">
-                    <label for="supportCategory">Categoria</label>
-                    <select id="supportCategory" name="category" required>
-                        <option value="">Selecione uma categoria</option>
-                        <option>Relatar erros</option><option>Dúvidas de uso</option><option>Sugestões de melhorias</option><option>Problemas com arquivos e sincronização</option><option>Problemas de login</option>
-                    </select>
-                    <label for="supportSubject">Assunto</label><input id="supportSubject" name="subject" maxlength="120" required placeholder="Resuma o que aconteceu">
-                    <label for="supportDescription">Descrição</label><textarea id="supportDescription" name="description" rows="6" maxlength="4000" required placeholder="Conte os detalhes para podermos ajudar..."></textarea>
-                    <p class="comfort-muted comfort-small">Por segurança, anexos não estão habilitados nesta versão. Não inclua senhas ou códigos de acesso.</p>
-                    <p id="comfortSupportStatus" class="comfort-support-status" role="status" aria-live="polite"></p>
-                    <button class="btn-primary" type="submit" id="comfortSupportSubmit"><i class="ph ph-paper-plane-tilt"></i> Enviar solicitação</button>
-                </form>
-            </article>
-            <article class="feature-card comfort-support-history-card">
-                <h3><i class="ph ph-clipboard-text"></i> Minhas solicitações</h3>
-                <p class="comfort-muted">Veja os protocolos enviados por esta conta. As respostas e atualizações também serão enviadas por e-mail.</p>
-                <div id="comfortSupportHistory" class="comfort-support-history"><p class="comfort-muted">Carregando solicitações...</p></div>
-                <div class="comfort-support-contact"><strong>Precisa de contato por e-mail?</strong><a href="mailto:karinevitoriasousa6@gmail.com">karinevitoriasousa6@gmail.com</a></div>
-            </article>
-        </div>
-    </section>
 
     </main>
 
@@ -1355,8 +1287,6 @@
         <a href="#" data-page="desempenho"><i class="ph ph-chart-line-up"></i><span>Desempenho</span></a>
         <a href="#" data-page="premium"><i class="ph ph-crown"></i><span>Plano Premium</span></a>
         <a href="#" data-page="perfil"><i class="ph ph-user-circle"></i><span>Meu Perfil</span></a>
-        <a href="#" data-page="suporte"><i class="ph ph-headset"></i><span>Suporte</span></a>
-        <a href="#" data-page="sobre"><i class="ph ph-info"></i><span>Sobre</span></a>
     </nav>
 
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1368,7 +1298,6 @@
     <script src="cloud-sync.js"></script>
     <script src="script.js"></script>
     <script src="extras.js"></script>
-    <script src="support.js"></script>
 
 </body>
 
