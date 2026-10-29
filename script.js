@@ -964,19 +964,34 @@ document.addEventListener("DOMContentLoaded", async () => {
                 completed: false,
                 createdAt: new Date().toISOString()
             };
-            const taskFiles = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
-            if (fileData.length) taskFiles[String(task.id)] = fileData;
-            localStorage.setItem("comfortTaskFiles", JSON.stringify(taskFiles));
-
+            // Salva a tarefa primeiro: falha no armazenamento de anexos nunca deve
+            // impedir que o aluno consiga cadastrar a tarefa.
             const tasks = getTasks();
             tasks.push(task);
             saveTasks(tasks);
+
+            let attachmentsSaved = true;
+            if (fileData.length) {
+                try {
+                    const taskFiles = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
+                    taskFiles[String(task.id)] = fileData;
+                    localStorage.setItem("comfortTaskFiles", JSON.stringify(taskFiles));
+                } catch (attachmentError) {
+                    attachmentsSaved = false;
+                    console.error("ComfortStudy: tarefa salva, mas não foi possível guardar os anexos neste aparelho.", attachmentError);
+                }
+            }
+
             closeModal();
             updateEverything();
             checkDueDateNotifications();
-            alert(fileData.some(file => file.storagePending)
-                ? "Tarefa salva neste aparelho. O Firebase Storage não aceitou o anexo; confira a configuração e as regras para sincronizá-lo."
-                : "Tarefa adicionada com sucesso! ✅");
+            if (!attachmentsSaved) {
+                alert("A tarefa foi salva, mas os anexos não couberam no armazenamento deste aparelho. Tente anexar arquivos menores ou ative o Firebase Storage.");
+            } else if (fileData.some(file => file.storagePending)) {
+                alert("Tarefa salva neste aparelho. O Firebase Storage não aceitou um anexo; confira se o Storage está ativado e se as regras foram publicadas.");
+            } else {
+                alert("Tarefa adicionada com sucesso! ✅");
+            }
         } catch (error) {
             console.error("ComfortStudy: não foi possível salvar a tarefa", error);
             alert(error && error.message ? error.message : "Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
@@ -2393,10 +2408,20 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
                     : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(fileData => {
                     if (fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0) > 900 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 900 KB por anotação.");
-                    addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
+                    try {
+                        addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
+                    } catch (saveError) {
+                        // Quota local cheia: preserva título e anotações, mesmo que os anexos
+                        // precisem ser adicionados novamente depois de ativar o Storage.
+                        addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: [] });
+                        renderSubjects();
+                        showSubjectModal(subjectName);
+                        alert("O conteúdo foi salvo, mas os anexos não couberam no armazenamento deste aparelho. Ative o Firebase Storage ou tente arquivos menores.");
+                        return;
+                    }
                     renderSubjects();
                     showSubjectModal(subjectName);
-                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O Firebase Storage não aceitou um anexo; confira se o Storage está ativado e se as regras foram publicadas.");
                 }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
                 return;
 
