@@ -34,8 +34,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    if (window.comfortCloudReady) {
-        await window.comfortCloudReady;
+    // A sincronização remota não pode bloquear a inicialização de toda a interface.
+    // Em conexões lentas ou quando o Firestore demora a responder, tarefas, matérias
+    // e perfil ficavam sem eventos porque o restante do script nunca era executado.
+    if (window.comfortCloudReady && typeof window.comfortCloudReady.then === "function") {
+        let cloudWaitTimedOut = false;
+        await Promise.race([
+            window.comfortCloudReady.catch(error => {
+                console.error("ComfortStudy: sincronização inicial indisponível; usando dados locais.", error);
+                return false;
+            }),
+            new Promise(resolve => setTimeout(() => {
+                cloudWaitTimedOut = true;
+                resolve(false);
+            }, 3000))
+        ]);
+        if (cloudWaitTimedOut) {
+            console.warn("ComfortStudy: a nuvem demorou a responder. A interface será iniciada para permitir salvar dados localmente.");
+        }
     }
 
     const STORAGE = {
@@ -174,7 +190,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function saveTasks(tasks) {
-        setStorage(STORAGE.tasks, tasks);
+        try {
+            setStorage(STORAGE.tasks, tasks);
+        } catch (error) {
+            console.error("ComfortStudy: falha ao gravar tarefas no armazenamento local.", error);
+            throw new Error("Não foi possível salvar a tarefa porque o armazenamento do navegador está cheio ou indisponível. Nenhum dado foi apagado. Verifique o espaço disponível e tente novamente.");
+        }
     }
 
 
@@ -224,7 +245,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function saveSubjectContents(contents) {
-        setStorage(STORAGE.subjectContents, contents);
+        try {
+            setStorage(STORAGE.subjectContents, contents);
+        } catch (error) {
+            console.error("ComfortStudy: falha ao gravar conteúdos das matérias.", error);
+            throw new Error("Não foi possível salvar o conteúdo porque o armazenamento do navegador está cheio ou indisponível. Nenhum dado foi apagado. Tente novamente após verificar o espaço disponível.");
+        }
     }
 
 
