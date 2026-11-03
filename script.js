@@ -496,6 +496,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             const url = new URL(value);
             const bucket = window.COMFORT_FIREBASE_CONFIG && window.COMFORT_FIREBASE_CONFIG.storageBucket;
             const path = decodeURIComponent(url.pathname);
+            const supabaseHost = "qcferdvpdtiernawkojm.supabase.co";
+            if (url.protocol === "https:" && url.hostname === supabaseHost && path.startsWith("/storage/v1/object/sign/comfortstudy-attachments/users/")) return url.href;
             if (url.protocol === "https:" && url.hostname === "firebasestorage.googleapis.com" && bucket && path.startsWith("/v0/b/" + bucket + "/o/users/")) return url.href;
         } catch (_) {}
         return "";
@@ -906,7 +908,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             '<select id="taskRecurrence"><option value="">Não repetir</option><option value="daily">Todos os dias</option><option value="weekly">Toda semana</option></select>' +
             '<label for="taskFiles">Anexar PDF ou imagem (JPG, PNG, WEBP ou GIF)</label>' +
             '<input type="file" id="taskFiles" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>' +
-            '<small>Com Firebase Storage configurado, os anexos ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 700 KB no total.</small>' +
+            '<small>Com armazenamento seguro configurado, os anexos ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 700 KB no total.</small>' +
             '<button type="submit" class="btn-primary">Adicionar tarefa</button></form>';
     }
 
@@ -960,13 +962,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         try { await validateAttachmentFiles(files); }
         catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
         const totalFileBytes = files.reduce((sum, file) => sum + file.size, 0);
-        const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+        const cloudStorageAvailable = Boolean(window.comfortAttachmentStorageReady && window.comfortAttachmentStorageReady());
         if (files.some(file => file.size > 10 * 1024 * 1024) || totalFileBytes > 20 * 1024 * 1024) {
             alert("Cada arquivo pode ter até 10 MB e os anexos da tarefa podem somar até 20 MB.");
             return;
         }
         if (!cloudStorageAvailable && totalFileBytes > 700 * 1024) {
-            alert("Para anexos acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet.");
+            alert("Para anexos acima de 700 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet.");
             return;
         }
 
@@ -1012,9 +1014,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateEverything();
             checkDueDateNotifications();
             if (!attachmentsSaved) {
-                alert("A tarefa foi salva, mas os anexos não couberam no armazenamento deste aparelho. Tente anexar arquivos menores ou ative o Firebase Storage.");
+                alert("A tarefa foi salva, mas os anexos não couberam no armazenamento deste aparelho. Tente anexar arquivos menores ou configure o armazenamento de anexos.");
             } else if (fileData.some(file => file.storagePending)) {
-                alert("Tarefa salva neste aparelho. O Firebase Storage não aceitou um anexo; confira se o Storage está ativado e se as regras foram publicadas.");
+                alert("Tarefa salva neste aparelho. O o armazenamento não aceitou um anexo; confira a configuração do Supabase.");
             } else {
                 alert("Tarefa adicionada com sucesso! ✅");
             }
@@ -2155,7 +2157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <label for="editSubjectText">Anotações</label><textarea id="editSubjectText" rows="6" maxlength="10000" required>${escapeHTML(item.text || "")}</textarea>
             <label class="checkbox-label"><input id="editSubjectImportant" type="checkbox"${item.important ? " checked" : ""}> Marcar como importante para revisar</label>
             <label for="editSubjectFiles">Adicionar mais PDFs ou fotos</label><input id="editSubjectFiles" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
-            <small>Arquivos atuais serão mantidos. Com Firebase Storage, o total pode chegar a 20 MB.</small>
+            <small>Arquivos atuais serão mantidos. Com o armazenamento seguro, o total pode chegar a 20 MB.</small>
             <button type="submit" class="btn-primary">Salvar alterações</button></form>`);
         const form = document.getElementById("editSubjectContentForm");
         form?.addEventListener("submit", async event => {
@@ -2168,9 +2170,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const currentFiles = Array.isArray(item.files) ? item.files : [];
             const currentBytes = currentFiles.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
             const newBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
-            const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+            const cloudStorageAvailable = Boolean(window.comfortAttachmentStorageReady && window.comfortAttachmentStorageReady());
             if (selectedFiles.some(file => file.size > 10 * 1024 * 1024) || currentBytes + newBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e este conteúdo pode somar até 20 MB."); return; }
-            if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+            if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet."); return; }
             Promise.all(selectedFiles.map(file => window.comfortPrepareAttachmentFile
                 ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName + "-" + contentId)
                 : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(newFiles => {
@@ -2183,7 +2185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     important: document.getElementById("editSubjectImportant").checked,
                     files: currentFiles.concat(newFiles)
                 });
-                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O Firebase Storage não aceitou um anexo; confira a configuração e as regras para sincronizá-lo.");
+                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O armazenamento de anexos não aceitou um arquivo; confira a configuração do Supabase.");
                 return updated;
             }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
         });
@@ -2285,9 +2287,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <label for="subjectContentInput">Anotações do conteúdo</label>
                         <textarea id="subjectContentInput" rows="5" placeholder="Escreva o que aprendeu na aula..." required></textarea>
                         <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="subjectContentImportant"> Marcar como importante para revisar</label>
-                        <label for="subjectContentFiles">Anexar PDF ou fotos (até 10 MB por arquivo com Firebase Storage)</label>
+                        <label for="subjectContentFiles">Anexar PDF ou fotos (até 10 MB por arquivo)</label>
                         <input type="file" id="subjectContentFiles" accept=".pdf,.png,.jpg,.jpeg,.webp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/gif" multiple>
-                        <p style="font-size:12px;color:#718096">Com Firebase Storage configurado, fotos e PDFs ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 900 KB por conteúdo.</p>
+                        <p style="font-size:12px;color:#718096">Com armazenamento seguro configurado, fotos e PDFs ficam disponíveis nos seus outros aparelhos. Sem ele, o modo local aceita até 900 KB por conteúdo.</p>
                         <button type="submit" class="btn-primary">＋ Salvar conteúdo</button>
                     </form>
 
@@ -2427,9 +2429,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 try { await validateAttachmentFiles(files); }
                 catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
                 const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
-                const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
+                const cloudStorageAvailable = Boolean(window.comfortAttachmentStorageReady && window.comfortAttachmentStorageReady());
                 if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB."); return; }
-                if (!cloudStorageAvailable && totalBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+                if (!cloudStorageAvailable && totalBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet."); return; }
                 Promise.all(files.map(file => window.comfortPrepareAttachmentFile
                     ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
                     : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(fileData => {
@@ -2442,12 +2444,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                         addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: [] });
                         renderSubjects();
                         showSubjectModal(subjectName);
-                        alert("O conteúdo foi salvo, mas os anexos não couberam no armazenamento deste aparelho. Ative o Firebase Storage ou tente arquivos menores.");
+                        alert("O conteúdo foi salvo, mas os anexos não couberam no armazenamento deste aparelho. Configure o armazenamento de anexos ou tente arquivos menores.");
                         return;
                     }
                     renderSubjects();
                     showSubjectModal(subjectName);
-                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O Firebase Storage não aceitou um anexo; confira se o Storage está ativado e se as regras foram publicadas.");
+                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O o armazenamento não aceitou um anexo; confira a configuração do Supabase.");
                 }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
                 return;
 

@@ -29,7 +29,45 @@
     "image/gif": bytes => bytes.length >= 6 && ["GIF87a", "GIF89a"].includes(Array.from(bytes.slice(0, 6), byte => String.fromCharCode(byte)).join("")),
     "image/webp": bytes => bytes.length >= 12 && Array.from(bytes.slice(0, 4), byte => String.fromCharCode(byte)).join("") === "RIFF" && Array.from(bytes.slice(8, 12), byte => String.fromCharCode(byte)).join("") === "WEBP"
   };
-  const storageReady = uid => Boolean(window.comfortStorage && uid && window.comfortAuth && window.comfortAuth.currentUser && window.comfortAuth.currentUser.uid === uid && navigator.onLine !== false);
+  // Supabase Storage substitui exclusivamente o Firebase Storage.
+  // O Firebase Auth continua sendo a identidade dos estudantes.
+  const SUPABASE_URL = "https://qcferdvpdtiernawkojm.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_5jd7_1RyY65fLm9TWsRLqw_X3ggp2i_";
+  const SUPABASE_BUCKET = "comfortstudy-attachments";
+  const SUPABASE_FUNCTION = SUPABASE_URL + "/functions/v1/comfort-attachments";
+
+  const storageReady = uid => Boolean(
+    SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && uid &&
+    window.comfortAuth && window.comfortAuth.currentUser &&
+    window.comfortAuth.currentUser.uid === uid && navigator.onLine !== false
+  );
+
+  async function supabaseStorageRequest(action, options) {
+    const user = window.comfortAuth && window.comfortAuth.currentUser;
+    if (!user) throw new Error("Entre na sua conta para acessar os anexos.");
+    const token = await user.getIdToken();
+    const headers = {
+      "apikey": SUPABASE_PUBLISHABLE_KEY,
+      "Authorization": "Bearer " + token
+    };
+    const init = { method: "POST", headers: headers };
+    if (options && options.file) {
+      const form = new FormData();
+      form.append("action", action);
+      form.append("path", options.path || "");
+      form.append("file", options.file, options.file.name || "arquivo");
+      init.body = form;
+    } else {
+      headers["Content-Type"] = "application/json";
+      init.body = JSON.stringify({ action: action, path: options && options.path || "" });
+    }
+    const response = await fetch(SUPABASE_FUNCTION, init);
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || "Não foi possível acessar o armazenamento de anexos.");
+    return result;
+  };
+
+  window.comfortAttachmentStorageReady = () => storageReady(activeUid);
 
   async function inspectAttachmentType(file) {
     if (!file || typeof file.slice !== "function" || !file.size) return "";
@@ -57,15 +95,13 @@
   }
 
   async function uploadFile(file, category, uid) {
-    if (!storageReady(uid)) throw new Error("O Firebase Storage não está disponível para esta conta.");
+    if (!storageReady(uid)) throw new Error("O armazenamento seguro de anexos não está disponível para esta conta.");
     if (!file || !allowedTypes.has(file.type)) throw new Error("Tipo de anexo não permitido.");
     if (file.size > MAX_ATTACHMENT_BYTES) throw new Error("Cada anexo pode ter até 10 MB.");
     const attachmentId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
     const path = "users/" + uid + "/attachments/" + safeFileName(category || "estudos") + "/" + attachmentId + "-" + safeFileName(file.name);
-    const ref = window.comfortStorage.ref(path);
-    await ref.put(file, { contentType: file.type, customMetadata: { ownerUid: uid, originalName: safeFileName(file.name) } });
-    const storageUrl = await ref.getDownloadURL();
-    return { attachmentId: attachmentId, name: String(file.name || "arquivo"), type: file.type, size: Number(file.size) || 0, storagePath: path, storageUrl: storageUrl, ownerUid: uid };
+    const uploaded = await supabaseStorageRequest("upload", { path: path, file: file });
+    return { attachmentId: attachmentId, name: String(file.name || "arquivo"), type: file.type, size: Number(file.size) || 0, storagePath: path, storageUrl: uploaded.signedUrl || "", ownerUid: uid, storageProvider: "supabase" };
   }
 
   function readFileAsDataUrl(file) {
@@ -89,22 +125,22 @@
     if (storageReady(uid)) {
       try { return await uploadFile(normalizedFile, category, uid); }
       catch (error) {
-        console.error("ComfortStudy: falha ao enviar anexo ao Firebase Storage", error);
-        if (file.size > LOCAL_ATTACHMENT_BYTES) throw new Error("Não foi possível enviar ao Firebase Storage. Confira se o Storage está ativado e se as regras foram publicadas.");
+        console.error("ComfortStudy: falha ao enviar anexo ao Supabase Storage", error);
+        if (file.size > LOCAL_ATTACHMENT_BYTES) throw new Error(error.message || "Não foi possível enviar o anexo ao armazenamento. Confira a configuração do Supabase.");
         const localData = await readFileAsDataUrl(normalizedFile);
         return { name: String(file.name || "arquivo"), type: detectedType, size: Number(file.size) || 0, dataUrl: localData, storagePending: true };
       }
     }
-    if (file.size > LOCAL_ATTACHMENT_BYTES) throw new Error("Anexos acima de 700 KB precisam do Firebase Storage ativado e de conexão com a internet.");
+    if (file.size > LOCAL_ATTACHMENT_BYTES) throw new Error("Anexos acima de 700 KB precisam do armazenamento seguro configurado e de conexão com a internet.");
     return { name: String(file.name || "arquivo"), type: detectedType, size: Number(file.size) || 0, dataUrl: await readFileAsDataUrl(normalizedFile), storagePending: Boolean(uid && navigator.onLine !== false) };
   };
 
   window.comfortDeleteAttachment = function (file) {
-    if (!file || !file.storagePath || !window.comfortStorage || !activeUid) return Promise.resolve(false);
+    if (!file || !file.storagePath || !activeUid || !storageReady(activeUid)) return Promise.resolve(false);
     const prefix = "users/" + activeUid + "/attachments/";
     if (!String(file.storagePath).startsWith(prefix)) return Promise.resolve(false);
-    return window.comfortStorage.ref(file.storagePath).delete().then(() => true).catch(error => {
-      if (error && error.code !== "storage/object-not-found") console.warn("ComfortStudy: anexo removido localmente; não foi possível remover a cópia da nuvem.", error);
+    return supabaseStorageRequest("delete", { path: file.storagePath }).then(() => true).catch(error => {
+      console.warn("ComfortStudy: não foi possível remover a cópia do anexo na nuvem.", error);
       return false;
     });
   };
@@ -123,7 +159,7 @@
         if (Number(file.size) > LOCAL_ATTACHMENT_BYTES) throw error;
         file.storagePending = true;
       }
-    } else if (!file.storagePath && typeof file.dataUrl === "string" && uid && navigator.onLine !== false && !window.comfortStorage) {
+    } else if (!file.storagePath && typeof file.dataUrl === "string" && uid && navigator.onLine !== false && !storageReady(uid)) {
       file.storagePending = true;
     }
     const clean = Object.assign({}, file);
@@ -153,11 +189,13 @@
   }
 
   async function resolveStorageUrls(key, value, uid) {
-    if (!window.comfortStorage || !value) return value;
+    if (!storageReady(uid) || !value) return value;
     const resolveFile = async file => {
-      if (!file || !file.storagePath || file.storageUrl || !String(file.storagePath).startsWith("users/" + uid + "/attachments/")) return file;
-      try { file.storageUrl = await window.comfortStorage.ref(file.storagePath).getDownloadURL(); }
-      catch (error) { console.warn("ComfortStudy: anexo da nuvem indisponível", error); }
+      if (!file || !file.storagePath || !String(file.storagePath).startsWith("users/" + uid + "/attachments/")) return file;
+      try {
+        const result = await supabaseStorageRequest("signed-url", { path: file.storagePath });
+        file.storageUrl = result.signedUrl || "";
+      } catch (error) { console.warn("ComfortStudy: anexo da nuvem indisponível", error); }
       return file;
     };
     if (key === "comfortSubjectContents" && typeof value === "object" && !Array.isArray(value)) {
