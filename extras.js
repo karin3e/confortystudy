@@ -482,6 +482,8 @@
   function applyAppearance() {
     const prefs = appearance();
     document.documentElement.dataset.theme = ["blue", "violet", "green", "rose"].includes(prefs.theme) ? prefs.theme : "blue";
+    document.documentElement.dataset.mode = prefs.mode === "dark" ? "dark" : "light";
+    const selectMode = document.getElementById("appearanceMode"); if (selectMode) selectMode.value = document.documentElement.dataset.mode;
     const selectTheme = document.getElementById("appearanceTheme"); if (selectTheme) selectTheme.value = document.documentElement.dataset.theme;
     const selectAvatar = document.getElementById("appearanceAvatar"); if (selectAvatar) selectAvatar.value = prefs.avatar || "👤";
     document.querySelectorAll(".sidebar .avatar").forEach(host => { host.textContent = prefs.avatar || "👤"; host.classList.add("emoji-avatar"); });
@@ -500,7 +502,7 @@
   function saveAppearance(event) {
     event.preventDefault();
     const visibleCards = Array.from(document.querySelectorAll('input[name="dashboardCard"]:checked')).map(input => input.value);
-    write("comfortAppearance", { theme: document.getElementById("appearanceTheme").value, avatar: document.getElementById("appearanceAvatar").value, visibleCards: visibleCards });
+    write("comfortAppearance", { theme: document.getElementById("appearanceTheme").value, mode: document.getElementById("appearanceMode")?.value === "dark" ? "dark" : "light", avatar: document.getElementById("appearanceAvatar").value, visibleCards: visibleCards });
     applyAppearance();
   }
 
