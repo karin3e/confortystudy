@@ -895,6 +895,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!modal.classList.contains("show")) {
             modalPreviousFocus = document.activeElement;
         }
+        modal.querySelector(".modal-content")?.classList.remove("cs-compact-modal");
 
         if (modalTitle) {
             modalTitle.textContent =
@@ -2208,30 +2209,73 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    function deleteCustomSubject(subjectName) {
+    function confirmDeleteCustomSubject(subjectName) {
         const custom = getCustomSubjects();
         const subject = custom.find(item => String(item.name).toLocaleLowerCase("pt-BR") === String(subjectName).toLocaleLowerCase("pt-BR"));
         if (!subject) return;
         const linkedTasks = getTasks().filter(item => item.subject === subject.name).length;
         const linkedExams = getExams().filter(item => item.subject === subject.name).length;
         const linkedNotes = getContentsForSubject(subject.name).length;
-        if (!window.confirm(`Excluir a matéria “${subject.name}”? ${linkedTasks} tarefa(s), ${linkedExams} prova(s) e ${linkedNotes} conteúdo(s) estão vinculados. Os registros serão preservados, mas ficarão sem essa matéria.`)) return;
-        const restore = {
-            [STORAGE.subjects]: JSON.stringify(getStorage(STORAGE.subjects, [])),
-            [STORAGE.subjectContents]: JSON.stringify(getSubjectContents()),
-            [STORAGE.tasks]: JSON.stringify(getTasks()),
-            [STORAGE.exams]: JSON.stringify(getExams())
-        };
-        pushUndo("exclusão da matéria", restore);
-        setStorage(STORAGE.subjects, custom.filter(item => item !== subject));
-        // Mantém tarefas, provas e anotações para não perder dados; remove apenas a matéria personalizada.
-        renderSubjects(); updateEverything();
-        comfortToast("Matéria excluída. Seus registros foram preservados.", { undo: undoLastAction });
+        openModal("Excluir matéria", `
+            <div class="cs-mini-dialog">
+                <div class="cs-mini-dialog-icon danger"><i class="ph ph-trash" aria-hidden="true"></i></div>
+                <h3>Excluir ${escapeHTML(subject.name)}?</h3>
+                <p>Esta matéria será retirada da sua lista. Seus registros continuarão salvos.</p>
+                <div class="cs-linked-summary">
+                    <span>${linkedTasks} tarefa(s)</span><span>${linkedExams} prova(s)</span><span>${linkedNotes} conteúdo(s)</span>
+                </div>
+                <div class="cs-mini-actions">
+                    <button type="button" class="btn-secondary" id="cancelDeleteSubject">Cancelar</button>
+                    <button type="button" class="btn-primary cs-danger-action" id="confirmDeleteSubject"><i class="ph ph-trash"></i> Excluir matéria</button>
+                </div>
+            </div>`);
+        const modalContent = document.querySelector("#modal .modal-content");
+        if (modalContent) modalContent.classList.add("cs-compact-modal");
+        document.getElementById("cancelDeleteSubject")?.addEventListener("click", closeModal);
+        document.getElementById("confirmDeleteSubject")?.addEventListener("click", () => {
+            const restore = {
+                [STORAGE.subjects]: JSON.stringify(getStorage(STORAGE.subjects, [])),
+                [STORAGE.subjectContents]: JSON.stringify(getSubjectContents()),
+                [STORAGE.tasks]: JSON.stringify(getTasks()),
+                [STORAGE.exams]: JSON.stringify(getExams())
+            };
+            pushUndo("exclusão da matéria", restore);
+            setStorage(STORAGE.subjects, custom.filter(item => item !== subject));
+            closeModal();
+            renderSubjects(); updateEverything();
+            comfortToast("Matéria excluída. Seus registros foram preservados.", { undo: undoLastAction });
+        });
+    }
+
+    function deleteCustomSubject(subjectName) {
+        confirmDeleteCustomSubject(subjectName);
     }
 
     window.promptAddSubject = function () {
-        const name = prompt("Qual é o nome da nova matéria?");
-        if (name && addCustomSubject(name)) { renderSubjects(); comfortToast("Matéria adicionada com sucesso!"); }
+        openModal("Adicionar matéria", `
+            <form id="addCustomSubjectForm" class="cs-mini-dialog">
+                <div class="cs-mini-dialog-icon"><i class="ph ph-book-open" aria-hidden="true"></i></div>
+                <h3>Uma nova matéria</h3>
+                <p>Adicione uma matéria para organizar seus estudos.</p>
+                <label for="customSubjectName">Nome da matéria</label>
+                <input id="customSubjectName" name="name" type="text" maxlength="50" placeholder="Ex.: Filosofia" autocomplete="off" required>
+                <div class="cs-mini-actions">
+                    <button type="button" class="btn-secondary" id="cancelAddSubject">Cancelar</button>
+                    <button type="submit" class="btn-primary"><i class="ph ph-plus"></i> Adicionar</button>
+                </div>
+            </form>`);
+        const modalContent = document.querySelector("#modal .modal-content");
+        if (modalContent) modalContent.classList.add("cs-compact-modal");
+        document.getElementById("cancelAddSubject")?.addEventListener("click", closeModal);
+        const input = document.getElementById("customSubjectName");
+        input?.focus();
+        document.getElementById("addCustomSubjectForm")?.addEventListener("submit", event => {
+            event.preventDefault();
+            const name = input?.value || "";
+            if (addCustomSubject(name)) {
+                closeModal(); renderSubjects(); comfortToast("Matéria adicionada com sucesso!");
+            }
+        });
     };
 
     window.editSubjectContent = function (subjectName, contentId) {
