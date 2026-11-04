@@ -270,8 +270,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         const allContents = getSubjectContents();
         if (!Array.isArray(allContents[subjectName])) allContents[subjectName] = [];
         const record = typeof content === 'string'
-            ? { id: Date.now(), topic: "", title: content.slice(0, 90), text: content, important: false, files: [], createdAt: new Date().toISOString() }
-            : { id: Date.now(), topic: String(content.topic || "").trim(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString() };
+            ? { id: Date.now(), topic: "", title: content.slice(0, 90), text: content, important: false, favorite: false, files: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+            : { id: Date.now(), topic: String(content.topic || "").trim(), title: String(content.title || 'Anotação').trim(), text: String(content.text || '').trim(), important: Boolean(content.important), favorite: Boolean(content.favorite), files: Array.isArray(content.files) ? content.files : [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
         allContents[subjectName].push(record);
         saveSubjectContents(allContents);
     }
@@ -313,6 +313,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     window.deleteSubjectContent = deleteSubjectContent;
+
+    window.toggleSubjectFavorite = function (subjectName, contentId) {
+        const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
+        if (!item) return;
+        updateSubjectContent(subjectName, contentId, { favorite: !item.favorite });
+    };
+
+    window.duplicateSubjectContent = function (subjectName, contentId) {
+        const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
+        if (!item) return;
+        const copy = { ...item, id: Date.now() + Math.floor(Math.random() * 1000), title: `${item.title || "Anotação"} (cópia)`, favorite: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), files: Array.isArray(item.files) ? item.files.map(file => ({ ...file })) : [] };
+        addSubjectContent(subjectName, copy);
+        showSubjectModal(subjectName);
+    };
 
 
     const DEFAULT_PROFILE = {
@@ -1982,44 +1996,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     
-    function getSubjectProgress(
-        subjectName
-    ) {
-
-        const subjectTasks =
-            getTasks().filter(
-                task =>
-                    String(
-                        task.subject
-                    ).toLowerCase() ===
-                    String(
-                        subjectName
-                    ).toLowerCase()
-            );
-
-
-        if (
-            subjectTasks.length ===
-            0
-        ) {
-            return 0;
-        }
-
-
-        const completed =
-            subjectTasks.filter(
-                task =>
-                    task.completed
-            ).length;
-
-
-        return Math.round(
-            (
-                completed /
-                subjectTasks.length
-            ) * 100
-        );
+    function getSubjectProgress(subjectName) {
+        const subjectTasks = getTasks().filter(task => String(task.subject || "").toLowerCase() === String(subjectName).toLowerCase());
+        const notes = getContentsForSubject(subjectName);
+        const completedTasks = subjectTasks.filter(task => task.completed).length;
+        const totalUnits = subjectTasks.length + notes.length;
+        if (!totalUnits) return 0;
+        // Cada tarefa concluída e cada conteúdo registrado contam como uma unidade.
+        // O percentual não presume domínio do assunto; mede organização/registro de estudo.
+        return Math.round(((completedTasks + notes.length) / totalUnits) * 100);
     }
+
 
 
     function renderSubjects() {
@@ -2330,12 +2317,16 @@ document.addEventListener("DOMContentLoaded", async () => {
                                                 ">
 
                                                 <div style="flex:1;min-width:0">
-                                                    <strong>${content.important ? '<i class="ph ph-star" aria-hidden="true"></i> ' : '<i class="ph ph-book-open-text" aria-hidden="true"></i> '}${escapeHTML(content.title || content.text || 'Anotação')}</strong>
+                                                    <div class="subject-note-heading"><strong>${content.important ? '<i class="ph ph-star" aria-hidden="true"></i> ' : '<i class="ph ph-book-open-text" aria-hidden="true"></i> '}${escapeHTML(content.title || content.text || 'Anotação')}</strong><span class="subject-note-date">${content.updatedAt ? new Date(content.updatedAt).toLocaleDateString('pt-BR') : ''}</span></div>
                                                     ${content.topic ? `<small class="subject-note-topic">${escapeHTML(content.topic)}</small>` : ''}
-                                                    <p style="white-space:pre-wrap;margin:6px 0">${escapeHTML(content.text || '')}</p>
-                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl || file.storageUrl); if (!url) return ''; const image = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(file.name || '') || /^data:image\//i.test(url); return `<p class="subject-attachment">${image ? `<img src="${escapeHTML(url)}" alt="Prévia de ${escapeHTML(file.name)}" loading="lazy">` : ''}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener"><i class="ph ph-paperclip" aria-hidden="true"></i> ${escapeHTML(file.name)}</a></p>`; }).join('')}
-                                                    <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-pencil-simple" aria-hidden="true"></i> Editar</button>
-                                                    <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-brain" aria-hidden="true"></i> Revisar</button>
+                                                    <p class="subject-note-preview">${escapeHTML(content.text || '')}</p>
+                                                    ${(content.files || []).map(file => { const url = safeAttachmentDataUrl(file.dataUrl || file.storageUrl); if (!url) return ''; const image = /\.(png|jpe?g|webp|gif)(\?|$)/i.test(file.name || '') || /^data:image\//i.test(url); return `<div class="subject-attachment-chip">${image ? '<i class="ph ph-image"></i>' : '<i class="ph ph-file-pdf"></i>'}<a href="${escapeHTML(url)}" download="${escapeHTML(file.name)}" target="_blank" rel="noopener">${escapeHTML(file.name)}</a></div>`; }).join('')}
+                                                    <div class="subject-note-actions">
+                                                      <button type="button" class="small-button" data-subject-action="favorite" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}" aria-label="${content.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}"><i class="ph ${content.favorite ? 'ph-bookmark-simple-fill' : 'ph-bookmark-simple'}"></i> ${content.favorite ? 'Favorito' : 'Favoritar'}</button>
+                                                      <button type="button" class="small-button" data-subject-action="duplicate" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-copy"></i> Duplicar</button>
+                                                      <button type="button" class="small-button" data-subject-action="edit" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-pencil-simple"></i> Editar</button>
+                                                      <button type="button" class="small-button" data-subject-action="review" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}"><i class="ph ph-brain"></i> Revisar</button>
+                                                    </div>
                                                 </div>
                                                 <button type="button" class="small-button" data-subject-action="delete" data-subject="${escapeHTML(subjectName)}" data-content-id="${Number(content.id)}" aria-label="Excluir conteúdo"><i class="ph ph-trash" aria-hidden="true"></i></button>
 
@@ -2391,6 +2382,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (button.dataset.subjectAction === "edit") window.editSubjectContent(name, id);
                 if (button.dataset.subjectAction === "review") window.generateSubjectReview(name, id);
                 if (button.dataset.subjectAction === "delete") window.deleteSubjectContent(name, id);
+                if (button.dataset.subjectAction === "favorite") window.toggleSubjectFavorite(name, id);
+                if (button.dataset.subjectAction === "duplicate") window.duplicateSubjectContent(name, id);
             });
         }
 
@@ -2406,6 +2399,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!form) return;
 
+        // Rascunho local por matéria: recupera o texto se o modal for fechado sem salvar.
+        const draftKey = "comfortSubjectDraft:" + subjectName;
+        try {
+            const draft = JSON.parse(localStorage.getItem(draftKey) || "null");
+            if (draft && typeof draft === "object") {
+                document.getElementById("subjectContentTopic").value = draft.topic || "";
+                document.getElementById("subjectContentTitle").value = draft.title || "";
+                document.getElementById("subjectContentInput").value = draft.text || "";
+                document.getElementById("subjectContentImportant").checked = Boolean(draft.important);
+            }
+        } catch (_) { /* rascunho inválido não impede abrir o caderno */ }
+        const saveDraft = () => {
+            try {
+                localStorage.setItem(draftKey, JSON.stringify({
+                    topic: document.getElementById("subjectContentTopic").value,
+                    title: document.getElementById("subjectContentTitle").value,
+                    text: document.getElementById("subjectContentInput").value,
+                    important: document.getElementById("subjectContentImportant").checked,
+                    savedAt: new Date().toISOString()
+                }));
+            } catch (error) { console.warn("ComfortStudy: não foi possível salvar o rascunho local.", error); }
+        };
+        ["subjectContentTopic", "subjectContentTitle", "subjectContentInput", "subjectContentImportant"].forEach(id => {
+            const field = document.getElementById(id);
+            field?.addEventListener("input", saveDraft);
+            field?.addEventListener("change", saveDraft);
+        });
 
             form.addEventListener(
             "submit",
@@ -2438,10 +2458,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (fileData.filter(file => file.dataUrl).reduce((sum, file) => sum + (Number(file.size) || 0), 0) > 900 * 1024) throw new Error("Sem o Storage, os anexos locais podem somar até 900 KB por anotação.");
                     try {
                         addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: fileData });
+                        localStorage.removeItem(draftKey);
                     } catch (saveError) {
                         // Quota local cheia: preserva título e anotações, mesmo que os anexos
                         // precisem ser adicionados novamente depois de ativar o Storage.
                         addSubjectContent(subjectName, { topic, title, text: content, important: document.getElementById("subjectContentImportant").checked, files: [] });
+                        localStorage.removeItem(draftKey);
                         renderSubjects();
                         showSubjectModal(subjectName);
                         alert("O conteúdo foi salvo, mas os anexos não couberam no armazenamento deste aparelho. Configure o armazenamento de anexos ou tente arquivos menores.");
@@ -2774,38 +2796,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                             );
 
 
+                        const subjectTasks = getTasks().filter(task => String(task.subject || "").toLowerCase() === subject.name.toLowerCase());
+                        const completed = subjectTasks.filter(task => task.completed).length;
+                        const notesCount = getContentsForSubject(subject.name).length;
                         return `
-                            <div
-                                class="performance-row">
-
-                                <span>
-
-                                    ${escapeHTML(
-                                        subject.name
-                                    )}
-
-                                </span>
-
-
-                                <div
-                                    class="performance-bar">
-
-                                    <span
-                                        style="
-                                            width:${progress}%
-                                        ">
-
-                                    </span>
-
-                                </div>
-
-
-                                <strong>
-
-                                    ${progress}%
-
-                                </strong>
-
+                            <div class="performance-subject-item">
+                              <div class="performance-row">
+                                <span>${escapeHTML(subject.name)}</span>
+                                <div class="performance-bar"><span style="width:${progress}%"></span></div>
+                                <strong>${progress}%</strong>
+                              </div>
+                              <small class="performance-subject-detail">${completed}/${subjectTasks.length} tarefas concluídas · ${notesCount} conteúdo(s) registrado(s)</small>
                             </div>
                         `;
                     }
