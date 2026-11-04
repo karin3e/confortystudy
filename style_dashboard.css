@@ -2550,3 +2550,36 @@ body.modal-open { overflow: hidden; }
   color: #edf2f8 !important;
   border-color: #343c49 !important;
 }
+
+
+/* Correção pontual: cartões claros que ainda apareciam no modo escuro */
+:root[data-mode="dark"] .comfort-about-hero {
+  background: #222630 !important;
+  color: #edf2f8 !important;
+  border: 1px solid #343c49 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18) !important;
+}
+:root[data-mode="dark"] .comfort-about-hero h2 {
+  color: #edf2f8 !important;
+}
+:root[data-mode="dark"] .comfort-about-hero p {
+  color: #aab5c4 !important;
+}
+:root[data-mode="dark"] .feature-empty {
+  display: block;
+  background: #222630 !important;
+  color: #aab5c4 !important;
+  border: 1px solid #343c49 !important;
+  border-radius: 12px;
+  box-shadow: none !important;
+}
+:root[data-mode="dark"] .feature-empty * {
+  color: #aab5c4 !important;
+}
+/* Evita que estilos inline de estado vazio mantenham superfícies brancas */
+:root[data-mode="dark"] .today-card .feature-empty,
+:root[data-mode="dark"] .feature-card .feature-empty,
+:root[data-mode="dark"] .dashboard-card .feature-empty {
+  background: #222630 !important;
+  color: #aab5c4 !important;
+}

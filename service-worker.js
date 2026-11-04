@@ -1,4 +1,4 @@
-const CACHE_NAME = "comfortstudy-v18";
+const CACHE_NAME = "comfortstudy-v19";
 const APP_SHELL = [
   "./", "./index.html", "./index_2.html", "./cadastro.html",
   "./recuperar-senha.html", "./style_dashboard.css", "./script.js", "./support.js",
