@@ -486,16 +486,16 @@
     const selectMode = document.getElementById("appearanceMode"); if (selectMode) selectMode.value = document.documentElement.dataset.mode;
     const selectTheme = document.getElementById("appearanceTheme"); if (selectTheme) selectTheme.value = document.documentElement.dataset.theme;
     const selectAvatar = document.getElementById("appearanceAvatar"); if (selectAvatar) selectAvatar.value = prefs.avatar || "👤";
-    document.querySelectorAll(".sidebar .avatar").forEach(host => { host.textContent = prefs.avatar || "👤"; host.classList.add("emoji-avatar"); });
-    const bigAvatar = document.querySelector(".big-avatar");
     const profile = read("comfortProfile", {});
     const photoData = profile && typeof profile.photoData === "string" && /^data:image\/(png|jpeg|webp|gif);base64,/i.test(profile.photoData) ? profile.photoData : "";
-    if (bigAvatar && photoData) {
-      const image = document.createElement("img"); image.src = photoData; image.alt = "Foto de perfil";
-      bigAvatar.replaceChildren(image); bigAvatar.classList.add("profile-photo-avatar"); bigAvatar.classList.remove("emoji-avatar");
-    } else if (bigAvatar) {
-      bigAvatar.textContent = prefs.avatar || "👤"; bigAvatar.classList.add("emoji-avatar"); bigAvatar.classList.remove("profile-photo-avatar");
-    }
+    document.querySelectorAll(".sidebar .avatar, .user-profile .avatar, .big-avatar").forEach(host => {
+      if (photoData) {
+        const image = document.createElement("img"); image.src = photoData; image.alt = "Foto de perfil";
+        host.replaceChildren(image); host.classList.add("profile-photo-avatar"); host.classList.remove("emoji-avatar");
+      } else {
+        host.textContent = prefs.avatar || "👤"; host.classList.add("emoji-avatar"); host.classList.remove("profile-photo-avatar");
+      }
+    });
     document.querySelectorAll("[data-dashboard-card]").forEach(card => card.classList.toggle("dashboard-card-hidden", Array.isArray(prefs.visibleCards) && !prefs.visibleCards.includes(card.dataset.dashboardCard)));
     document.querySelectorAll('input[name="dashboardCard"]').forEach(input => { input.checked = Array.isArray(prefs.visibleCards) ? prefs.visibleCards.includes(input.value) : true; });
   }

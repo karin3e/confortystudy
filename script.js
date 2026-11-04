@@ -64,6 +64,72 @@ document.addEventListener("DOMContentLoaded", async () => {
         profile: "comfortProfile"
     };
 
+    // Avisos internos e histórico curto de desfazer (sem alterar os lembretes do sistema).
+    function comfortToast(message, options = {}) {
+        let host = document.getElementById("comfortToastRegion");
+        if (!host) {
+            host = document.createElement("div");
+            host.id = "comfortToastRegion";
+            host.className = "comfort-toast-region";
+            host.setAttribute("aria-live", "polite");
+            host.setAttribute("aria-atomic", "false");
+            document.body.appendChild(host);
+        }
+        const toast = document.createElement("div");
+        toast.className = "comfort-toast " + (options.type || "success");
+        const icon = document.createElement("i");
+        icon.className = "ph " + (options.type === "error" ? "ph-warning-circle" : options.type === "info" ? "ph-info" : "ph-check-circle");
+        icon.setAttribute("aria-hidden", "true");
+        const text = document.createElement("span"); text.textContent = message;
+        toast.append(icon, text);
+        if (options.undo) {
+            const button = document.createElement("button"); button.type = "button"; button.className = "comfort-toast-undo"; button.textContent = "Desfazer";
+            button.addEventListener("click", () => { options.undo(); toast.remove(); });
+            toast.appendChild(button);
+        }
+        host.appendChild(toast);
+        window.setTimeout(() => toast.remove(), options.undo ? 9000 : 3600);
+    }
+    window.comfortToast = comfortToast;
+    const UNDO_KEY = "comfortUndoHistory";
+    function pushUndo(label, restore) {
+        try {
+            const history = JSON.parse(localStorage.getItem(UNDO_KEY) || "[]");
+            history.push({ label, at: Date.now(), restore });
+            localStorage.setItem(UNDO_KEY, JSON.stringify(history.slice(-20)));
+        } catch (_) { /* histórico opcional; nunca bloqueia a ação principal */ }
+    }
+    function undoLastAction() {
+        let history = [];
+        try { history = JSON.parse(localStorage.getItem(UNDO_KEY) || "[]"); } catch (_) {}
+        const last = history.pop();
+        if (!last || !last.restore || Date.now() - Number(last.at) > 24 * 60 * 60 * 1000) {
+            comfortToast("Não há uma ação recente para desfazer.", { type: "info" }); return;
+        }
+        try {
+            Object.entries(last.restore).forEach(([key, value]) => localStorage.setItem(key, value));
+            localStorage.setItem(UNDO_KEY, JSON.stringify(history));
+            window.dispatchEvent(new Event("comfort-data-updated"));
+            if (typeof updateEverything === "function") updateEverything();
+            if (typeof renderSubjects === "function") renderSubjects();
+            comfortToast("Ação desfeita: " + last.label + ".");
+        } catch (_) { comfortToast("Não foi possível recuperar essa ação.", { type: "error" }); }
+    }
+    window.comfortUndoLastAction = undoLastAction;
+    document.addEventListener("keydown", event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.shiftKey) {
+            const target = event.target;
+            if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+            event.preventDefault(); undoLastAction();
+        }
+    });
+    function comfortHasInappropriateLanguage(value) {
+        const normalized = String(value || "").toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const blocked = ["puta", "putaria", "puto", "merda", "bosta", "caralho", "foder", "fodase", "fdp", "filho da puta", " arrombado", "vadia", "viado", "buceta", "piroca", "cuzao"];
+        return blocked.some(word => new RegExp("(^|[^a-z0-9])" + word.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z0-9]|$)", "i").test(normalized));
+    }
+    window.comfortHasInappropriateLanguage = comfortHasInappropriateLanguage;
+
     const FIXED_SUBJECTS = [
         { name: "Matemática", icon: "ph-calculator", className: "math" },
         { name: "Português", icon: "ph-book-open-text", className: "portuguese" },
@@ -143,8 +209,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     function addCustomSubject(name) {
         const clean = String(name || '').trim();
         if (!clean) return false;
+        if (comfortHasInappropriateLanguage(clean)) { comfortToast("Esse nome contém palavras inadequadas.", { type: "error" }); return false; }
         if (getAllSubjects().some(s => s.name.toLocaleLowerCase('pt-BR') === clean.toLocaleLowerCase('pt-BR'))) {
-            alert('Essa matéria já existe.'); return false;
+            comfortToast('Essa matéria já existe.', { type: 'info' }); return false;
         }
         const items = getCustomSubjects();
         items.push({ name: clean, icon: 'ph-notebook', className: 'custom' });
@@ -282,6 +349,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!Array.isArray(list)) return;
         const item = list.find(c => Number(c.id) === Number(contentId));
         if (!item) return;
+        pushUndo("edição do conteúdo", { [STORAGE.subjectContents]: JSON.stringify(getSubjectContents()) });
         Object.assign(item, changes, { updatedAt: new Date().toISOString() });
         saveSubjectContents(allContents);
         showSubjectModal(subjectName);
@@ -299,7 +367,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const removed = allContents[subjectName].find(content => Number(content.id) === Number(contentId));
-        (removed && Array.isArray(removed.files) ? removed.files : []).forEach(file => window.comfortDeleteAttachment?.(file));
+        if (!removed) return;
+        pushUndo("exclusão do conteúdo", { [STORAGE.subjectContents]: JSON.stringify(getSubjectContents()) });
         allContents[subjectName] =
             allContents[subjectName].filter(
                 content =>
@@ -309,6 +378,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         saveSubjectContents(allContents);
 
         showSubjectModal(subjectName);
+        comfortToast("Conteúdo excluído.", { undo: undoLastAction });
     }
 
 
@@ -358,22 +428,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function renderProfileAvatar(photoData, name) {
-        const avatar = document.querySelector(".big-avatar");
-        if (!avatar) return;
+        const avatars = document.querySelectorAll(".big-avatar, .sidebar .avatar, .user-profile .avatar");
+        if (!avatars.length) return;
         const safeImage = typeof photoData === "string" && /^data:image\/(png|jpeg|webp|gif);base64,/i.test(photoData);
-        if (safeImage) {
-            const image = document.createElement("img");
-            image.src = photoData;
-            image.alt = "Foto de perfil de " + (name || "estudante");
-            avatar.replaceChildren(image);
-            avatar.classList.add("profile-photo-avatar");
-            avatar.classList.remove("emoji-avatar");
-        } else {
-            const appearance = getStorage("comfortAppearance", {});
-            avatar.textContent = appearance.avatar || "👤";
-            avatar.classList.add("emoji-avatar");
-            avatar.classList.remove("profile-photo-avatar");
-        }
+        avatars.forEach(avatar => {
+            if (safeImage) {
+                const image = document.createElement("img");
+                image.src = photoData;
+                image.alt = "Foto de perfil de " + (name || "estudante");
+                avatar.replaceChildren(image);
+                avatar.classList.add("profile-photo-avatar");
+                avatar.classList.remove("emoji-avatar");
+            } else {
+                const appearance = getStorage("comfortAppearance", {});
+                avatar.textContent = appearance.avatar || "👤";
+                avatar.classList.add("emoji-avatar");
+                avatar.classList.remove("profile-photo-avatar");
+            }
+        });
     }
 
 
@@ -960,6 +1032,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const dateInput = document.getElementById("taskDate");
         if (!nameInput || !subjectInput || !dateInput) return;
 
+        const submitButton = document.querySelector("#taskForm [type='submit']");
+        if (submitButton?.disabled) return;
+        if (submitButton) { submitButton.disabled = true; submitButton.dataset.originalText = submitButton.textContent; submitButton.textContent = "Salvando..."; }
         const name = nameInput.value.trim();
         const subject = subjectInput.value;
         const date = dateInput.value;
@@ -970,24 +1045,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         const files = Array.from(fileInput && fileInput.files || []);
 
         if (!name || !subject || !date) {
-            alert("Preencha o nome, a matéria e a data.");
-            return;
+            if (submitButton) { submitButton.disabled = false; submitButton.textContent = submitButton.dataset.originalText || "Adicionar tarefa"; }
+            comfortToast("Preencha o nome, a matéria e a data.", { type: "info" }); return;
+        }
+        if (comfortHasInappropriateLanguage([name, description, stepsText].join(" "))) {
+            if (submitButton) { submitButton.disabled = false; submitButton.textContent = submitButton.dataset.originalText || "Adicionar tarefa"; }
+            comfortToast("Revise o texto: encontramos palavras inadequadas.", { type: "error" }); return;
         }
         try { await validateAttachmentFiles(files); }
-        catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
+        catch (error) { if (submitButton) { submitButton.disabled = false; submitButton.textContent = submitButton.dataset.originalText || "Adicionar tarefa"; } comfortToast(error.message || "Não foi possível reconhecer um dos arquivos.", { type: "error" }); return; }
         const totalFileBytes = files.reduce((sum, file) => sum + file.size, 0);
         const cloudStorageAvailable = Boolean(window.comfortAttachmentStorageReady && window.comfortAttachmentStorageReady());
         if (files.some(file => file.size > 10 * 1024 * 1024) || totalFileBytes > 20 * 1024 * 1024) {
-            alert("Cada arquivo pode ter até 10 MB e os anexos da tarefa podem somar até 20 MB.");
-            return;
+            if (submitButton) { submitButton.disabled = false; submitButton.textContent = submitButton.dataset.originalText || "Adicionar tarefa"; }
+            comfortToast("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB.", { type: "info" }); return;
         }
         if (!cloudStorageAvailable && totalFileBytes > 700 * 1024) {
-            alert("Para anexos acima de 700 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet.");
-            return;
+            if (submitButton) { submitButton.disabled = false; submitButton.textContent = submitButton.dataset.originalText || "Adicionar tarefa"; }
+            comfortToast("Para anexos acima de 700 KB, configure o armazenamento de anexos.", { type: "info" }); return;
         }
 
-        const submitButton = document.querySelector("#taskForm [type='submit']");
-        if (submitButton) submitButton.disabled = true;
         try {
             const taskId = Date.now();
             const fileData = await Promise.all(files.map(file => window.comfortPrepareAttachmentFile
@@ -1028,16 +1105,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             updateEverything();
             checkDueDateNotifications();
             if (!attachmentsSaved) {
-                alert("A tarefa foi salva, mas os anexos não couberam no armazenamento deste aparelho. Tente anexar arquivos menores ou configure o armazenamento de anexos.");
+                comfortToast("Tarefa salva, mas os anexos não couberam neste aparelho.", { type: "info" });
             } else if (fileData.some(file => file.storagePending)) {
-                alert("Tarefa salva neste aparelho. O o armazenamento não aceitou um anexo; confira a configuração do Supabase.");
+                comfortToast("Tarefa salva neste aparelho; um anexo não foi sincronizado.", { type: "info" });
             } else {
-                alert("Tarefa adicionada com sucesso! ✅");
+                comfortToast("Tarefa adicionada com sucesso!");
             }
         } catch (error) {
             console.error("ComfortStudy: não foi possível salvar a tarefa", error);
-            alert(error && error.message ? error.message : "Não foi possível salvar a tarefa ou os anexos. Tente arquivos menores.");
-        } finally { if (submitButton) submitButton.disabled = false; }
+            comfortToast(error && error.message ? error.message : "Não foi possível salvar a tarefa ou os anexos.", { type: "error" });
+        } finally { if (submitButton) { submitButton.disabled = false; submitButton.textContent = submitButton.dataset.originalText || "Adicionar tarefa"; } }
     }
 
     window.addTask = addTask;
@@ -1285,9 +1362,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     function deleteTask(id) {
-        if (!confirm("Deseja realmente excluir esta tarefa?")) return;
         const allTasks = getTasks();
         const removed = allTasks.find(task => Number(task.id) === Number(id));
+        if (!removed) return;
+        pushUndo("exclusão da tarefa", { [STORAGE.tasks]: JSON.stringify(allTasks) });
         const tasks = allTasks.filter(task => Number(task.id) !== Number(id));
         saveTasks(tasks);
 
@@ -1296,16 +1374,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const files = JSON.parse(localStorage.getItem("comfortTaskFiles") || "{}");
                 const fileKey = String(removed.attachmentSourceId || removed.id);
                 const stillReferenced = tasks.some(task => String(task.attachmentSourceId || task.id) === fileKey);
-                if (!stillReferenced) {
-                    (Array.isArray(files[fileKey]) ? files[fileKey] : []).forEach(file => window.comfortDeleteAttachment?.(file));
-                    delete files[fileKey];
-                }
-                (Array.isArray(files[String(removed.id)]) ? files[String(removed.id)] : []).forEach(file => window.comfortDeleteAttachment?.(file));
-                delete files[String(removed.id)];
+                // Mantém os anexos durante a janela de desfazer; a tarefa restaurada continua íntegra.
                 localStorage.setItem("comfortTaskFiles", JSON.stringify(files));
             } catch (_) {}
         }
         updateEverything();
+        comfortToast("Tarefa excluída.", { undo: undoLastAction });
     }
 
     window.deleteTask =
@@ -2075,6 +2149,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 </div>
 
 
+                                ${subject.className === "custom" ? `<button type="button" class="subject-delete-button" data-delete-custom-subject="${escapeHTML(subject.name)}" aria-label="Excluir matéria ${escapeHTML(subject.name)}" title="Excluir matéria"><i class="ph ph-trash" aria-hidden="true"></i></button>` : ""}
                                 <h3>
 
                                     ${escapeHTML(
@@ -2121,6 +2196,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 )
                 .join("") : query ? `<p class="feature-empty subject-search-empty">Nenhuma matéria ou anotação encontrada para “${escapeHTML(query)}”.</p>` : "");
+        grid.querySelectorAll("[data-delete-custom-subject]").forEach(button => button.addEventListener("click", event => {
+            event.stopPropagation(); deleteCustomSubject(button.dataset.deleteCustomSubject);
+        }));
         grid.querySelectorAll("[data-subject-open]").forEach(card => {
             card.addEventListener("click", () => showSubjectModal(card.dataset.subjectOpen));
             card.addEventListener("keydown", event => {
@@ -2130,9 +2208,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
+    function deleteCustomSubject(subjectName) {
+        const custom = getCustomSubjects();
+        const subject = custom.find(item => String(item.name).toLocaleLowerCase("pt-BR") === String(subjectName).toLocaleLowerCase("pt-BR"));
+        if (!subject) return;
+        const linkedTasks = getTasks().filter(item => item.subject === subject.name).length;
+        const linkedExams = getExams().filter(item => item.subject === subject.name).length;
+        const linkedNotes = getContentsForSubject(subject.name).length;
+        if (!window.confirm(`Excluir a matéria “${subject.name}”? ${linkedTasks} tarefa(s), ${linkedExams} prova(s) e ${linkedNotes} conteúdo(s) estão vinculados. Os registros serão preservados, mas ficarão sem essa matéria.`)) return;
+        const restore = {
+            [STORAGE.subjects]: JSON.stringify(getStorage(STORAGE.subjects, [])),
+            [STORAGE.subjectContents]: JSON.stringify(getSubjectContents()),
+            [STORAGE.tasks]: JSON.stringify(getTasks()),
+            [STORAGE.exams]: JSON.stringify(getExams())
+        };
+        pushUndo("exclusão da matéria", restore);
+        setStorage(STORAGE.subjects, custom.filter(item => item !== subject));
+        // Mantém tarefas, provas e anotações para não perder dados; remove apenas a matéria personalizada.
+        renderSubjects(); updateEverything();
+        comfortToast("Matéria excluída. Seus registros foram preservados.", { undo: undoLastAction });
+    }
+
     window.promptAddSubject = function () {
         const name = prompt("Qual é o nome da nova matéria?");
-        if (name && addCustomSubject(name)) renderSubjects();
+        if (name && addCustomSubject(name)) { renderSubjects(); comfortToast("Matéria adicionada com sucesso!"); }
     };
 
     window.editSubjectContent = function (subjectName, contentId) {
@@ -2152,6 +2251,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const title = document.getElementById("editSubjectTitle").value.trim();
             const text = document.getElementById("editSubjectText").value.trim();
             const selectedFiles = Array.from(document.getElementById("editSubjectFiles").files || []);
+            if (comfortHasInappropriateLanguage([title, text].join(" "))) { comfortToast("Revise o texto: encontramos palavras inadequadas.", { type: "error" }); return; }
             try { await validateAttachmentFiles(selectedFiles); }
             catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
             const currentFiles = Array.isArray(item.files) ? item.files : [];
@@ -2432,7 +2532,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             async event => {
 
                 event.preventDefault();
-
+                const saveButton = form.querySelector("[type='submit']");
+                if (saveButton?.disabled) return;
+                if (saveButton) { saveButton.disabled = true; saveButton.dataset.originalText = saveButton.textContent; saveButton.textContent = "Salvando..."; }
 
                 const input =
                     document.getElementById(
@@ -2445,13 +2547,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const content = input.value.trim();
                 const fileInput = document.getElementById("subjectContentFiles");
                 const files = Array.from(fileInput.files || []);
-                if (!title || !content) { alert("Preencha o título e as anotações."); return; }
+                if (!title || !content) { if (saveButton) { saveButton.disabled = false; saveButton.textContent = saveButton.dataset.originalText || "＋ Salvar conteúdo"; } comfortToast("Preencha o título e as anotações.", { type: "info" }); return; }
+                if (comfortHasInappropriateLanguage([topic, title, content].join(" "))) { if (saveButton) { saveButton.disabled = false; saveButton.textContent = saveButton.dataset.originalText || "＋ Salvar conteúdo"; } comfortToast("Revise o texto: encontramos palavras inadequadas.", { type: "error" }); return; }
                 try { await validateAttachmentFiles(files); }
-                catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
+                catch (error) { if (saveButton) { saveButton.disabled = false; saveButton.textContent = saveButton.dataset.originalText || "＋ Salvar conteúdo"; } comfortToast(error.message || "Não foi possível reconhecer um dos arquivos.", { type: "error" }); return; }
                 const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
                 const cloudStorageAvailable = Boolean(window.comfortAttachmentStorageReady && window.comfortAttachmentStorageReady());
-                if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB."); return; }
-                if (!cloudStorageAvailable && totalBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet."); return; }
+                if (files.some(file => file.size > 10 * 1024 * 1024) || totalBytes > 20 * 1024 * 1024) { if (saveButton) { saveButton.disabled = false; saveButton.textContent = saveButton.dataset.originalText || "＋ Salvar conteúdo"; } comfortToast("Cada arquivo pode ter até 10 MB e os anexos podem somar até 20 MB.", { type: "info" }); return; }
+                if (!cloudStorageAvailable && totalBytes > 900 * 1024) { if (saveButton) { saveButton.disabled = false; saveButton.textContent = saveButton.dataset.originalText || "＋ Salvar conteúdo"; } comfortToast("Para anexos acima de 900 KB, configure o armazenamento de anexos.", { type: "info" }); return; }
                 Promise.all(files.map(file => window.comfortPrepareAttachmentFile
                     ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName)
                     : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(fileData => {
@@ -2466,13 +2569,14 @@ document.addEventListener("DOMContentLoaded", async () => {
                         localStorage.removeItem(draftKey);
                         renderSubjects();
                         showSubjectModal(subjectName);
-                        alert("O conteúdo foi salvo, mas os anexos não couberam no armazenamento deste aparelho. Configure o armazenamento de anexos ou tente arquivos menores.");
+                        comfortToast("Conteúdo salvo, mas os anexos não couberam neste aparelho.", { type: "info" });
                         return;
                     }
                     renderSubjects();
                     showSubjectModal(subjectName);
-                    if (fileData.some(file => file.storagePending)) alert("Conteúdo salvo neste aparelho. O o armazenamento não aceitou um anexo; confira a configuração do Supabase.");
-                }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
+                    if (fileData.some(file => file.storagePending)) comfortToast("Conteúdo salvo neste aparelho; um anexo não foi sincronizado.", { type: "info" });
+                    else comfortToast("Conteúdo salvo com sucesso!");
+                }).catch(error => comfortToast(error && error.message ? error.message : "Não foi possível ler um dos arquivos.", { type: "error" })).finally(() => { if (saveButton) { saveButton.disabled = false; saveButton.textContent = saveButton.dataset.originalText || "＋ Salvar conteúdo"; } });
                 return;
 
 
@@ -3797,11 +3901,13 @@ document.addEventListener("DOMContentLoaded", async () => {
                     <p>${escapeHTML(notice.message || "")}</p>
                     <small>Toque para marcar como lido</small>
                 </div>
+                <button type="button" class="notice-delete-button" data-notice-delete="${escapeHTML(String(notice.id))}" aria-label="Excluir aviso" title="Excluir aviso"><i class="ph ph-trash" aria-hidden="true"></i></button>
             </div>`;
         const renderReadNotice = notice => `
             <div class="notice is-read">
                 <i class="ph ph-check-circle" aria-hidden="true"></i>
                 <div class="notice-copy"><strong>${escapeHTML(notice.title || "Aviso")}</strong><p>${escapeHTML(notice.message || "")}</p></div>
+                <button type="button" class="notice-delete-button" data-notice-delete="${escapeHTML(String(notice.id))}" aria-label="Excluir aviso" title="Excluir aviso"><i class="ph ph-trash" aria-hidden="true"></i></button>
             </div>`;
 
 
@@ -3943,6 +4049,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                     .trim();
 
 
+                            if (comfortHasInappropriateLanguage([title, message].join(" "))) { comfortToast("Revise o aviso: encontramos palavras inadequadas.", { type: "error" }); return; }
                             if (
                                 !title ||
                                 !message
@@ -3986,9 +4093,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                             updateEverything();
 
 
-                            alert(
-                                "Aviso publicado com sucesso!"
-                            );
+                            comfortToast("Aviso publicado com sucesso!");
                         }
                     );
                 }
@@ -4300,7 +4405,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             "notificationButton"
         );
 
+    function deleteNotice(event) {
+        const button = event.target.closest("[data-notice-delete]");
+        if (!button) return false;
+        event.preventDefault(); event.stopPropagation();
+        const notices = getNotices();
+        const removed = notices.find(item => String(item.id) === String(button.dataset.noticeDelete));
+        if (!removed) return true;
+        pushUndo("exclusão do aviso", { [STORAGE.notices]: JSON.stringify(notices) });
+        saveNotices(notices.filter(item => String(item.id) !== String(removed.id)));
+        renderNotices();
+        comfortToast("Aviso excluído.", { undo: undoLastAction });
+        return true;
+    }
+
     function markNoticeAsRead(event) {
+        if (deleteNotice(event)) return;
         const card = event.target.closest(".notice[data-notice-id]");
         if (!card) return;
         const notices = getNotices();
