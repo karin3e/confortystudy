@@ -8,6 +8,22 @@
   const read = (key, fallback=[]) => { try { const v=JSON.parse(localStorage.getItem(key)||"null"); return v ?? fallback; } catch { return fallback; } };
   const write = (key, value) => { localStorage.setItem(key, JSON.stringify(value)); };
   const escapeHTML = (s) => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  function notifyInline(message,type="info"){
+    let host=$("csInlineNotice");
+    if(!host){
+      host=document.createElement("div");host.id="csInlineNotice";host.className="cs-inline-notice";
+      host.setAttribute("role","status");host.setAttribute("aria-live","polite");
+      document.body.appendChild(host);
+    }
+    host.textContent=String(message||"");
+    host.dataset.state=type;host.hidden=false;
+    clearTimeout(host._hideTimer);
+    host._hideTimer=setTimeout(()=>{host.hidden=true;},5500);
+  }
+  function setInlineStatus(id,message,type="info"){
+    const el=$(id);if(!el)return;
+    el.textContent=message;el.dataset.state=type;el.hidden=!message;
+  }
   const user = () => window.comfortAuth?.currentUser || null;
   const db = () => window.comfortDb || null;
   const userDoc = (key) => db().collection("users").doc(user().uid).collection("data").doc(key);
@@ -55,7 +71,7 @@
       if(!Number.isFinite(grade)||grade<0||grade>10||!Number.isFinite(weight)||weight<=0)return;
       const rows=read(KEYS.grades);rows.push({id:crypto.randomUUID(),subject:$("csGradeSubject").value,term:$("csGradeTerm").value,title:$("csGradeTitle").value.trim(),grade,weight,createdAt:new Date().toISOString()});
       write(KEYS.grades,rows);renderGrades();e.target.reset();$("csGradeWeight").value=1;
-      try{await saveCloud(KEYS.grades,rows);}catch(err){alert("Nota salva neste dispositivo; a sincronização será retomada quando possível.");}
+      try{await saveCloud(KEYS.grades,rows);}catch(err){notifyInline("Nota salva neste dispositivo; a sincronização será retomada quando possível.");}
     });
     ["csCalcSubject","csTarget","csRemaining"].forEach(id=>$(id)?.addEventListener("change",calcGrade));
     $("csGradeRows")?.addEventListener("click",async e=>{const id=e.target.dataset.gradeDelete;if(!id)return;const rows=read(KEYS.grades).filter(g=>g.id!==id);write(KEYS.grades,rows);renderGrades();try{await saveCloud(KEYS.grades,rows);}catch{}});
@@ -89,7 +105,7 @@
     $("csSaveNote")?.addEventListener("click",async()=>{
       const title=$("csNoteTitle").value.trim(), editor=$("csNoteEditor");
       const content=editor.innerHTML, plain=editor.innerText.trim();
-      if(!title||!plain){alert("Informe um título e escreva sua anotação.");editor.focus();return;}
+      if(!title||!plain){setInlineStatus("csNoteStatus","Preencha o título e escreva sua anotação antes de salvar.","error");if(!title)$("csNoteTitle").focus();else editor.focus();return;}
       const button=$("csSaveNote");button.disabled=true;
       const selectedFiles=Array.from($("csNoteFiles").files||[]);
       const rows=read(KEYS.notes,[]);
@@ -110,16 +126,38 @@
         renderNotes();
         const message=uploadErrors.length
           ?"Anotação salva neste dispositivo, mas alguns anexos não foram enviados: "+uploadErrors.join("; ")
-          :"Anotação salva neste dispositivo. A sincronização com a nuvem será tentada quando estiver disponível.";
-        alert(message);
+          :"Anotação salva com sucesso.";
+        setInlineStatus("csNoteStatus",message,uploadErrors.length?"error":"success");
       } finally {button.disabled=false;}
     });
-    $("csNoteList")?.addEventListener("click",async e=>{const id=e.target.dataset.noteDelete;if(!id)return;const rows=read(KEYS.notes).filter(n=>n.id!==id);write(KEYS.notes,rows);renderNotes();try{await saveCloud(KEYS.notes,rows);}catch{}});
+    $("csNoteList")?.addEventListener("click",async e=>{
+      const button=e.target.closest("[data-note-delete]");if(!button)return;
+      const id=button.dataset.noteDelete;
+      const rows=read(KEYS.notes).filter(n=>String(n.id)!==String(id));
+      write(KEYS.notes,rows);renderNotes();
+      setInlineStatus("csNoteStatus","Anotação apagada deste dispositivo.","success");
+      try{await saveCloud(KEYS.notes,rows);}
+      catch(err){setInlineStatus("csNoteStatus","Anotação apagada deste dispositivo. A sincronização ficará pendente.","error");}
+    });
+    $("csDeleteAllNotes")?.addEventListener("click",async()=>{
+      const button=$("csDeleteAllNotes");
+      if(button.dataset.confirm!=="yes"){
+        button.dataset.confirm="yes";button.textContent="Confirmar apagar todas";
+        setInlineStatus("csNoteStatus","Clique novamente para apagar todas as anotações. Esta ação não pode ser desfeita.","warning");
+        return;
+      }
+      const rows=[];write(KEYS.notes,rows);renderNotes();
+      button.dataset.confirm="no";button.textContent="Apagar todas";
+      setInlineStatus("csNoteStatus","Todas as anotações foram apagadas deste dispositivo.","success");
+      try{await saveCloud(KEYS.notes,rows);}
+      catch(err){setInlineStatus("csNoteStatus","Anotações apagadas localmente; sincronização pendente.","error");}
+    });
     }
   }
   function renderNotes(){
     const el=$("csNoteList");if(!el)return;const rows=read(KEYS.notes).slice().reverse();
-    el.innerHTML=rows.length?rows.map(n=>`<div class="official-row"><div><strong>${escapeHTML(n.favorite?"★ ":"")}${escapeHTML(n.title)}</strong><small>${escapeHTML(n.subject)} · ${new Date(n.updatedAt).toLocaleDateString("pt-BR")} · ${n.attachments?.length||0} anexo(s)</small></div><button type="button" data-note-delete="${n.id}">Excluir</button></div>`).join(""):"<p class='official-muted'>Suas anotações salvas aparecerão aqui.</p>";
+    el.innerHTML=rows.length?rows.map(n=>`<div class="official-row official-note-row"><div><strong>${escapeHTML(n.favorite?"★ ":"")}${escapeHTML(n.title)}</strong><small>${escapeHTML(n.subject)} · ${new Date(n.updatedAt).toLocaleDateString("pt-BR")} · ${n.attachments?.length||0} anexo(s)</small></div><button type="button" class="official-danger" data-note-delete="${escapeHTML(n.id)}" aria-label="Apagar anotação ${escapeHTML(n.title)}">Apagar</button></div>`).join(""):"<div class='official-empty'><strong>Nenhuma anotação salva</strong><span>Suas anotações aparecerão aqui. Você poderá apagá-las individualmente ou todas de uma vez.</span></div>";
+    const bulk=$("csDeleteAllNotes");if(bulk)bulk.disabled=!rows.length;
   }
   async function initGroups(){
     const el=$("csGroups");if(!el)return;
@@ -134,18 +172,18 @@
     if(!groupsEventsBound){groupsEventsBound=true;
     $("csJoinGroupForm")?.addEventListener("submit",async e=>{
       e.preventDefault();const code=$("csJoinGroupCode").value.trim().toUpperCase();
-      try{if(!firebase.functions)throw new Error("Firebase Functions não está disponível.");await firebase.functions().httpsCallable("joinStudyGroup")({inviteCode:code});e.target.reset();await list();alert("Você entrou no grupo!");}
-      catch(err){alert(err.message||"Não foi possível entrar no grupo. Verifique o código.");}
+      try{if(!firebase.functions)throw new Error("Firebase Functions não está disponível.");await firebase.functions().httpsCallable("joinStudyGroup")({inviteCode:code});e.target.reset();await list();notifyInline("Você entrou no grupo!");}
+      catch(err){notifyInline(err.message||"Não foi possível entrar no grupo. Verifique o código.");}
     });
     $("csGroupForm")?.addEventListener("submit",async e=>{
       e.preventDefault();const name=$("csGroupName").value.trim();if(!name)return;
       const code=Array.from(crypto.getRandomValues(new Uint8Array(5))).map(n=>(n%36).toString(36)).join("").toUpperCase();
       try{await col.add({name,description:$("csGroupDescription").value.trim(),ownerUid:u.uid,memberUids:[u.uid],inviteCode:code,materials:[],createdAt:firebase.firestore.FieldValue.serverTimestamp()});e.target.reset();await list();}
-      catch(err){alert("Grupo não criado. As regras do Firestore precisam permitir criação segura de grupos.");}
+      catch(err){notifyInline("Grupo não criado. As regras do Firestore precisam permitir criação segura de grupos.");}
     });
     el.addEventListener("click",async e=>{
-      const id=e.target.dataset.share;if(!id)return;const url=$("link-"+id)?.value.trim();if(!url||!/^https?:\/\//i.test(url)){alert("Informe um link http ou https válido.");return;}
-      try{await col.doc(id).update({materials:firebase.firestore.FieldValue.arrayUnion({title:url,url,addedBy:u.uid,createdAt:new Date().toISOString()})});await list();}catch{alert("Não foi possível compartilhar. Verifique sua participação e as regras.");}
+      const id=e.target.dataset.share;if(!id)return;const url=$("link-"+id)?.value.trim();if(!url||!/^https?:\/\//i.test(url)){notifyInline("Informe um link http ou https válido.");return;}
+      try{await col.doc(id).update({materials:firebase.firestore.FieldValue.arrayUnion({title:url,url,addedBy:u.uid,createdAt:new Date().toISOString()})});await list();}catch{notifyInline("Não foi possível compartilhar. Verifique sua participação e as regras.");}
     });
     }
     await list();
@@ -217,14 +255,14 @@
     });
     $("csImportBackup")?.addEventListener("change",async e=>{
       const file=e.target.files?.[0];if(!file)return;
-      if(file.size>15*1024*1024){alert("Arquivo de backup muito grande.");return;}
+      if(file.size>15*1024*1024){notifyInline("Arquivo de backup muito grande.");return;}
       try{
         const parsed=JSON.parse(await file.text());if(parsed.product!=="ComfortStudy"||!parsed.data||typeof parsed.data!=="object")throw new Error("Arquivo não reconhecido.");
         if(!confirm("Restaurar esta cópia substituirá os dados locais correspondentes. Deseja continuar?"))return;
         Object.entries(parsed.data).forEach(([k,v])=>{if(/^comfort[A-Za-z0-9]+$/.test(k))localStorage.setItem(k,JSON.stringify(v));});
-        alert("Cópia restaurada neste dispositivo. Recarregue a página para atualizar todas as telas.");
+        notifyInline("Cópia restaurada neste dispositivo. Recarregue a página para atualizar todas as telas.");
         location.reload();
-      }catch(err){alert(err.message||"Não foi possível restaurar o backup.");}finally{e.target.value="";}
+      }catch(err){notifyInline(err.message||"Não foi possível restaurar o backup.");}finally{e.target.value="";}
     });
   }
   function init(){

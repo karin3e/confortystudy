@@ -257,3 +257,21 @@ html[data-mode="dark"] .official-editor,
 html[data-mode="dark"] #appearanceForm select{background:#111d30!important;color:#e7edf8!important;border-color:#334155!important}
 html[data-mode="dark"] .official-toolbar{background:#111d30!important}
 html[data-mode="dark"] .official-toolbar button{background:#172338!important;color:#e7edf8!important;border-color:#334155!important}
+
+
+/* Caderno: ações de exclusão e feedback sem alertas bloqueantes */
+.official-note-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 10px}
+.official-note-list-head h3{margin:0}
+.official-note-row{background:var(--white)}
+.official-danger{border:1px solid #efb4b4!important;background:#fff5f5!important;color:#a72b2b!important;border-radius:10px!important;padding:9px 13px!important;font-weight:700;cursor:pointer}
+.official-danger:hover{background:#ffe6e6!important}
+.official-danger:disabled{opacity:.45;cursor:not-allowed}
+.official-note-status{margin:12px 0 4px;padding:11px 14px;border-radius:10px;background:var(--purple-light);color:var(--text);font-size:.9rem}
+.official-note-status[data-state="success"]{background:#e8f7ee;color:#17663a}
+.official-note-status[data-state="error"]{background:#fff0ed;color:#9b3024}
+.official-note-status[data-state="warning"]{background:#fff7df;color:#78520b}
+.official-empty{display:grid;gap:5px;padding:20px;border:1px dashed var(--border);border-radius:12px;color:var(--muted)}
+.official-empty strong{color:var(--text)}
+.cs-inline-notice{position:fixed;z-index:99999;right:22px;top:22px;max-width:min(420px,calc(100vw - 32px));padding:13px 17px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--text);box-shadow:0 12px 35px rgba(15,23,42,.18);font-size:.92rem}
+.cs-inline-notice[hidden]{display:none}
+@media(max-width:640px){.official-note-list-head{align-items:flex-start;flex-direction:column}.official-note-actions{align-items:stretch;flex-direction:column}.official-note-actions>*{width:100%}.cs-inline-notice{right:12px;top:12px}}
