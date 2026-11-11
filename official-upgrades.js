@@ -166,25 +166,46 @@
     async function list(){
       try{
         const snap=await col.where("memberUids","array-contains",u.uid).get();
-        el.innerHTML=snap.empty?"<article class='official-card'><p>Você ainda não participa de grupos.</p></article>":snap.docs.map(d=>{const g=d.data();return `<article class="official-card"><h3>${escapeHTML(g.name)}</h3><p>${escapeHTML(g.description||"Sem descrição")}</p><div class="official-feedback">Código: <b>${escapeHTML(g.inviteCode)}</b></div><small>${(g.memberUids||[]).length} participante(s)</small><div class="official-form"><label>Material (link)<input id="link-${d.id}" placeholder="https://..."></label><button type="button" data-share="${d.id}">Compartilhar link</button></div><div>${(g.materials||[]).map(m=>`<p><a href="${escapeHTML(m.url)}" target="_blank" rel="noopener">${escapeHTML(m.title)}</a></p>`).join("")}</div></article>`}).join("");
-      }catch(e){el.innerHTML="<article class='official-card'><p>Não foi possível carregar grupos. Verifique as regras de acesso do Firestore.</p></article>";}
+        el.innerHTML=snap.empty?"<article class='official-card'><p>Você ainda não participa de grupos.</p></article>":snap.docs.map(d=>{const g=d.data();return `<article class="official-card"><h3>${escapeHTML(g.name)}</h3><p>${escapeHTML(g.description||"Sem descrição")}</p><div class="official-feedback">Código de convite: <b>${escapeHTML(g.inviteCode)}</b></div><small>${(g.memberUids||[]).length} participante(s)</small><div class="official-form"><label>Material (link)<input id="link-${d.id}" placeholder="https://..."></label><button type="button" data-share="${d.id}">Compartilhar link</button></div><div>${(g.materials||[]).map(m=>`<p><a href="${escapeHTML(m.url)}" target="_blank" rel="noopener">${escapeHTML(m.title)}</a></p>`).join("")}</div></article>`}).join("");
+      }catch(e){console.error("ComfortStudy grupos:",e);el.innerHTML="<article class='official-card'><p>Não foi possível carregar grupos. Confira sua conexão e as regras do Firestore.</p></article>";}
     }
     if(!groupsEventsBound){groupsEventsBound=true;
-    $("csJoinGroupForm")?.addEventListener("submit",async e=>{
-      e.preventDefault();const code=$("csJoinGroupCode").value.trim().toUpperCase();
-      try{if(!firebase.functions)throw new Error("Firebase Functions não está disponível.");await firebase.functions().httpsCallable("joinStudyGroup")({inviteCode:code});e.target.reset();await list();notifyInline("Você entrou no grupo!");}
-      catch(err){notifyInline(err.message||"Não foi possível entrar no grupo. Verifique o código.");}
-    });
-    $("csGroupForm")?.addEventListener("submit",async e=>{
-      e.preventDefault();const name=$("csGroupName").value.trim();if(!name)return;
-      const code=Array.from(crypto.getRandomValues(new Uint8Array(5))).map(n=>(n%36).toString(36)).join("").toUpperCase();
-      try{await col.add({name,description:$("csGroupDescription").value.trim(),ownerUid:u.uid,memberUids:[u.uid],inviteCode:code,materials:[],createdAt:firebase.firestore.FieldValue.serverTimestamp()});e.target.reset();await list();}
-      catch(err){notifyInline("Grupo não criado. As regras do Firestore precisam permitir criação segura de grupos.");}
-    });
-    el.addEventListener("click",async e=>{
-      const id=e.target.dataset.share;if(!id)return;const url=$("link-"+id)?.value.trim();if(!url||!/^https?:\/\//i.test(url)){notifyInline("Informe um link http ou https válido.");return;}
-      try{await col.doc(id).update({materials:firebase.firestore.FieldValue.arrayUnion({title:url,url,addedBy:u.uid,createdAt:new Date().toISOString()})});await list();}catch{notifyInline("Não foi possível compartilhar. Verifique sua participação e as regras.");}
-    });
+      $("csJoinGroupForm")?.addEventListener("submit",async e=>{
+        e.preventDefault();
+        const code=$("csJoinGroupCode").value.trim().toUpperCase();
+        if(!/^[A-Z0-9]{10}$/.test(code)){notifyInline("O código deve ter 10 letras ou números.");return;}
+        const button=e.submitter||e.target.querySelector("button[type=submit]");if(button)button.disabled=true;
+        try{
+          const ref=col.doc(code);
+          const snap=await ref.get();
+          if(!snap.exists)throw new Error("Grupo não encontrado. Confira o código.");
+          const data=snap.data()||{};
+          if((data.memberUids||[]).includes(u.uid)){notifyInline("Você já participa deste grupo.");return;}
+          if((data.memberUids||[]).length>=100)throw new Error("Este grupo atingiu o limite de 100 participantes.");
+          await ref.update({memberUids:firebase.firestore.FieldValue.arrayUnion(u.uid)});
+          e.target.reset();await list();notifyInline("Você entrou no grupo!");
+        }catch(err){notifyInline(err.message||"Não foi possível entrar. Confira o código e tente novamente.");}
+        finally{if(button)button.disabled=false;}
+      });
+      $("csGroupForm")?.addEventListener("submit",async e=>{
+        e.preventDefault();const name=$("csGroupName").value.trim();if(!name)return;
+        const alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const bytes=crypto.getRandomValues(new Uint8Array(10));
+        const code=Array.from(bytes).map(n=>alphabet[n%alphabet.length]).join("");
+        const button=e.submitter||e.target.querySelector("button[type=submit]");if(button)button.disabled=true;
+        try{
+          await col.doc(code).set({name,description:$("csGroupDescription").value.trim(),ownerUid:u.uid,memberUids:[u.uid],inviteCode:code,materials:[],createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+          e.target.reset();await list();notifyInline("Grupo criado! Compartilhe o código de convite com seus colegas.");
+        }catch(err){console.error("ComfortStudy criar grupo:",err);notifyInline("Não foi possível criar o grupo. Confira as regras do Firestore.");}
+        finally{if(button)button.disabled=false;}
+      });
+      el.addEventListener("click",async e=>{
+        const button=e.target.closest("[data-share]");if(!button)return;
+        const id=button.dataset.share;const url=$("link-"+id)?.value.trim();
+        if(!url||!/^https?:\/\//i.test(url)){notifyInline("Informe um link http ou https válido.");return;}
+        try{await col.doc(id).update({materials:firebase.firestore.FieldValue.arrayUnion({title:url,url,addedBy:u.uid,createdAt:new Date().toISOString()})});await list();notifyInline("Material compartilhado!");}
+        catch(err){notifyInline("Não foi possível compartilhar. Verifique sua participação no grupo.");}
+      });
     }
     await list();
   }

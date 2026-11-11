@@ -32,3 +32,11 @@ Os cadastros permanecem abertos para que outras pessoas também possam usar o ap
 ## Créditos e Central de Suporte
 
 Veja `SUPORTE-SETUP.md` antes de publicar as novas regras e funções de e-mail. A página Sobre e a Central de Suporte estão integradas ao `index_2.html` e usam a paleta azul existente.
+
+
+## Modo sem cobrança de Cloud Functions (Firebase Spark)
+- O ingresso em grupos foi adaptado para usar somente Firestore: cada grupo usa um código de convite aleatório de 10 caracteres como ID do documento.
+- Para esta versão, publique apenas as regras do Firestore: `firebase deploy --only firestore:rules`.
+- **Não execute `firebase deploy --only functions`**: as funções de e-mail do suporte dependem de Cloud Functions e não fazem parte do fluxo gratuito.
+- As solicitações de suporte continuam sendo registradas e consultáveis no Firestore; o envio automático de e-mails e notificações por servidor fica desativado.
+- Firebase Authentication e Firestore continuam sendo usados. Os anexos continuam no Supabase Storage/Edge Function já configurado.

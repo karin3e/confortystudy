@@ -16,7 +16,7 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Grupos compartilhados: somente membros leem; membros podem acrescentar materiais.
+    // Grupos compartilhados sem Cloud Functions: o código de convite é o ID do documento.
     match /studyGroups/{groupId} {
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
@@ -25,12 +25,28 @@ service cloud.firestore {
         && request.resource.data.memberUids[0] == request.auth.uid
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 2
-        && request.resource.data.name.size() <= 70;
-      allow read: if request.auth != null
+        && request.resource.data.name.size() <= 70
+        && request.resource.data.inviteCode == groupId
+        && groupId.matches('^[A-Z0-9]{10}$');
+      // Leitura direta pelo código permite entrar; listagem só para membros.
+      allow get: if request.auth != null
+        && (request.auth.uid in resource.data.memberUids
+          || resource.data.inviteCode == groupId);
+      allow list: if request.auth != null
         && request.auth.uid in resource.data.memberUids;
       allow update: if request.auth != null
-        && request.auth.uid in resource.data.memberUids
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['materials']);
+        && (
+          (request.auth.uid in resource.data.memberUids
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['materials']))
+          ||
+          (resource.data.inviteCode == groupId
+            && !(request.auth.uid in resource.data.memberUids)
+            && request.auth.uid in request.resource.data.memberUids
+            && request.resource.data.memberUids.size() == resource.data.memberUids.size() + 1
+            && request.resource.data.memberUids.hasAll(resource.data.memberUids)
+            && request.resource.data.memberUids.size() <= 100
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUids']))
+        );
       allow delete: if request.auth != null
         && resource.data.ownerUid == request.auth.uid;
     }
