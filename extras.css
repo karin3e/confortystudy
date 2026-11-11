@@ -275,3 +275,34 @@ html[data-mode="dark"] .official-toolbar button{background:#172338!important;col
 .cs-inline-notice{position:fixed;z-index:99999;right:22px;top:22px;max-width:min(420px,calc(100vw - 32px));padding:13px 17px;border:1px solid var(--border);border-radius:12px;background:var(--white);color:var(--text);box-shadow:0 12px 35px rgba(15,23,42,.18);font-size:.92rem}
 .cs-inline-notice[hidden]{display:none}
 @media(max-width:640px){.official-note-list-head{align-items:flex-start;flex-direction:column}.official-note-actions{align-items:stretch;flex-direction:column}.official-note-actions>*{width:100%}.cs-inline-notice{right:12px;top:12px}}
+
+
+/* Global non-blocking feedback: replaces browser alert dialogs */
+.comfort-toast-notice{
+  position:fixed;z-index:100000;top:22px;right:22px;
+  width:max-content;max-width:min(440px,calc(100vw - 32px));
+  padding:14px 18px;border:1px solid var(--border);
+  border-left:4px solid var(--primary);border-radius:14px;
+  background:var(--white);color:var(--text);
+  box-shadow:0 14px 38px rgba(15,23,42,.18);
+  font-size:.92rem;line-height:1.5;animation:comfortToastIn .18s ease-out;
+}
+.comfort-toast-notice[hidden]{display:none}
+@keyframes comfortToastIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:640px){.comfort-toast-notice{top:12px;right:12px;max-width:calc(100vw - 24px)}}
+
+
+/* Guia explicativo da página Sobre */
+.comfort-about-guide{margin-top:18px;padding:24px}
+.comfort-about-guide-heading{display:flex;gap:14px;align-items:flex-start;margin-bottom:20px}
+.comfort-about-guide-heading>i{font-size:1.8rem;color:var(--primary);background:var(--purple-light);padding:12px;border-radius:14px}
+.comfort-about-guide-heading h3{margin:2px 0 6px}
+.comfort-about-guide-heading p{margin:0;color:var(--muted);line-height:1.6}
+.comfort-about-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.comfort-about-guide-grid>div,.comfort-about-institution{padding:16px;border:1px solid var(--border);border-radius:14px;background:var(--bg)}
+.comfort-about-guide h4{margin:0 0 8px;color:var(--text);font-size:.98rem}
+.comfort-about-guide h4 i{color:var(--primary);margin-right:6px}
+.comfort-about-guide-grid p,.comfort-about-institution p{margin:0;color:var(--muted);font-size:.91rem;line-height:1.65}
+.comfort-about-institution{margin-top:16px}
+.comfort-about-note{margin:16px 0 0;padding:12px 14px;border-radius:10px;background:var(--purple-light);color:var(--text);font-size:.9rem;line-height:1.6}
+@media(max-width:700px){.comfort-about-guide{padding:16px}.comfort-about-guide-grid{grid-template-columns:1fr}.comfort-about-guide-heading{gap:10px}}

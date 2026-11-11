@@ -10,7 +10,34 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <link rel="stylesheet" href="style_dashboard.css">
-    <link rel="stylesheet" href="extras.css?v=20261111-3">
+    <link rel="stylesheet" href="extras.css?v=20261111-4">
+
+    <script>
+    (function () {
+      if (window.__comfortToastInstalled) return;
+      window.__comfortToastInstalled = true;
+      window.alert = function (message) {
+        var show = function () {
+          var host = document.getElementById("comfortToastNotice");
+          if (!host) {
+            host = document.createElement("div");
+            host.id = "comfortToastNotice";
+            host.className = "comfort-toast-notice";
+            host.setAttribute("role", "status");
+            host.setAttribute("aria-live", "polite");
+            document.body.appendChild(host);
+          }
+          host.textContent = String(message == null ? "" : message);
+          host.hidden = false;
+          clearTimeout(window.__comfortToastTimer);
+          window.__comfortToastTimer = setTimeout(function () { host.hidden = true; }, 5000);
+        };
+        if (document.body) show();
+        else document.addEventListener("DOMContentLoaded", show, { once: true });
+      };
+    })();
+    </script>
+
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1224">
@@ -186,15 +213,6 @@
                         id="notificationCount">
                         0
                     </span>
-
-                </button>
-
-                <button
-                    class="btn-primary"
-                    id="newTaskButton">
-
-                    <i class="ph ph-plus"></i>
-                    Nova Tarefa
 
                 </button>
 
@@ -1278,6 +1296,26 @@
                 <h3><i class="ph ph-envelope-simple"></i> Suporte oficial</h3><p><a href="mailto:karinevitoriasousa6@gmail.com">karinevitoriasousa6@gmail.com</a></p>
             </article>
         </div>
+        <article class="feature-card comfort-about-guide">
+            <div class="comfort-about-guide-heading">
+                <i class="ph ph-compass"></i>
+                <div><p class="welcome">CONHEÇA A PLATAFORMA</p><h3>Como funciona o ComfortStudy?</h3>
+                <p>O ComfortStudy reúne ferramentas para ajudar o estudante a organizar a rotina escolar e acompanhar sua aprendizagem.</p></div>
+            </div>
+            <div class="comfort-about-guide-grid">
+                <div><h4><i class="ph ph-house"></i> Painel e organização</h4><p>No Dashboard você acompanha um resumo da rotina. Em Matérias, organiza conteúdos; no Calendário, visualiza datas; em Tarefas e Provas, registra atividades e avaliações.</p></div>
+                <div><h4><i class="ph ph-notebook"></i> Caderno digital</h4><p>Crie anotações por matéria, escreva e formate conteúdos, marque favoritos e anexe arquivos compatíveis. Lembre-se de salvar suas alterações.</p></div>
+                <div><h4><i class="ph ph-chart-line-up"></i> Acompanhamento</h4><p>Use o Boletim para registrar notas e acompanhar médias, o Desempenho para observar sua evolução e o Cronômetro para organizar sessões de estudo.</p></div>
+                <div><h4><i class="ph ph-users-three"></i> Estudo colaborativo</h4><p>Os Grupos de estudo foram pensados para reunir colegas e compartilhar materiais. Alguns recursos de entrada e compartilhamento dependem da ativação dos serviços de nuvem.</p></div>
+                <div><h4><i class="ph ph-user-circle"></i> Perfil e preferências</h4><p>No Perfil, personalize seus dados e preferências. Você também pode escolher a aparência clara, escura ou automática quando essa opção estiver disponível na sua versão.</p></div>
+                <div><h4><i class="ph ph-shield-check"></i> Conta e segurança</h4><p>O cadastro e o login identificam sua conta. Não compartilhe sua senha e mantenha uma cópia de segurança dos seus dados importantes.</p></div>
+            </div>
+            <div class="comfort-about-institution">
+                <h4><i class="ph ph-buildings"></i> E a Área institucional?</h4>
+                <p>Essa área foi planejada para escolas e equipes autorizadas, como direção e coordenação. A proposta é permitir organizar instituições, turmas e estudantes, administrar permissões e consultar relatórios. O acesso é restrito e a área ainda está em desenvolvimento; não é uma função administrativa liberada para qualquer estudante.</p>
+            </div>
+            <p class="comfort-about-note"><strong>Importante:</strong> a disponibilidade de algumas funções depende da configuração dos serviços e da etapa de desenvolvimento. O ComfortStudy continua recebendo melhorias.</p>
+        </article>
     </section>
 
     <section class="page-section" id="page-suporte">
@@ -1417,7 +1455,7 @@
     <script src="script.js"></script>
     <script src="extras.js"></script>
     <script src="support.js"></script>
-    <script src="official-upgrades.js?v=20261111-2"></script>
+    <script src="official-upgrades.js?v=20261111-3"></script>
 
 </body>
 
