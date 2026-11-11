@@ -1,8 +1,11 @@
 const { onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
+const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 initializeApp();
+const db = admin.firestore();
 const SMTP_HOST=defineSecret('SMTP_HOST');
 const SMTP_PORT=defineSecret('SMTP_PORT');
 const SMTP_USER=defineSecret('SMTP_USER');
@@ -41,4 +44,22 @@ Status: ${labels[after.status]||safe(after.status)}
 ${after.latestMessage?`Mensagem: ${safe(after.latestMessage)}
 `:''}
 Para dúvidas, escreva para ${SUPPORT_EMAIL}.`});
+});
+
+
+exports.joinStudyGroup = onCall({ enforceAppCheck: false }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Entre na sua conta.");
+  const code = String(request.data?.inviteCode || "").trim().toUpperCase();
+  if (!/^[A-Z0-9]{5}$/.test(code)) throw new HttpsError("invalid-argument", "Código inválido.");
+  const found = await db.collection("studyGroups").where("inviteCode", "==", code).limit(1).get();
+  if (found.empty) throw new HttpsError("not-found", "Grupo não encontrado.");
+  const ref = found.docs[0].ref;
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new HttpsError("not-found", "Grupo não encontrado.");
+    const members = snap.get("memberUids") || [];
+    if (members.length >= 100) throw new HttpsError("resource-exhausted", "Este grupo atingiu o limite de participantes.");
+    if (!members.includes(request.auth.uid)) tx.update(ref, { memberUids: admin.firestore.FieldValue.arrayUnion(request.auth.uid) });
+  });
+  return { joined: true };
 });

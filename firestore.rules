@@ -15,6 +15,35 @@ service cloud.firestore {
         && request.resource.data.description is string && request.resource.data.description.size() >= 10 && request.resource.data.description.size() <= 4000;
       allow update, delete: if false;
     }
+
+    // Grupos compartilhados: somente membros leem; membros podem acrescentar materiais.
+    match /studyGroups/{groupId} {
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.memberUids is list
+        && request.resource.data.memberUids.size() == 1
+        && request.resource.data.memberUids[0] == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 70;
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.memberUids;
+      allow update: if request.auth != null
+        && request.auth.uid in resource.data.memberUids
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['materials']);
+      allow delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // Área institucional: acesso exclusivo por custom claims atribuídas no servidor.
+    match /institutions/{institutionId}/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.institutionId == institutionId
+        && (request.auth.token.institutionAdmin == true
+          || request.auth.token.role == 'school_admin'
+          || request.auth.token.role == 'institution_admin');
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

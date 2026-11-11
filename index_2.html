@@ -80,12 +80,16 @@
                     <span>Meu Plano</span>
                 </a>
 
+                <a href="#" data-page="boletim"><i class="ph ph-notebook"></i><span>Boletim</span></a>
+                <a href="#" data-page="grupos"><i class="ph ph-users-three"></i><span>Grupos de estudo</span></a>
+                <a href="#" data-page="caderno-avancado"><i class="ph ph-notebook-tabs"></i><span>Caderno avançado</span></a>
+                <a href="#" data-page="institucional" id="institutionNav" hidden><i class="ph ph-buildings"></i><span>Área institucional</span></a>
                 <a href="#" data-page="suporte">
                     <i class="ph ph-headset"></i>
                     <span>Suporte</span>
                 </a>
 
-                <a href="#" data-page="sobre">
+<a href="#" data-page="sobre">
                     <i class="ph ph-info"></i>
                     <span>Sobre</span>
                 </a>
@@ -1094,7 +1098,7 @@
                     </div>
                 </article>
             </div>
-        </section>
+        <article class="official-card" id="csSmartPlan"><h3>Plano inteligente de revisão</h3><p class="official-muted">Sugestões geradas a partir das provas e tarefas cadastradas.</p><button type="button" class="official-primary" id="csGeneratePlan">Gerar plano de estudos</button><div id="csSmartPlanResult" class="official-list"></div></article></section>
         <section
             class="page-section"
             id="page-premium">
@@ -1234,7 +1238,7 @@
                         <div class="profile-field profile-field-wide"><label for="profileBio">Sobre você</label><textarea id="profileBio" name="bio" rows="4" maxlength="500" placeholder="Conte um pouco sobre seus objetivos de estudo..."></textarea></div>
                     </div>
                     <div class="profile-form-actions"><span id="profileSaveStatus" class="profile-save-status" role="status" aria-live="polite"></span><div><button type="button" class="btn-secondary" id="cancelProfileChanges">Cancelar</button><button type="submit" class="btn-primary">Salvar alterações</button></div></div>
-                </section>
+                <article class="official-card" id="csBackupCard"><h3>Privacidade e cópia de segurança</h3><p class="official-muted">Exporte uma cópia dos seus dados para guardar com segurança. O arquivo contém informações pessoais; não compartilhe publicamente.</p><div class="official-inline"><button type="button" class="official-primary" id="csExportBackup">Baixar meus dados</button><label class="official-file">Restaurar cópia<input type="file" id="csImportBackup" accept="application/json"></label></div><p class="official-muted">A sincronização na nuvem continua vinculada à sua conta. Exporte periodicamente uma cópia adicional.</p></article></section>
             </form>
 
             <article class="feature-card profile-appearance-card">
@@ -1304,6 +1308,46 @@
         </div>
     </section>
 
+
+    <section class="page-section" id="page-boletim" style="display:none">
+      <div class="official-heading"><div><span>ACOMPANHAMENTO ACADÊMICO</span><h2>Meu boletim</h2><p>Registre avaliações e acompanhe suas médias.</p></div></div>
+      <div class="official-columns">
+        <article class="official-card"><h3>Adicionar avaliação</h3><form id="csGradeForm" class="official-form">
+          <label>Matéria<select id="csGradeSubject" required></select></label>
+          <label>Período<select id="csGradeTerm"><option>1º bimestre</option><option>2º bimestre</option><option>3º bimestre</option><option>4º bimestre</option><option>1º trimestre</option><option>2º trimestre</option><option>3º trimestre</option></select></label>
+          <label>Nome da avaliação<input id="csGradeTitle" maxlength="90" required placeholder="Ex.: Prova de química"></label>
+          <label>Nota (0 a 10)<input id="csGradeValue" type="number" min="0" max="10" step="0.1" required></label>
+          <label>Peso<input id="csGradeWeight" type="number" min="0.1" max="10" step="0.1" value="1" required></label>
+          <button class="official-primary" type="submit">Salvar avaliação</button>
+        </form></article>
+        <article class="official-card"><h3>Quanto preciso tirar?</h3><div class="official-form">
+          <label>Matéria<select id="csCalcSubject"></select></label><label>Média desejada<input id="csTarget" type="number" min="0" max="10" step="0.1" value="7"></label>
+          <label>Avaliações restantes<input id="csRemaining" type="number" min="1" max="20" value="1"></label><div id="csGradeCalc" class="official-feedback">Adicione notas para calcular.</div>
+        </div></article>
+      </div>
+      <article class="official-card"><div class="official-card-title"><h3>Minhas notas</h3><strong id="csOverallAverage">Média geral: —</strong></div><div id="csGradeRows" class="official-list"></div></article>
+    </section>
+    <section class="page-section" id="page-grupos" style="display:none">
+      <div class="official-heading"><div><span>APRENDIZAGEM COLABORATIVA</span><h2>Grupos de estudo</h2><p>Crie grupos, compartilhe materiais e convide colegas.</p></div></div>
+      <article class="official-card"><h3>Novo grupo</h3><form id="csGroupForm" class="official-form official-inline">
+        <label>Nome<input id="csGroupName" maxlength="70" required placeholder="Ex.: Revisão para o ENEM"></label>
+        <label>Descrição<input id="csGroupDescription" maxlength="180" placeholder="Objetivo do grupo"></label><button class="official-primary" type="submit">Criar grupo</button>
+      </form><form id="csJoinGroupForm" class="official-form official-inline"><label>Entrar com código<input id="csJoinGroupCode" maxlength="5" placeholder="ABCDE" required></label><button class="official-primary" type="submit">Entrar no grupo</button></form></article><div id="csGroups" class="official-columns"></div>
+    </section>
+<section class="page-section" id="page-caderno-avancado" style="display:none">
+      <div class="official-heading"><div><span>SEU CONHECIMENTO ORGANIZADO</span><h2>Caderno digital avançado</h2><p>Edite, formate, favorite e anexe materiais às suas anotações.</p></div></div>
+      <article class="official-card"><div class="official-form official-inline"><label>Matéria<select id="csNoteSubject"></select></label><label>Título<input id="csNoteTitle" maxlength="120" placeholder="Título da anotação"></label></div>
+        <div class="official-toolbar"><button type="button" data-cs-cmd="bold"><b>B</b></button><button type="button" data-cs-cmd="italic"><i>I</i></button><button type="button" data-cs-cmd="underline"><u>U</u></button><button type="button" data-cs-cmd="insertUnorderedList">Lista</button><button type="button" data-cs-cmd="insertOrderedList">Lista numerada</button><button type="button" data-cs-cmd="formatBlock" data-cs-value="h2">Título</button><button type="button" id="csInsertTable">Tabela</button></div>
+        <div id="csNoteEditor" class="official-editor" contenteditable="true" data-placeholder="Comece a escrever..."></div>
+        <div class="official-inline official-note-actions"><label><input type="checkbox" id="csNoteFavorite"> Favoritar</label><label class="official-file">Anexar PDF/imagem<input id="csNoteFiles" type="file" multiple accept="application/pdf,image/*"></label><button type="button" class="official-primary" id="csSaveNote">Salvar anotação</button></div>
+        <div id="csNoteList" class="official-list"></div>
+      </article>
+    </section>
+    <section class="page-section" id="page-institucional" style="display:none">
+      <div class="official-heading"><div><span>GESTÃO ESCOLAR</span><h2>Área institucional</h2><p>Gestão de instituições, turmas, estudantes, permissões e relatórios.</p></div></div>
+      <article class="official-card"><h3>Acesso administrativo</h3><p>Área restrita a usuários com função institucional concedida no Firebase. A função não pode ser ativada pelo próprio estudante.</p><div id="csInstitutionArea">Solicite ao administrador a atribuição de uma função institucional autorizada.</div></article>
+    </section>
+
     </main>
 
 
@@ -1363,6 +1407,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
     <script src="firebase-config-v2.js"></script>
     <script src="firebase-init.js"></script>
@@ -1370,6 +1415,7 @@
     <script src="script.js"></script>
     <script src="extras.js"></script>
     <script src="support.js"></script>
+    <script src="official-upgrades.js"></script>
 
 </body>
 

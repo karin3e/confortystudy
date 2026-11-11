@@ -232,7 +232,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         perfil: "Meu Perfil",
         planejamento: "Meu Plano de Estudos",
         suporte: "Central de Suporte",
-        sobre: "Sobre o ComfortStudy"
+        sobre: "Sobre o ComfortStudy",
+        boletim: "Meu Boletim",
+        grupos: "Grupos de Estudo",
+        assistente: "Assistente de IA",
+        "caderno-avancado": "Caderno Digital",
+        institucional: "Área Institucional"
     };
 
 

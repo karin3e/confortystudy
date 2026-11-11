@@ -5,7 +5,7 @@
     "comfortStudyLog", "comfortSubjectContents", "comfortSubjects", "comfortProfile",
     "comfortWeeklyGoal", "comfortClassSchedule", "comfortStudyPlans", "comfortFlashcards", "comfortGrades",
     "comfortStudyDiary", "comfortAppearance", "comfortQuizQuestions", "comfortQuizResults", "comfortPdfAnnotations",
-    "comfortDailyGoalMinutes", "comfortStudySubjectLog", "comfortReminderSettings", "comfortStudyReaderFiles"
+    "comfortDailyGoalMinutes", "comfortStudySubjectLog", "comfortReminderSettings", "comfortStudyReaderFiles", "comfortOfficialGrades", "comfortOfficialNotes"
   ];
   const LOCAL_ONLY_KEYS = ["comfortStudyNotifications", "comfortNotificationSent", "comfortSyncPendingKeys"];
   const PENDING_KEY = "comfortSyncPendingKeys";
