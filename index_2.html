@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <link rel="stylesheet" href="style_dashboard.css">
-    <link rel="stylesheet" href="extras.css">
+    <link rel="stylesheet" href="extras.css?v=20261111-3">
 
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b1224">
@@ -1245,7 +1245,7 @@
                     <h3>Personalizar meu app</h3><p class="feature-help">Ajustes simples para deixar seu espaço com a sua cara.</p>
                     <form id="appearanceForm" class="feature-form">
                         <label for="appearanceTheme">Cor do app</label><select id="appearanceTheme"><option value="blue">Azul (atual)</option><option value="violet">Violeta</option><option value="green">Verde</option><option value="rose">Rosa</option></select>
-                        <label for="appearanceMode">Modo de exibição</label><select id="appearanceMode"><option value="light">Claro</option><option value="dark">Escuro</option></select>
+                        <label for="appearanceMode">Modo de exibição</label><select id="appearanceMode"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Escuro</option></select>
                         <label for="appearanceAvatar">Avatar</label><select id="appearanceAvatar"><option value="👤">👤 Pessoa</option><option value="😊">😊 Sorriso</option><option value="🐱">🐱 Gato</option><option value="🐼">🐼 Panda</option><option value="🦊">🦊 Raposa</option><option value="⭐">⭐ Estrela</option><option value="🌻">🌻 Girassol</option></select>
                         <fieldset class="dashboard-options"><legend>Cartões no painel</legend><label><input type="checkbox" name="dashboardCard" value="today"> Seu Hoje</label><label><input type="checkbox" name="dashboardCard" value="tasks"> Minhas tarefas</label><label><input type="checkbox" name="dashboardCard" value="exams"> Próximas provas</label><label><input type="checkbox" name="dashboardCard" value="notices"> Avisos</label></fieldset>
                         <button class="btn-primary" type="submit">Salvar personalização</button>
@@ -1338,7 +1338,7 @@
       <div class="official-heading"><div><span>SEU CONHECIMENTO ORGANIZADO</span><h2>Caderno digital avançado</h2><p>Edite, formate, favorite e anexe materiais às suas anotações.</p></div></div>
       <article class="official-card"><div class="official-form official-inline"><label>Matéria<select id="csNoteSubject"></select></label><label>Título<input id="csNoteTitle" maxlength="120" placeholder="Título da anotação"></label></div>
         <div class="official-toolbar"><button type="button" data-cs-cmd="bold"><b>B</b></button><button type="button" data-cs-cmd="italic"><i>I</i></button><button type="button" data-cs-cmd="underline"><u>U</u></button><button type="button" data-cs-cmd="insertUnorderedList">Lista</button><button type="button" data-cs-cmd="insertOrderedList">Lista numerada</button><button type="button" data-cs-cmd="formatBlock" data-cs-value="h2">Título</button><button type="button" id="csInsertTable">Tabela</button></div>
-        <div id="csNoteEditor" class="official-editor" contenteditable="true" data-placeholder="Comece a escrever..."></div>
+        <div id="csNoteEditor" class="official-editor" contenteditable="true" role="textbox" aria-label="Texto da anotação" aria-multiline="true" data-placeholder="Comece a escrever..." style="display:block;min-height:280px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:12px;padding:16px;background:#fff;color:#172033;line-height:1.65;outline:none;white-space:pre-wrap;overflow-wrap:anywhere"></div>
         <div class="official-inline official-note-actions"><label><input type="checkbox" id="csNoteFavorite"> Favoritar</label><label class="official-file">Anexar PDF/imagem<input id="csNoteFiles" type="file" multiple accept="application/pdf,image/*"></label><button type="button" class="official-primary" id="csSaveNote">Salvar anotação</button></div>
         <div id="csNoteList" class="official-list"></div>
       </article>
@@ -1415,7 +1415,7 @@
     <script src="script.js"></script>
     <script src="extras.js"></script>
     <script src="support.js"></script>
-    <script src="official-upgrades.js"></script>
+    <script src="official-upgrades.js?v=20261111-2"></script>
 
 </body>
 

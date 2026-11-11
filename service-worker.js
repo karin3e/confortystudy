@@ -1,9 +1,9 @@
-const CACHE_NAME = "comfortstudy-v20";
+const CACHE_NAME = "comfortstudy-v22";
 const APP_SHELL = [
   "./", "./index.html", "./index_2.html", "./cadastro.html",
   "./recuperar-senha.html", "./style_dashboard.css", "./script.js", "./support.js",
   "./auth.js", "./extras.js", "./official-upgrades.js", "./extras.css", "./firebase-config-v2.js", "./firebase-init.js", "./cloud-sync.js",
-  "./extras.css", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"
+  "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"
 ];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

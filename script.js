@@ -493,7 +493,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const form = document.getElementById("profileSettingsForm");
         if (form) {
             if (form.dataset.dirty !== "true") {
-                ["name", "email", "school", "course", "bio"].forEach(key => {
+                ["name", "email", "school", "course", "classroom", "bio"].forEach(key => {
                     const field = form.elements.namedItem(key);
                     if (field) field.value = profile[key] || "";
                 });
@@ -515,7 +515,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         form.addEventListener("submit", event => {
             event.preventDefault();
             if (!form.reportValidity()) return;
-            const profile = Object.fromEntries(["name", "email", "school", "course", "bio"].map(key => [key, form.elements.namedItem(key).value.trim()]));
+            const profile = Object.fromEntries(["name", "email", "school", "course", "classroom", "bio"].map(key => [key, form.elements.namedItem(key)?.value.trim() || ""]));
             if (!profile.name) { form.elements.namedItem("name").focus(); return; }
             profile.photoData = form.dataset.photoData || "";
             saveProfile({ ...getProfile(), ...profile });

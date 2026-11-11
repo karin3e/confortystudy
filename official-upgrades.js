@@ -78,20 +78,41 @@
   }
   async function initNotes() {
     fillSubjects("csNoteSubject");
-    const notes=await loadCloud(KEYS.notes,read(KEYS.notes));write(KEYS.notes,notes);renderNotes();
+    const localNotes=read(KEYS.notes,[]);
+    let notes=localNotes;
+    try { notes=await loadCloud(KEYS.notes,localNotes); if(!Array.isArray(notes))notes=localNotes; write(KEYS.notes,notes); }
+    catch(err){ console.warn("Caderno: sincronização indisponível; usando dados locais.",err); }
+    renderNotes();
     if(!notesEventsBound){notesEventsBound=true;
     document.querySelectorAll("[data-cs-cmd]").forEach(b=>b.addEventListener("click",()=>{ $("csNoteEditor").focus();document.execCommand(b.dataset.csCmd,false,b.dataset.csValue||null); }));
     $("csInsertTable")?.addEventListener("click",()=>{ $("csNoteEditor").focus();document.execCommand("insertHTML",false,"<table><tbody><tr><td> </td><td> </td></tr><tr><td> </td><td> </td></tr></tbody></table><p></p>");});
     $("csSaveNote")?.addEventListener("click",async()=>{
-      const title=$("csNoteTitle").value.trim(),content=$("csNoteEditor").innerHTML;
-      if(!title||!$("csNoteEditor").textContent.trim()){alert("Informe um título e escreva sua anotação.");return;}
+      const title=$("csNoteTitle").value.trim(), editor=$("csNoteEditor");
+      const content=editor.innerHTML, plain=editor.innerText.trim();
+      if(!title||!plain){alert("Informe um título e escreva sua anotação.");editor.focus();return;}
       const button=$("csSaveNote");button.disabled=true;
+      const selectedFiles=Array.from($("csNoteFiles").files||[]);
+      const rows=read(KEYS.notes,[]);
+      const note={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),subject:$("csNoteSubject").value,title,content,favorite:$("csNoteFavorite").checked,attachments:[],updatedAt:new Date().toISOString()};
+      rows.push(note); write(KEYS.notes,rows); renderNotes();
+      $("csNoteTitle").value="";editor.innerHTML="";$("csNoteFiles").value="";$("csNoteFavorite").checked=false;
+      let uploadErrors=[];
       try{
-        const attachments=[];
-        for(const f of Array.from($("csNoteFiles").files||[]))attachments.push(await uploadAttachment(f,"notes"));
-        const rows=read(KEYS.notes);rows.push({id:crypto.randomUUID(),subject:$("csNoteSubject").value,title,content,favorite:$("csNoteFavorite").checked,attachments,updatedAt:new Date().toISOString()});
-        write(KEYS.notes,rows);await saveCloud(KEYS.notes,rows);$("csNoteTitle").value="";$("csNoteEditor").innerHTML="";$("csNoteFiles").value="";$("csNoteFavorite").checked=false;renderNotes();
-      }catch(e){alert(e.message||"Não foi possível salvar a anotação.");}finally{button.disabled=false;}
+        for(const f of selectedFiles){
+          try{note.attachments.push(await uploadAttachment(f,"notes"));}
+          catch(err){uploadErrors.push(f.name+": "+(err.message||"falha no envio"));}
+        }
+        if(uploadErrors.length===0 && note.attachments.length) {
+          const updated=read(KEYS.notes,[]).map(n=>n.id===note.id?note:n);write(KEYS.notes,updated);
+        }
+        try{await saveCloud(KEYS.notes,read(KEYS.notes,[]));}
+        catch(err){console.warn("Anotação salva localmente; sincronização pendente.",err);}
+        renderNotes();
+        const message=uploadErrors.length
+          ?"Anotação salva neste dispositivo, mas alguns anexos não foram enviados: "+uploadErrors.join("; ")
+          :"Anotação salva neste dispositivo. A sincronização com a nuvem será tentada quando estiver disponível.";
+        alert(message);
+      } finally {button.disabled=false;}
     });
     $("csNoteList")?.addEventListener("click",async e=>{const id=e.target.dataset.noteDelete;if(!id)return;const rows=read(KEYS.notes).filter(n=>n.id!==id);write(KEYS.notes,rows);renderNotes();try{await saveCloud(KEYS.notes,rows);}catch{}});
     }
@@ -131,32 +152,38 @@
   }
   function initTheme(){
     const profile=(()=>{try{return JSON.parse(localStorage.getItem("comfortProfile")||"{}")}catch{return {}}})();
-    const saved=localStorage.getItem("comfortTheme")||profile.theme||"auto";
+    const picker=$("appearanceMode");
+    const saved=localStorage.getItem("comfortTheme")||profile.theme||picker?.value||"auto";
     function apply(mode){
-      const dark=mode==="dark"||(mode==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);
-      document.documentElement.dataset.theme=dark?"dark":"light";
-      document.documentElement.dataset.themePreference=mode;
-      localStorage.setItem("comfortTheme",mode);
+      const normalized=["auto","light","dark"].includes(mode)?mode:"auto";
+      const dark=normalized==="dark"||(normalized==="auto"&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.dataset.mode=dark?"dark":"light";
+      document.documentElement.dataset.modePreference=normalized;
+      localStorage.setItem("comfortTheme",normalized);
+      if(picker) picker.value=normalized;
     }
     apply(saved);
-    if(!document.getElementById("csThemePicker")){
-      const target=document.querySelector(".profile-content")||document.querySelector("#page-perfil .profile-content")||document.querySelector("#page-perfil");
-      if(target){const wrap=document.createElement("div");wrap.className="official-card";wrap.innerHTML='<h3>Aparência</h3><label class="official-theme-label">Tema <select id="csThemePicker"><option value="auto">Automático</option><option value="light">Claro</option><option value="dark">Escuro</option></select></label>';target.appendChild(wrap);$("csThemePicker").value=saved;$("csThemePicker").addEventListener("change",e=>apply(e.target.value));}
-    }
-    matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((localStorage.getItem("comfortTheme")||"auto")==="auto")apply("auto");});
+    picker?.addEventListener("change",e=>apply(e.target.value));
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((localStorage.getItem("comfortTheme")||"auto")==="auto")apply("auto");});
   }
   function initProfileExtras(){
+    const form=$("profileSettingsForm");
+    if(!form || form.querySelector('[name="classroom"]')) return;
+    const grid=form.querySelector(".profile-fields-grid");
+    if(!grid) return;
+    const field=document.createElement("div");
+    field.className="profile-field";
+    field.innerHTML='<label for="profileClassroom">Série / turma</label><input id="profileClassroom" name="classroom" type="text" maxlength="60" placeholder="Ex.: 3ª série A">';
+    grid.appendChild(field);
     const profile=(()=>{try{return JSON.parse(localStorage.getItem("comfortProfile")||"{}")}catch{return {}}})();
-    // Mantém os campos originais e adiciona campos complementares ao perfil, sem substituir a tela existente.
-    const section=$("page-perfil");if(!section||$("csProfileExtra"))return;
-    const card=document.createElement("article");card.id="csProfileExtra";card.className="official-card";
-    card.innerHTML=`<h3>Informações complementares</h3><form id="csProfileForm" class="official-form official-inline"><label>Escola<input name="school" maxlength="120" value="${escapeHTML(profile.school||"")}"></label><label>Curso<input name="course" maxlength="120" value="${escapeHTML(profile.course||"")}"></label><label>Série/turma<input name="classroom" maxlength="60" value="${escapeHTML(profile.classroom||"")}"></label><label>Bio<input name="bio" maxlength="240" value="${escapeHTML(profile.bio||"")}"></label><label>Foto de perfil<input id="csProfilePhoto" type="file" accept="image/png,image/jpeg,image/webp"></label><button class="official-primary" type="submit">Salvar perfil</button></form>`;
-    section.appendChild(card);
-    $("csProfileForm").addEventListener("submit",async e=>{
-      e.preventDefault();const form=new FormData(e.target);const next={...profile,school:form.get("school"),course:form.get("course"),classroom:form.get("classroom"),bio:form.get("bio")};
-      try{const file=$("csProfilePhoto").files[0];if(file){const attachment=await uploadAttachment(file,"profile");next.photoURL=attachment.url||attachment.path;}localStorage.setItem("comfortProfile",JSON.stringify(next));await saveCloud("comfortProfile",next);alert("Perfil salvo.");}catch(err){alert(err.message||"Não foi possível salvar o perfil.");}
-    });
+    field.querySelector("input").value=profile.classroom||"";
+    form.addEventListener("submit",()=>{
+      const data=JSON.parse(localStorage.getItem("comfortProfile")||"{}");
+      data.classroom=field.querySelector("input").value.trim();
+      localStorage.setItem("comfortProfile",JSON.stringify(data));
+    },{capture:true});
   }
+
   function initInstitution(){
     const u=user();const role=u?.getIdTokenResult?null:null;
     if(!u)return;

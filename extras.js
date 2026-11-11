@@ -482,8 +482,11 @@
   function applyAppearance() {
     const prefs = appearance();
     document.documentElement.dataset.theme = ["blue", "violet", "green", "rose"].includes(prefs.theme) ? prefs.theme : "blue";
-    document.documentElement.dataset.mode = prefs.mode === "dark" ? "dark" : "light";
-    const selectMode = document.getElementById("appearanceMode"); if (selectMode) selectMode.value = document.documentElement.dataset.mode;
+    const savedMode = ["auto", "light", "dark"].includes(localStorage.getItem("comfortTheme")) ? localStorage.getItem("comfortTheme") : (["auto", "light", "dark"].includes(prefs.mode) ? prefs.mode : "auto");
+    const effectiveDark = savedMode === "dark" || (savedMode === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.mode = effectiveDark ? "dark" : "light";
+    document.documentElement.dataset.modePreference = savedMode;
+    const selectMode = document.getElementById("appearanceMode"); if (selectMode) selectMode.value = savedMode;
     const selectTheme = document.getElementById("appearanceTheme"); if (selectTheme) selectTheme.value = document.documentElement.dataset.theme;
     const selectAvatar = document.getElementById("appearanceAvatar"); if (selectAvatar) selectAvatar.value = prefs.avatar || "👤";
     const profile = read("comfortProfile", {});
@@ -502,7 +505,9 @@
   function saveAppearance(event) {
     event.preventDefault();
     const visibleCards = Array.from(document.querySelectorAll('input[name="dashboardCard"]:checked')).map(input => input.value);
-    write("comfortAppearance", { theme: document.getElementById("appearanceTheme").value, mode: document.getElementById("appearanceMode")?.value === "dark" ? "dark" : "light", avatar: document.getElementById("appearanceAvatar").value, visibleCards: visibleCards });
+    const mode = ["auto","light","dark"].includes(document.getElementById("appearanceMode")?.value) ? document.getElementById("appearanceMode").value : "auto";
+    localStorage.setItem("comfortTheme", mode);
+    write("comfortAppearance", { theme: document.getElementById("appearanceTheme").value, mode, avatar: document.getElementById("appearanceAvatar").value, visibleCards: visibleCards });
     applyAppearance();
   }
 

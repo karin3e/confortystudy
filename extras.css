@@ -104,9 +104,156 @@
 .official-note-actions{margin-top:12px}.official-note-actions label{display:flex;align-items:center;gap:7px}
 .official-file input{max-width:220px}
 .official-theme-label{display:flex;align-items:center;gap:12px;color:var(--text)}
-html[data-theme="dark"]{color-scheme:dark;--bg:#101827;--white:#172338;--text:#e7edf8;--muted:#a2b0c5;--border:#2a3a53;--purple-light:#332754;--purple:#c4a7ff;--shadow:0 8px 25px rgba(0,0,0,.2)}
-html[data-theme="dark"] body{background:var(--bg);color:var(--text)}
-html[data-theme="dark"] .official-card{background:var(--white);border-color:var(--border)}
-html[data-theme="dark"] .official-form input,html[data-theme="dark"] .official-form select,html[data-theme="dark"] .official-form textarea,html[data-theme="dark"] .official-editor,html[data-theme="dark"] .official-ai-answer{background:#111d30;color:var(--text);border-color:var(--border)}
+html[data-mode="dark"]{color-scheme:dark;--bg:#101827;--white:#172338;--text:#e7edf8;--muted:#a2b0c5;--border:#2a3a53;--purple-light:#332754;--purple:#c4a7ff;--shadow:0 8px 25px rgba(0,0,0,.2)}
+html[data-mode="dark"] body{background:var(--bg);color:var(--text)}
+html[data-mode="dark"] .official-card{background:var(--white);border-color:var(--border)}
+html[data-mode="dark"] .official-form input,html[data-mode="dark"] .official-form select,html[data-mode="dark"] .official-form textarea,html[data-mode="dark"] .official-editor,html[data-mode="dark"] .official-ai-answer{background:#111d30;color:var(--text);border-color:var(--border)}
 @media(max-width:850px){.official-columns{grid-template-columns:1fr}.official-card{padding:16px}.official-heading{align-items:flex-start}.official-row{align-items:flex-start;flex-wrap:wrap}}
 @media(max-width:560px){.official-inline{display:grid;grid-template-columns:1fr;width:100%}.official-inline label{width:100%}.official-card-title{align-items:flex-start;flex-direction:column}.official-row{gap:8px}.official-row>div{width:100%}.official-heading p{font-size:.86rem}}
+
+/* Correção do Caderno Avançado: editor e controles sempre visíveis */
+#page-caderno-avancado .official-card{display:block;width:100%;max-width:1100px;margin:0 0 24px;padding:clamp(16px,2vw,24px);box-sizing:border-box}
+#page-caderno-avancado .official-form{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(240px,1.4fr);gap:14px;margin-bottom:14px}
+#page-caderno-avancado .official-form label{display:grid;gap:7px;font-weight:600}
+#page-caderno-avancado .official-form input,#page-caderno-avancado .official-form select{width:100%;min-height:42px;padding:10px 12px;border:1px solid var(--border,#cbd5e1);border-radius:10px;background:var(--white,#fff);color:var(--text,#172033);box-sizing:border-box}
+#page-caderno-avancado .official-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+#page-caderno-avancado .official-toolbar button{min-height:38px;padding:8px 12px;border:1px solid var(--border,#cbd5e1);border-radius:9px;background:var(--white,#fff);color:var(--text,#172033);cursor:pointer}
+#page-caderno-avancado #csNoteEditor{display:block;min-height:280px;width:100%;margin:0 0 14px;box-sizing:border-box;border:1px solid var(--border,#cbd5e1);border-radius:12px;padding:16px;background:var(--white,#fff);color:var(--text,#172033);line-height:1.65;outline:none;white-space:pre-wrap;overflow-wrap:anywhere}
+#page-caderno-avancado #csNoteEditor:focus{border-color:var(--primary,#3b82f6);box-shadow:0 0 0 3px rgba(59,130,246,.12)}
+#page-caderno-avancado #csNoteEditor:empty:before{content:attr(data-placeholder);color:#8491a5}
+#page-caderno-avancado #csNoteEditor table{width:100%;border-collapse:collapse}
+#page-caderno-avancado #csNoteEditor td{min-width:70px;border:1px solid var(--border,#cbd5e1);padding:8px}
+#page-caderno-avancado .official-note-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+#page-caderno-avancado .official-note-actions label{display:flex;align-items:center;gap:8px}
+#page-caderno-avancado .official-file input{display:block;max-width:230px}
+#page-caderno-avancado #csSaveNote{min-height:42px;padding:10px 18px;border:0;border-radius:10px;background:var(--primary,#3478f6);color:white;font-weight:700;cursor:pointer}
+#page-caderno-avancado .official-row{background:var(--white,#fff);margin-top:8px}
+@media(max-width:700px){#page-caderno-avancado .official-form{grid-template-columns:1fr}#page-caderno-avancado .official-note-actions{align-items:stretch}#page-caderno-avancado #csSaveNote{width:100%}}
+
+
+/* Redesign geral dos módulos oficiais — controles consistentes e sem duplicações */
+#page-boletim, #page-grupos, #page-caderno-avancado, #page-institucional {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(16px, 2.2vw, 30px);
+}
+#page-boletim .official-heading, #page-grupos .official-heading,
+#page-caderno-avancado .official-heading, #page-institucional .official-heading {
+  display:flex!important; align-items:flex-start!important; justify-content:space-between!important;
+  gap:18px!important; margin:8px 0 24px!important;
+}
+#page-boletim .official-heading h2, #page-grupos .official-heading h2,
+#page-caderno-avancado .official-heading h2, #page-institucional .official-heading h2 {
+  font-size:clamp(1.55rem,2.5vw,2.15rem)!important; line-height:1.2!important; margin:6px 0 8px!important;
+  color:var(--text,#14213d)!important; font-weight:800!important;
+}
+#page-boletim .official-heading p, #page-grupos .official-heading p,
+#page-caderno-avancado .official-heading p, #page-institucional .official-heading p {
+  margin:0!important; color:var(--muted,#64748b)!important; font-size:.95rem!important;
+}
+#page-boletim .official-card, #page-grupos .official-card,
+#page-caderno-avancado .official-card, #page-institucional .official-card {
+  display:block!important; width:100%!important; max-width:none!important; box-sizing:border-box!important;
+  padding:clamp(18px,2vw,26px)!important; margin:0 0 20px!important;
+  background:var(--white,#fff)!important; border:1px solid var(--border,#e2e8f0)!important;
+  border-radius:18px!important; box-shadow:0 8px 28px rgba(15,23,42,.06)!important;
+}
+#page-boletim .official-card h3, #page-grupos .official-card h3,
+#page-caderno-avancado .official-card h3, #page-institucional .official-card h3 {
+  font-size:1.05rem!important; font-weight:750!important; margin:0 0 16px!important;
+  color:var(--text,#14213d)!important;
+}
+#page-boletim .official-form, #page-grupos .official-form,
+#page-caderno-avancado .official-form {display:grid!important; gap:14px!important; margin:0 0 14px!important}
+#page-boletim .official-inline, #page-grupos .official-inline,
+#page-caderno-avancado .official-inline {display:flex!important; align-items:flex-end!important; flex-wrap:wrap!important; gap:14px!important}
+#page-boletim .official-form label, #page-grupos .official-form label,
+#page-caderno-avancado .official-form label {
+  display:grid!important; gap:7px!important; flex:1 1 220px!important; min-width:0!important;
+  color:var(--text,#334155)!important; font-size:.88rem!important; font-weight:650!important;
+}
+#page-boletim .official-form input, #page-boletim .official-form select,
+#page-grupos .official-form input, #page-grupos .official-form select,
+#page-caderno-avancado .official-form input, #page-caderno-avancado .official-form select {
+  box-sizing:border-box!important; width:100%!important; min-height:44px!important; padding:10px 12px!important;
+  border:1px solid var(--border,#dbe3ef)!important; border-radius:10px!important;
+  background:var(--bg,#f8fafc)!important; color:var(--text,#172033)!important; font:inherit!important;
+}
+#page-boletim .official-primary, #page-grupos .official-primary,
+#page-caderno-avancado .official-primary {
+  display:inline-flex!important; justify-content:center!important; align-items:center!important;
+  min-height:44px!important; padding:11px 18px!important; border:0!important; border-radius:11px!important;
+  background:linear-gradient(110deg,#3478f6,#6254dc)!important; color:white!important;
+  font-size:.9rem!important; font-weight:700!important; cursor:pointer!important;
+}
+#page-caderno-avancado .official-toolbar {
+  display:flex!important; flex-wrap:wrap!important; gap:8px!important; margin:16px 0 10px!important;
+  padding:10px!important; border:1px solid var(--border,#e2e8f0)!important; border-radius:12px!important;
+  background:var(--bg,#f8fafc)!important;
+}
+#page-caderno-avancado .official-toolbar button {
+  min-width:40px!important; min-height:38px!important; padding:8px 12px!important;
+  border:1px solid var(--border,#dbe3ef)!important; border-radius:8px!important;
+  background:var(--white,#fff)!important; color:var(--text,#172033)!important; font-weight:650!important;
+}
+#page-caderno-avancado .official-editor {
+  display:block!important; width:100%!important; min-height:320px!important; box-sizing:border-box!important;
+  margin:0!important; padding:18px!important; border:1px solid var(--border,#dbe3ef)!important;
+  border-radius:13px!important; background:var(--white,#fff)!important; color:var(--text,#172033)!important;
+  font-size:1rem!important; line-height:1.75!important; outline:none!important; overflow-wrap:anywhere!important;
+}
+#page-caderno-avancado .official-editor:focus {border-color:#4785f5!important; box-shadow:0 0 0 3px rgba(59,130,246,.12)!important}
+#page-caderno-avancado .official-note-actions {display:flex!important; align-items:center!important; flex-wrap:wrap!important; gap:12px!important; margin:16px 0 8px!important}
+#page-caderno-avancado .official-note-actions label {display:flex!important; align-items:center!important; gap:8px!important; flex:0 1 auto!important; font-size:.9rem!important}
+#page-caderno-avancado .official-file {padding:9px 12px!important; border:1px dashed var(--border,#cbd5e1)!important; border-radius:10px!important; background:var(--bg,#f8fafc)!important}
+#page-caderno-avancado .official-file input {max-width:260px!important; font-size:.85rem!important}
+#page-caderno-avancado #csSaveNote {margin-left:auto!important}
+#page-grupos #csJoinGroupForm {padding-top:14px!important; margin-top:16px!important; border-top:1px solid var(--border,#e2e8f0)!important}
+#page-grupos .official-columns {display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:16px!important}
+#page-institucional #csInstitutionArea {padding:16px!important; border-radius:12px!important; background:var(--bg,#f8fafc)!important; color:var(--muted,#64748b)!important; line-height:1.6!important}
+#page-perfil #csBackupCard {margin-top:18px!important}
+#page-perfil #csProfileExtra {display:none!important}
+#page-perfil .profile-appearance-card {margin-top:18px!important}
+#page-perfil #appearanceForm {display:grid!important; grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:12px 16px!important}
+#page-perfil #appearanceForm label {display:grid!important; gap:7px!important; font-size:.88rem!important; font-weight:650!important}
+#page-perfil #appearanceForm select {width:100%!important; min-height:42px!important; box-sizing:border-box!important; padding:9px 12px!important; border:1px solid var(--border,#dbe3ef)!important; border-radius:10px!important; background:var(--bg,#f8fafc)!important; color:var(--text,#172033)!important}
+#page-perfil #appearanceForm .dashboard-options {grid-column:1/-1!important}
+#page-perfil #appearanceForm>button {grid-column:1/-1!important}
+#page-perfil .profile-fields-grid .profile-field {min-width:0!important}
+@media(max-width:850px){
+ #page-boletim,#page-grupos,#page-caderno-avancado,#page-institucional{padding:14px!important}
+ #page-grupos .official-columns{grid-template-columns:1fr!important}
+}
+@media(max-width:600px){
+ #page-boletim .official-inline,#page-grupos .official-inline,#page-caderno-avancado .official-inline{display:grid!important;grid-template-columns:1fr!important}
+ #page-boletim .official-inline>* ,#page-grupos .official-inline>* ,#page-caderno-avancado .official-inline>*{width:100%!important}
+ #page-caderno-avancado .official-note-actions #csSaveNote{margin-left:0!important;width:100%!important}
+ #page-perfil #appearanceForm{grid-template-columns:1fr!important}
+}
+
+
+/* Polimento do perfil e estados de interação */
+#page-perfil .profile-appearance-card{padding:22px!important;border:1px solid var(--border)!important;border-radius:18px!important;background:var(--white)!important;box-shadow:var(--shadow)!important}
+#page-perfil .profile-appearance-card h3{margin:0 0 6px!important;font-size:1.08rem!important;color:var(--text)!important}
+#page-perfil .profile-appearance-card .feature-help{margin:0 0 16px!important}
+#page-perfil #appearanceForm label{color:var(--text)!important}
+#page-perfil #appearanceForm select{appearance:auto!important;box-shadow:none!important}
+#page-perfil #appearanceForm button{min-height:44px!important;border-radius:11px!important}
+#page-perfil #csBackupCard .official-inline{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:12px!important}
+#page-perfil #csBackupCard .official-inline button,
+#page-perfil #csBackupCard .official-inline label{min-height:42px!important}
+#page-perfil #csBackupCard .official-file{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:10px 14px!important;border-radius:10px!important;background:var(--bg)!important;color:var(--text)!important;cursor:pointer!important}
+#page-perfil #csBackupCard .official-file input{max-width:230px!important}
+#page-perfil .comfort-profile-shortcuts{display:flex!important;gap:10px!important;flex-wrap:wrap!important;margin-top:12px!important}
+#page-perfil .comfort-profile-shortcuts button{min-height:40px!important;border-radius:10px!important}
+#page-institucional .official-card p{line-height:1.65!important}
+#page-institucional #csInstitutionArea:before{content:"Acesso protegido";display:block;margin-bottom:6px;color:var(--primary)!important;font-weight:750!important}
+#page-grupos #csGroups:empty:after{content:"Seus grupos aparecerão aqui depois que você criar um ou entrar com um código.";display:block;padding:18px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);text-align:center}
+html[data-mode="dark"] .official-card,
+html[data-mode="dark"] .feature-card{background:var(--white)!important;color:var(--text)!important;border-color:var(--border)!important}
+html[data-mode="dark"] .official-form input,
+html[data-mode="dark"] .official-form select,
+html[data-mode="dark"] .official-editor,
+html[data-mode="dark"] #appearanceForm select{background:#111d30!important;color:#e7edf8!important;border-color:#334155!important}
+html[data-mode="dark"] .official-toolbar{background:#111d30!important}
+html[data-mode="dark"] .official-toolbar button{background:#172338!important;color:#e7edf8!important;border-color:#334155!important}
