@@ -1,0 +1,215 @@
+
+/* ==========================================================
+   COMFORTSTUDY / CREATIVE SYSTEM
+   Cada módulo ganha linguagem visual própria, mantendo unidade.
+   ========================================================== */
+:root{
+ --cc-ink:#172541;--cc-muted:#74829b;--cc-line:#e4eaf4;--cc-paper:#fff;
+ --cc-blue:#376ff0;--cc-violet:#7655e8;--cc-canvas:#f4f7fc;
+ --cc-shadow:0 16px 40px rgba(31,54,96,.075);
+}
+body{background:radial-gradient(ellipse at 12% 0%,rgba(105,143,255,.08),transparent 28%),var(--cc-canvas);color:var(--cc-ink)}
+.page-section{max-width:1540px;padding:30px clamp(18px,3vw,42px)!important}
+.page-header{position:relative;padding-bottom:18px!important;border-bottom:1px solid rgba(208,219,238,.75);margin-bottom:25px!important}
+.page-header h2{font-size:clamp(27px,2.4vw,36px)!important;letter-spacing:-.055em!important}
+.page-header>div:before{content:"";display:block;width:34px;height:4px;border-radius:9px;background:linear-gradient(90deg,var(--cc-blue),var(--cc-violet));margin-bottom:12px}
+.page-header .welcome{font-size:10px!important;letter-spacing:.18em!important;color:#8090ad!important}
+.page-header p:not(.welcome){max-width:660px}
+.feature-card,.official-card,.performance-section,.profile-settings-form,.profile-appearance-card,.calendar-card,.timer-card{
+ border:1px solid rgba(222,230,243,.9)!important;border-radius:21px!important;box-shadow:var(--cc-shadow)!important;background:rgba(255,255,255,.94)!important
+}
+.feature-card h3,.official-card h3{font-weight:820!important;letter-spacing:-.025em!important}
+.btn-primary,.official-primary{background:linear-gradient(115deg,#3478f6,#7158e8)!important;border-radius:12px!important;box-shadow:0 8px 20px rgba(64,105,220,.2)!important}
+.btn-secondary{border-radius:11px!important}
+input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{border-radius:11px!important;background:#f8faff!important;border-color:#e0e8f4!important}
+label{letter-spacing:.005em}
+
+/* Dashboard: hero editorial + cards with colored identity */
+#page-dashboard .dashboard-welcome-panel{
+ min-height:230px!important;position:relative;isolation:isolate;overflow:hidden;
+ padding:clamp(28px,4vw,48px)!important;border-radius:26px!important;
+ background:linear-gradient(115deg,#1f56bd 0%,#3476ed 52%,#7659df 100%)!important;
+ box-shadow:0 22px 48px rgba(50,91,190,.22)!important
+}
+#page-dashboard .dashboard-welcome-panel:before{
+ content:"";position:absolute;z-index:-1;width:360px;height:360px;border:1px solid rgba(255,255,255,.16);border-radius:50%;
+ right:5%;top:-52%;box-shadow:0 0 0 28px rgba(255,255,255,.045),0 0 0 58px rgba(255,255,255,.035),0 0 0 92px rgba(255,255,255,.025)
+}
+#page-dashboard .dashboard-welcome-panel:after{
+ content:"";position:absolute;z-index:-1;width:220px;height:220px;border-radius:50%;right:22%;bottom:-72%;background:rgba(255,255,255,.09);filter:blur(2px)
+}
+#page-dashboard .dashboard-welcome-copy{max-width:650px}
+#page-dashboard .dashboard-welcome-copy h2{font-size:clamp(27px,3.4vw,43px)!important;line-height:1.06!important;letter-spacing:-.055em!important;max-width:580px}
+#page-dashboard .dashboard-welcome-copy p{font-size:14px!important;line-height:1.7!important;color:rgba(255,255,255,.82)!important;max-width:520px}
+#page-dashboard .dashboard-quick-actions{gap:10px!important;margin-top:22px}
+#page-dashboard .quick-action-primary{background:#fff!important;color:#285cc6!important;box-shadow:0 8px 22px rgba(10,33,82,.15)!important}
+#page-dashboard .quick-action-secondary{background:rgba(255,255,255,.12)!important;border:1px solid rgba(255,255,255,.35)!important;color:#fff!important}
+#page-dashboard .cards-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px!important;margin:20px 0!important}
+#page-dashboard .cards-grid .card{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;padding:20px!important;border:1px solid var(--cc-line)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 8px 25px rgba(31,54,96,.055)!important}
+#page-dashboard .cards-grid .card:after{content:"";position:absolute;width:90px;height:90px;right:-28px;bottom:-35px;border-radius:50%;background:var(--metric-soft,#edf3ff)}
+#page-dashboard .cards-grid .card:nth-child(2){--metric-soft:#e9f8f2}
+#page-dashboard .cards-grid .card:nth-child(3){--metric-soft:#f0ebff}
+#page-dashboard .card-icon{width:48px!important;height:48px!important;border-radius:15px!important;display:grid;place-items:center;background:#edf3ff!important;color:#3973ed!important}
+#page-dashboard .card:nth-child(2) .card-icon{background:#e9f8f2!important;color:#18a477!important}
+#page-dashboard .card:nth-child(3) .card-icon{background:#f0ebff!important;color:#7958df!important}
+#page-dashboard .card-info h3{font-size:12px!important;color:#74829b!important;font-weight:700!important}
+#page-dashboard .card-info strong,#page-dashboard .card-info span{font-size:26px!important;font-weight:850!important;color:#1b2b49!important}
+#page-dashboard .dashboard-today{border:0!important;background:linear-gradient(135deg,#fff,#f4f7ff)!important}
+#page-dashboard .today-columns{gap:18px!important}
+#page-dashboard .today-columns>div{padding:16px;border:1px solid #e6edf8;border-radius:15px;background:rgba(255,255,255,.78)}
+#page-dashboard .dashboard-bottom-grid{gap:16px!important}
+
+/* Subjects: library shelf, each subject tile distinct */
+#page-materias .subject-search-bar{max-width:100%!important;padding:16px 18px!important;border-radius:17px!important;background:#fff!important;border:1px solid var(--cc-line)!important;box-shadow:0 8px 24px rgba(31,54,96,.05)!important}
+#page-materias .subjects-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px!important}
+#page-materias .subjects-grid>*{
+ position:relative;min-height:180px!important;padding:23px!important;border:1px solid var(--cc-line)!important;border-radius:19px!important;
+ background:linear-gradient(145deg,#fff 55%,#f2f6ff)!important;box-shadow:0 10px 28px rgba(31,54,96,.055)!important;overflow:hidden;transition:transform .2s,box-shadow .2s
+}
+#page-materias .subjects-grid>*:hover{transform:translateY(-4px);box-shadow:0 18px 34px rgba(31,54,96,.1)!important}
+#page-materias .subjects-grid>*:before{content:"";position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#4b82f4,#8b70eb)}
+#page-materias .subjects-grid>*:nth-child(4n+2){background:linear-gradient(145deg,#fff 55%,#f0fbf7)!important}
+#page-materias .subjects-grid>*:nth-child(4n+2):before{background:linear-gradient(90deg,#20a77d,#78d5b0)}
+#page-materias .subjects-grid>*:nth-child(4n+3){background:linear-gradient(145deg,#fff 55%,#fff7ed)!important}
+#page-materias .subjects-grid>*:nth-child(4n+3):before{background:linear-gradient(90deg,#f0a34d,#f6cb7c)}
+#page-materias .subjects-grid>*:nth-child(4n){background:linear-gradient(145deg,#fff 55%,#f6f1ff)!important}
+#page-materias .subjects-grid>*:nth-child(4n):before{background:linear-gradient(90deg,#8965e8,#b19af4)}
+
+/* Calendar: planner canvas, stronger weekday/date rhythm */
+#page-calendario .calendar-card{max-width:1040px!important;margin:0 auto!important;padding:25px!important;background:linear-gradient(150deg,#fff,#f8faff)!important}
+#page-calendario .calendar-top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:18px!important;border-bottom:1px solid var(--cc-line)}
+#page-calendario .calendar-top h3{font-size:22px!important;font-weight:850!important;letter-spacing:-.04em}
+#page-calendario .calendar-week,#page-calendario .calendar-days{gap:7px!important}
+#page-calendario .calendar-week>*{padding:9px 0;color:#8290a8;font-size:10px;font-weight:850;letter-spacing:.08em}
+#page-calendario .calendar-days>*{min-height:76px!important;padding:10px!important;border:1px solid #edf1f7!important;border-radius:13px!important;background:#fff!important;transition:background .15s,border .15s}
+#page-calendario .calendar-days>*:hover{background:#f1f6ff!important;border-color:#c9d9fb!important}
+#page-calendario .calendar-days .today{background:#edf4ff!important;border:1px solid #9bbaff!important;color:#2866df!important;font-weight:850}
+#page-calendario .calendar-days .muted{opacity:.38}
+
+/* Tasks and exams: editorial list, not a grid of identical boxes */
+#page-tarefas .filter-bar{padding:12px!important;border-radius:16px!important;background:#fff!important;border:1px solid var(--cc-line)!important;box-shadow:0 7px 22px rgba(31,54,96,.045)!important}
+#page-tarefas .full-task-list,#page-provas .exam-list{grid-template-columns:1fr!important;gap:10px!important}
+#page-tarefas .full-task-list>* ,#page-provas .exam-list>*{
+ display:flex;align-items:center;gap:16px;padding:17px 19px!important;border-radius:15px!important;border:1px solid var(--cc-line)!important;background:#fff!important;box-shadow:0 5px 18px rgba(31,54,96,.04)!important
+}
+#page-tarefas .full-task-list>*:hover,#page-provas .exam-list>*:hover{border-color:#bfd2f7!important;transform:translateX(2px)}
+#page-provas .exam-list>*{border-left:4px solid #6e8ff0!important}
+#page-tarefas .filter.active{background:#edf4ff!important;color:#2d68df!important;border-color:#c8d9fb!important}
+
+/* Focus timer: dedicated focus chamber */
+#page-cronometro .timer-card{position:relative;overflow:hidden;max-width:820px!important;padding:clamp(26px,4vw,48px)!important;border-radius:26px!important;background:radial-gradient(circle at 50% 10%,#eaf1ff 0,#fff 43%,#fafaff 100%)!important}
+#page-cronometro .timer-card:before{content:"";position:absolute;inset:12px;border:1px solid rgba(116,145,206,.12);border-radius:19px;pointer-events:none}
+#page-cronometro .timer-circle{width:250px!important;height:250px!important;border:9px solid #e7edfb!important;border-top-color:#477df0!important;background:radial-gradient(circle,#fff,#f3f6ff)!important;box-shadow:0 15px 40px rgba(60,103,206,.1),inset 0 0 0 7px #fff!important}
+#page-cronometro .timer-circle span{font-size:52px!important;font-weight:850!important;letter-spacing:-.06em;color:#1e3153}
+#page-cronometro .timer-presets button{border-radius:999px!important;padding:9px 18px!important}
+#page-cronometro .timer-presets button.active{background:#eaf1ff!important;border-color:#a9c4fa!important;color:#2868e2!important}
+
+/* Performance and gradebook: analytics studio */
+#page-desempenho .performance-cards{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:15px!important}
+#page-desempenho .performance-card{position:relative;overflow:hidden;padding:22px!important;border-radius:18px!important;background:linear-gradient(145deg,#fff,#f8faff)!important}
+#page-desempenho .performance-card:nth-child(2){background:linear-gradient(145deg,#fff,#f0fbf7)!important}
+#page-desempenho .performance-card:nth-child(3){background:linear-gradient(145deg,#fff,#f5f1ff)!important}
+#page-desempenho .performance-card strong{font-size:30px!important;font-weight:850!important;letter-spacing:-.05em}
+#page-boletim .official-columns{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:17px!important}
+#page-boletim .official-columns>.official-card:first-child{border-top:4px solid #4b80ed!important}
+#page-boletim .official-columns>.official-card:nth-child(2){border-top:4px solid #8565e8!important}
+#page-boletim #csGradeRows>.official-row,#page-boletim #csGradeRows>*{border-radius:13px!important}
+
+/* Notebook: workspace with toolbar, paper and side rail */
+#page-caderno-avancado>.official-heading{max-width:1200px}
+#page-caderno-avancado>.official-form.official-inline{max-width:1200px;margin:0 auto 12px!important;padding:16px 18px!important;border:1px solid var(--cc-line);border-radius:16px;background:#fff;box-shadow:0 7px 22px rgba(31,54,96,.045)}
+#page-caderno-avancado .official-toolbar{background:#eef3fc!important;border:1px solid #e0e8f5!important;border-radius:13px!important}
+#page-caderno-avancado .official-toolbar button{min-width:39px;min-height:37px;border-radius:9px!important;background:#fff!important;border:1px solid #dce5f2!important}
+#page-caderno-avancado .official-editor{min-height:390px!important;padding:28px!important;border:1px solid #e5eaf2!important;border-radius:4px 16px 16px 4px!important;background:linear-gradient(90deg,#f4f7fc 0 13px,#fff 13px)!important;box-shadow:0 10px 30px rgba(31,54,96,.05)!important;line-height:1.85!important}
+#page-caderno-avancado .official-note-list-head{padding-top:22px!important;border-top:1px solid var(--cc-line)}
+#page-caderno-avancado #csNoteList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#page-caderno-avancado #csNoteList>*{border:1px solid var(--cc-line);border-radius:15px;background:#fff;padding:17px;box-shadow:0 6px 18px rgba(31,54,96,.045)}
+
+/* Planning: tool dashboard with varied modules */
+#page-planejamento .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
+#page-planejamento .feature-card{position:relative;overflow:hidden}
+#page-planejamento .feature-card h3{font-size:16px!important}
+#page-planejamento .feature-card:nth-child(3n+1){border-top:4px solid #4d80ee!important}
+#page-planejamento .feature-card:nth-child(3n+2){border-top:4px solid #24a982!important}
+#page-planejamento .feature-card:nth-child(3n){border-top:4px solid #8a69e8!important}
+#page-planejamento .feature-wide{grid-column:1/-1}
+#page-planejamento .quick-study-card{background:linear-gradient(130deg,#eef4ff,#f6f2ff)!important}
+
+/* Profile: personal identity panel and grouped settings */
+#page-perfil .profile-card{position:relative;overflow:hidden;padding:28px!important;border-radius:22px!important;background:linear-gradient(115deg,#eaf2ff,#f5f0ff)!important;border:1px solid #dbe6fa!important}
+#page-perfil .profile-card:after{content:"";position:absolute;width:190px;height:190px;border-radius:50%;right:8%;top:-70%;background:rgba(255,255,255,.65);box-shadow:0 0 0 25px rgba(255,255,255,.2),0 0 0 55px rgba(255,255,255,.12)}
+#page-perfil .big-avatar{width:84px!important;height:84px!important;border:4px solid #fff!important;border-radius:24px!important;box-shadow:0 8px 22px rgba(40,76,140,.13)}
+#page-perfil .profile-info h2{font-size:25px!important;letter-spacing:-.04em}
+#page-perfil .profile-settings-form{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr);gap:16px;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+#page-perfil .profile-settings-section{padding:23px!important;border:1px solid var(--cc-line)!important;border-radius:18px!important;background:#fff!important;box-shadow:var(--cc-shadow)!important}
+#page-perfil .profile-settings-section:first-child{grid-column:1/-1}
+#page-perfil .profile-settings-heading{margin-bottom:18px}
+#page-perfil .profile-fields-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+#page-perfil .profile-field{display:grid;gap:7px;min-width:0}
+#page-perfil .profile-field-wide{grid-column:1/-1}
+#page-perfil .profile-form-actions{display:flex;justify-content:flex-end;gap:10px;padding-top:17px;border-top:1px solid var(--cc-line);margin-top:18px}
+#page-perfil .profile-appearance-card{grid-column:1/-1}
+#page-perfil .profile-appearance-card .feature-form{display:grid;grid-template-columns:1fr 1.5fr;gap:13px 18px;align-items:center}
+#page-perfil .profile-appearance-card fieldset{border:1px solid var(--cc-line)!important;border-radius:13px!important;padding:14px!important}
+#page-perfil .profile-appearance-card fieldset label{display:flex;align-items:center;gap:9px;padding:7px 0}
+
+/* About and support: editorial/storytelling + help desk */
+#page-sobre .comfort-about-hero{position:relative;overflow:hidden;padding:clamp(26px,4vw,44px)!important;border-radius:24px!important;background:linear-gradient(120deg,#1f55b9,#3c78ed 58%,#7659df)!important;color:#fff!important}
+#page-sobre .comfort-about-hero h2,#page-sobre .comfort-about-hero h3{color:#fff!important}
+#page-sobre .comfort-about-hero p{color:rgba(255,255,255,.84)!important;line-height:1.75}
+#page-sobre .comfort-about-mark{display:grid;place-items:center;width:58px;height:58px;border-radius:18px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:#fff}
+#page-sobre .comfort-about-grid{grid-template-columns:minmax(0,1.6fr) minmax(270px,.9fr)!important;gap:16px!important}
+#page-sobre .comfort-about-card{padding:25px!important}
+#page-sobre .comfort-about-card:first-child{border-top:4px solid #4c80ef!important}
+#page-sobre .comfort-about-card:nth-child(2){border-top:4px solid #8b6ae9!important}
+#page-sobre .comfort-about-guide{padding:24px!important;background:linear-gradient(135deg,#fff,#f4f7ff)!important}
+#page-suporte .comfort-support-layout{grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr)!important;gap:17px!important}
+#page-suporte .comfort-support-form-card{border-top:4px solid #4c80ef!important}
+#page-suporte .comfort-support-history-card{border-top:4px solid #22a77d!important}
+#page-suporte .comfort-support-form{gap:13px}
+#page-suporte .comfort-support-form textarea{min-height:150px}
+#page-suporte .comfort-support-contact{padding:15px;border-radius:13px;background:#f5f8fd}
+
+/* Premium: product page, not generic feature boxes */
+#page-premium .premium-page{position:relative;overflow:hidden;border-radius:27px!important;padding:clamp(28px,5vw,58px)!important;background:linear-gradient(120deg,#1e4fae,#3d72e8 54%,#7755dc)!important;box-shadow:0 22px 48px rgba(48,83,174,.2)!important}
+#page-premium .premium-page:after{content:"";position:absolute;right:-60px;top:-130px;width:360px;height:360px;border:1px solid rgba(255,255,255,.22);border-radius:50%;box-shadow:0 0 0 30px rgba(255,255,255,.05),0 0 0 65px rgba(255,255,255,.04)}
+#page-premium .premium-page h2,#page-premium .premium-page h3{color:#fff!important}
+#page-premium .premium-page p{color:rgba(255,255,255,.82)!important}
+#page-premium .premium-features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:24px}
+#page-premium .premium-features>div{padding:20px;border:1px solid rgba(255,255,255,.24)!important;border-radius:16px;background:rgba(255,255,255,.12)!important;color:#fff;backdrop-filter:blur(8px)}
+#page-premium .premium-features h3{font-size:15px!important}
+
+/* Responsive */
+@media(max-width:1000px){
+ #page-materias .subjects-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #page-perfil .profile-settings-form{grid-template-columns:1fr}
+ #page-perfil .profile-settings-section:first-child{grid-column:auto}
+ #page-sobre .comfort-about-grid,#page-suporte .comfort-support-layout{grid-template-columns:1fr!important}
+ #page-desempenho .performance-cards{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ #page-premium .premium-features{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+ .page-section{padding:17px 14px!important}
+ .page-header{align-items:flex-start!important;flex-direction:column!important}
+ .page-header>.btn-primary{width:100%}
+ #page-dashboard .cards-grid{grid-template-columns:1fr!important}
+ #page-dashboard .dashboard-welcome-panel{min-height:0!important;padding:26px 21px!important}
+ #page-dashboard .dashboard-welcome-copy h2{font-size:29px!important}
+ #page-materias .subjects-grid,#page-caderno-avancado #csNoteList{grid-template-columns:1fr!important}
+ #page-calendario .calendar-card{padding:12px!important}
+ #page-calendario .calendar-days>*{min-height:48px!important;padding:5px!important}
+ #page-perfil .profile-card{align-items:flex-start!important;padding:20px!important}
+ #page-perfil .profile-fields-grid{grid-template-columns:1fr!important}
+ #page-perfil .profile-field-wide{grid-column:auto}
+ #page-perfil .profile-settings-form{grid-template-columns:1fr!important}
+ #page-perfil .profile-form-actions{flex-direction:column}
+ #page-perfil .profile-form-actions button{width:100%}
+ #page-perfil .profile-appearance-card .feature-form{grid-template-columns:1fr!important}
+ #page-desempenho .performance-cards{grid-template-columns:1fr!important}
+ #page-boletim .official-columns,#page-planejamento .feature-grid{grid-template-columns:1fr!important}
+ #page-planejamento .feature-wide{grid-column:auto}
+ #page-cronometro .timer-circle{width:205px!important;height:205px!important}
+ #page-cronometro .timer-circle span{font-size:43px!important}
+ #page-premium .premium-page{padding:26px 20px!important}
+ #page-suporte .comfort-support-layout{grid-template-columns:1fr!important}
+}
