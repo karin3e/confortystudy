@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <link rel="stylesheet" href="style_dashboard.css">
-    <link rel="stylesheet" href="extras.css?v=20261118-1">
+    <link rel="stylesheet" href="extras.css?v=20261119-design-1">
 
     <script>
     (function () {
@@ -61,72 +61,30 @@
                 <span>ComfortStudy</span>
             </div>
 
-            <nav class="menu">
+            <nav class="menu" aria-label="Navegação principal">
+                <span class="nav-group-label">VISÃO GERAL</span>
+                <a href="#" class="active" data-page="dashboard"><i class="ph ph-squares-four"></i><span>Dashboard</span></a>
+                <a href="#" data-page="calendario"><i class="ph ph-calendar-blank"></i><span>Calendário</span></a>
+                <a href="#" data-page="planejamento" class="mobile-hidden-link"><i class="ph ph-calendar-check"></i><span>Meu plano</span></a>
 
-                <a href="#" class="active" data-page="dashboard">
-                    <i class="ph ph-squares-four"></i>
-                    <span>Dashboard</span>
-                </a>
+                <span class="nav-group-label">ORGANIZAÇÃO</span>
+                <a href="#" data-page="materias"><i class="ph ph-books"></i><span>Matérias</span></a>
+                <a href="#" data-page="tarefas"><i class="ph ph-check-square"></i><span>Tarefas</span></a>
+                <a href="#" data-page="provas"><i class="ph ph-exam"></i><span>Provas</span></a>
+                <a href="#" data-page="boletim"><i class="ph ph-chart-line-up"></i><span>Boletim</span></a>
+                <a href="#" data-page="caderno-avancado"><i class="ph ph-notebook-tabs"></i><span>Caderno digital</span></a>
 
-                <a href="#" data-page="materias">
-                    <i class="ph ph-books"></i>
-                    <span>Materias</span>
-                </a>
-
-                <a href="#" data-page="calendario">
-                    <i class="ph ph-calendar-blank"></i>
-                    <span>Calendario</span>
-                </a>
-
-                <a href="#" data-page="tarefas">
-                    <i class="ph ph-check-square"></i>
-                    <span>Tarefas</span>
-                </a>
-
-                <a href="#" data-page="provas">
-                    <i class="ph ph-exam"></i>
-                    <span>Provas</span>
-                </a>
-
-                <a href="#" data-page="cronometro">
-                    <i class="ph ph-timer"></i>
-                    <span>Cronometro</span>
-                </a>
-
-                <a href="#" data-page="avisos">
-                    <i class="ph ph-bell"></i>
-                    <span>Avisos</span>
-                </a>
-
-                <a href="#" data-page="desempenho" class="mobile-hidden-link">
-                    <i class="ph ph-chart-line-up"></i>
-                    <span>Desempenho</span>
-                </a>
-
-                <a href="#" data-page="planejamento" class="mobile-hidden-link">
-                    <i class="ph ph-notebook"></i>
-                    <span>Meu Plano</span>
-                </a>
-
-                <a href="#" data-page="boletim"><i class="ph ph-notebook"></i><span>Boletim</span></a>
+                <span class="nav-group-label">FOCO E COMUNIDADE</span>
+                <a href="#" data-page="cronometro"><i class="ph ph-timer"></i><span>Cronômetro</span></a>
                 <a href="#" data-page="grupos"><i class="ph ph-users-three"></i><span>Grupos de estudo</span></a>
-                <a href="#" data-page="caderno-avancado"><i class="ph ph-notebook-tabs"></i><span>Caderno avançado</span></a>
+                <a href="#" data-page="avisos"><i class="ph ph-bell"></i><span>Avisos</span></a>
+                <a href="#" data-page="desempenho" class="mobile-hidden-link"><i class="ph ph-chart-line-up"></i><span>Desempenho</span></a>
+
+                <span class="nav-group-label">AJUDA</span>
+                <a href="#" data-page="suporte"><i class="ph ph-headset"></i><span>Suporte</span></a>
+                <a href="#" data-page="sobre"><i class="ph ph-info"></i><span>Sobre</span></a>
                 <a href="#" data-page="institucional" id="institutionNav" hidden><i class="ph ph-buildings"></i><span>Área institucional</span></a>
-                <a href="#" data-page="suporte">
-                    <i class="ph ph-headset"></i>
-                    <span>Suporte</span>
-                </a>
-
-<a href="#" data-page="sobre">
-                    <i class="ph ph-info"></i>
-                    <span>Sobre</span>
-                </a>
-
-                <button type="button" class="mobile-more-button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu">
-                    <i class="ph ph-dots-three-circle"></i>
-                    <span>Mais</span>
-                </button>
-
+                <button type="button" class="mobile-more-button" id="mobileMoreButton" aria-expanded="false" aria-controls="mobileMoreMenu"><i class="ph ph-dots-three-circle"></i><span>Mais</span></button>
             </nav>
 
         </div>
@@ -227,9 +185,22 @@
             class="page-section active-page"
             id="page-dashboard">
 
+            <section class="dashboard-welcome-panel" aria-label="Atalhos de estudo">
+                <div class="dashboard-welcome-copy">
+                    <span class="dashboard-eyebrow">SEU AMBIENTE DE APRENDIZAGEM</span>
+                    <h2>Organize sua rotina. <span>Avance no seu ritmo.</span></h2>
+                    <p>Tenha tarefas, avaliações e materiais em um só lugar para estudar com mais clareza.</p>
+                </div>
+                <div class="dashboard-quick-actions">
+                    <button type="button" class="quick-action-primary" data-page="tarefas"><i class="ph ph-plus-circle"></i> Nova tarefa</button>
+                    <button type="button" class="quick-action-secondary" data-page="caderno-avancado"><i class="ph ph-notebook-tabs"></i> Abrir caderno</button>
+                </div>
+                <div class="dashboard-decoration" aria-hidden="true"><i class="ph ph-graduation-cap"></i></div>
+            </section>
+
             <!-- CARDS -->
 
-            <section class="cards-grid">
+            <section class="cards-grid" aria-label="Resumo acadêmico">
 
                 <div class="card">
 
@@ -1352,7 +1323,7 @@
           <button class="official-primary" type="submit">Salvar avaliação</button>
         </form></article>
         <article class="official-card"><h3>Quanto preciso tirar?</h3><div class="official-form">
-          <label>Matéria<select id="csCalcSubject"></select></label><label>Média desejada<input id="csTarget" type="number" min="0" max="10" step="0.1" value="7"></label>
+          <label>Matéria<select id="csCalcSubject"></select></label><label>Período<select id="csCalcTerm"><option>1º bimestre</option><option>2º bimestre</option><option>3º bimestre</option><option>4º bimestre</option><option>1º trimestre</option><option>2º trimestre</option><option>3º trimestre</option></select></label><label>Média desejada<input id="csTarget" type="number" min="0" max="10" step="0.1" value="7"></label>
           <label>Avaliações restantes<input id="csRemaining" type="number" min="1" max="20" value="1"></label><div id="csGradeCalc" class="official-feedback">Adicione notas para calcular.</div>
         </div></article>
       </div>
@@ -1448,7 +1419,6 @@
     <script src="extras.js"></script>
     <script src="support.js"></script>
     <script src="official-upgrades.js?v=20261118-1"></script>
-
 </body>
 
 </html>

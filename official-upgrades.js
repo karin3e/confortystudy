@@ -56,20 +56,28 @@
   function renderGrades() {
     const grades=read(KEYS.grades);
     const list=$("csGradeRows"); if(!list)return;
-    list.innerHTML=grades.length?grades.slice().reverse().map(g=>`<div class="official-row"><div><strong>${escapeHTML(g.subject)} · ${escapeHTML(g.title)}</strong><small>${escapeHTML(g.term)} · Peso ${g.weight}</small></div><b>${Number(g.grade).toFixed(1).replace(".",",")}</b><button type="button" data-grade-delete="${g.id}" aria-label="Excluir nota">Excluir</button></div>`).join(""):"<p class='official-muted'>Nenhuma avaliação cadastrada.</p>";
-    const averages=subjects.map(s=>weightedAverage(grades.filter(g=>g.subject===s))).filter(v=>v!==null);
-    $("csOverallAverage").textContent="Média geral: "+(averages.length?(averages.reduce((a,b)=>a+b,0)/averages.length).toFixed(2).replace(".",","):"—");
+    list.innerHTML=grades.length?grades.slice().reverse().map(g=>`<div class="official-row"><div><strong>${escapeHTML(g.subject)} · ${escapeHTML(g.title)}</strong><small>${escapeHTML(g.term||"Período não informado")} · Peso ${Number(g.weight||1).toLocaleString("pt-BR")}</small></div><b>${Number(g.grade).toFixed(1).replace(".",",")}</b><button type="button" data-grade-delete="${escapeHTML(g.id)}" aria-label="Excluir nota">Excluir</button></div>`).join(""):"<p class='official-muted'>Nenhuma avaliação cadastrada.</p>";
+    const groups=new Map();
+    grades.forEach(g=>{
+      const key=(g.subject||"")+"\u0000"+(g.term||"Período não informado");
+      if(!groups.has(key))groups.set(key,[]);
+      groups.get(key).push(g);
+    });
+    const averages=Array.from(groups.values()).map(weightedAverage).filter(v=>v!==null);
+    $("csOverallAverage").textContent="Média geral dos períodos: "+(averages.length?(averages.reduce((a,b)=>a+b,0)/averages.length).toFixed(2).replace(".",","):"—");
     calcGrade();
   }
   function calcGrade() {
-    const subject=$("csCalcSubject")?.value, target=Number($("csTarget")?.value||7), remaining=Math.max(1,Number($("csRemaining")?.value||1));
-    const rows=read(KEYS.grades).filter(g=>g.subject===subject);
+    const subject=$("csCalcSubject")?.value;
+    const term=$("csCalcTerm")?.value||"1º bimestre";
+    const target=Number($("csTarget")?.value||7);
+    const remaining=Math.max(1,Number($("csRemaining")?.value||1));
+    const rows=read(KEYS.grades).filter(g=>g.subject===subject&&(g.term||"Período não informado")===term);
     const avg=weightedAverage(rows); const out=$("csGradeCalc"); if(!out)return;
-    if(avg===null){out.textContent="Cadastre ao menos uma nota desta matéria para calcular.";return;}
-    // Supõe avaliações futuras de peso 1. A média é ponderada das notas já lançadas.
+    if(avg===null){out.textContent="Cadastre ao menos uma nota desta matéria neste período para calcular.";return;}
     const currentWeight=rows.reduce((a,g)=>a+Number(g.weight||1),0);
     const required=(target*(currentWeight+remaining)-avg*currentWeight)/remaining;
-    out.textContent=required<=0?"Você já atingiu a média desejada.":required>10?`Com ${remaining} avaliação(ões) restante(s), seria necessário ${required.toFixed(2).replace(".",",")} em cada uma; a meta não é alcançável apenas com notas até 10.`:`Você precisa de aproximadamente ${required.toFixed(2).replace(".",",")} em cada avaliação restante (peso 1) para alcançar média ${target.toFixed(1).replace(".",",")}.`;
+    out.textContent=required<=0?"Você já atingiu a média desejada neste período.":required>10?`Com ${remaining} avaliação(ões) restante(s), seria necessário ${required.toFixed(2).replace(".",",")} em cada uma; a meta não é alcançável apenas com notas até 10.`:`Você precisa de aproximadamente ${required.toFixed(2).replace(".",",")} em cada avaliação restante (peso 1) para alcançar média ${target.toFixed(1).replace(".",",")} neste período.`;
   }
   async function initGrades() {
     fillSubjects("csGradeSubject");fillSubjects("csCalcSubject");
@@ -77,12 +85,12 @@
     if(!gradesEventsBound){gradesEventsBound=true;
     $("csGradeForm")?.addEventListener("submit",async e=>{
       e.preventDefault(); const grade=Number($("csGradeValue").value),weight=Number($("csGradeWeight").value);
-      if(!Number.isFinite(grade)||grade<0||grade>10||!Number.isFinite(weight)||weight<=0)return;
-      const rows=read(KEYS.grades);rows.push({id:crypto.randomUUID(),subject:$("csGradeSubject").value,term:$("csGradeTerm").value,title:$("csGradeTitle").value.trim(),grade,weight,createdAt:new Date().toISOString()});
+      if(!Number.isFinite(grade)||grade<0||grade>10||!Number.isFinite(weight)||weight<=0){notifyInline("Confira a nota (0 a 10) e informe um peso maior que zero.","error");return;}
+      const rows=read(KEYS.grades);rows.push({id:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():String(Date.now()),subject:$("csGradeSubject").value,term:$("csGradeTerm").value,title:$("csGradeTitle").value.trim(),grade,weight,createdAt:new Date().toISOString()});
       write(KEYS.grades,rows);renderGrades();e.target.reset();$("csGradeWeight").value=1;
       try{await saveCloud(KEYS.grades,rows);}catch(err){notifyInline("Nota salva neste dispositivo; a sincronização será retomada quando possível.");}
     });
-    ["csCalcSubject","csTarget","csRemaining"].forEach(id=>$(id)?.addEventListener("change",calcGrade));
+    ["csCalcSubject","csCalcTerm","csTarget","csRemaining"].forEach(id=>$(id)?.addEventListener("change",calcGrade));
     $("csGradeRows")?.addEventListener("click",async e=>{const id=e.target.dataset.gradeDelete;if(!id)return;const rows=read(KEYS.grades).filter(g=>g.id!==id);write(KEYS.grades,rows);renderGrades();try{await saveCloud(KEYS.grades,rows);}catch{}});
     }
   }
