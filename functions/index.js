@@ -50,7 +50,7 @@ Para dúvidas, escreva para ${SUPPORT_EMAIL}.`});
 exports.joinStudyGroup = onCall({ enforceAppCheck: false }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Entre na sua conta.");
   const code = String(request.data?.inviteCode || "").trim().toUpperCase();
-  if (!/^[A-Z0-9]{5}$/.test(code)) throw new HttpsError("invalid-argument", "Código inválido.");
+  if (!/^[A-Z0-9]{10}$/.test(code)) throw new HttpsError("invalid-argument", "Código inválido.");
   const found = await db.collection("studyGroups").where("inviteCode", "==", code).limit(1).get();
   if (found.empty) throw new HttpsError("not-found", "Grupo não encontrado.");
   const ref = found.docs[0].ref;

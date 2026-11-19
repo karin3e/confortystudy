@@ -1,42 +1,52 @@
 # ComfortStudy
 
-Organizador de estudos para tarefas, provas, matérias e rotina semanal.
+Plataforma de organização de estudos com interface responsiva e instalação como PWA.
 
 ## Funcionalidades
-- Login e cadastro por e-mail/senha e Google, com sincronização de dados por conta.
-- Tarefas com instruções, checklist, anexos PDF/imagem e repetição diária ou semanal.
-- Caderno por matéria, com anotações, marcação de conteúdo importante e revisão a partir do texto.
-- Calendário, cronômetro, avisos e acompanhamento de desempenho.
-- Painel "Seu Hoje" com três tarefas prioritárias e provas próximas; agenda semanal de aulas, tarefas, provas e sessões de estudo.
-- Sugestões de horários livres usando a grade de aulas e avisos de aula, prazo e revisão enquanto o app estiver aberto.
-- Diário de estudos, revisão espaçada de anotações importantes e flashcards, cálculo de nota necessária e relatório mensal/semanal.
-- Leitor de PDF com páginas favoritas e observações, além de temas, avatar e cartões personalizáveis no painel.
-- Perfil ajustável com nome, e-mail, escola, curso, biografia e foto, com opções para salvar ou cancelar alterações.
-- Layout adaptável para celulares, tablets e computadores, com rolagem interna nos formulários e modais.
-- Metas semanais, plano de estudo para provas e registro de notas.
-- Simulados com questões objetivas próprias, correção automática, histórico de resultados e conquistas de estudo.
-- Questões erradas em simulados viram flashcards com revisão espaçada.
-- Busca geral por tarefas, provas, matérias e anotações; plano rápido conforme o tempo disponível.
-- Lembretes configuráveis para tarefas, provas e revisões; avisos lidos saem da caixa principal e ficam no histórico.
-- Fotos e PDFs sincronizados entre dispositivos pelo Firebase Storage depois de ativar o bucket e publicar `storage.rules`.
-- Exportação e restauração de backup. As marcações e observações do leitor de PDF também sincronizam com a conta.
+- Cadastro, login por e-mail/senha, login Google e recuperação de senha.
+- Dashboard, matérias, calendário, tarefas, provas, cronômetro, avisos e desempenho.
+- Planejamento de estudos, metas, grade semanal, diário e revisão espaçada.
+- Flashcards, banco de questões, simulados e histórico.
+- Caderno digital por matéria, com editor formatado, favoritos, edição, duplicação, exclusão e anexos.
+- Boletim com médias ponderadas e simulador de nota necessária.
+- Grupos de estudo com convite por código e compartilhamento de links.
+- Perfil, preferências de aparência, backup local e central de suporte.
+- Área institucional protegida por permissões concedidas no servidor.
+- Interface adaptável a computadores, tablets e celulares.
 
-Consulte [PLANO_DE_EVOLUCAO.md](PLANO_DE_EVOLUCAO.md) para acompanhar as etapas de responsividade, estabilidade e melhorias do projeto.
+## Arquitetura
+- GitHub Pages: hospedagem estática do frontend.
+- Firebase Authentication: autenticação e identidade dos estudantes.
+- Cloud Firestore: dados de cada conta, sincronização e grupos.
+- Supabase Storage privado: arquivos anexados, acessados exclusivamente pela Edge Function `comfort-attachments`, que valida o token do Firebase.
+- Service Worker: cache do aplicativo e suporte offline da estrutura principal.
+
+O Firebase Storage não é usado para novos anexos nesta arquitetura. Não é necessário ativá-lo para a integração atual de anexos.
+
+## Custos e limites
+O app usa Firebase Authentication e Cloud Firestore. O uso depende das cotas e condições do plano Firebase da conta. Grupos usam Firestore diretamente e não precisam de Cloud Functions para criar ou entrar por código nesta versão. O envio automático de e-mails do suporte por Cloud Functions está desativado até que exista um plano compatível e configuração de SMTP. Notificações com o app completamente fechado também exigem serviço de envio push no servidor e não estão ativadas.
+
+O Supabase Storage/Edge Function possui limites próprios de armazenamento e transferência. Mantenha o bucket `comfortstudy-attachments` privado e nunca coloque a chave secreta do Supabase no frontend.
 
 ## Publicação
-Use CONFIGURAR_FIREBASE.md e COMO_INSTALAR.txt. As páginas carregam firebase-config-v2.js. Inclua extras.js, extras.css e os ícones na publicação.
+1. Consulte `CONFIGURAR_FIREBASE.md`.
+2. Consulte `SUPABASE-ANEXOS-SETUP.md` para anexos.
+3. Publique as regras de `firestore.rules` no projeto Firebase correto.
+4. Publique a pasta do frontend no GitHub Pages, mantendo a estrutura de arquivos.
+5. Faça testes de login, sincronização, grupos e anexos antes de divulgar atualizações.
 
-Os cadastros permanecem abertos para que outras pessoas também possam usar o app. Cada conta acessa seus dados usando o UID autenticado; as regras do Firestore e do Storage negam acesso aos dados de outras contas. Ao sair, o app confirma a sincronização e limpa o cache de dados daquele usuário neste navegador. O Premium está marcado como "Em breve"; os recursos atuais são gratuitos. Os avisos do navegador funcionam enquanto o app está aberto. Notificações com o app fechado exigem Web Push e um serviço de envio no servidor.
+## Segurança
+Nunca publique credenciais administrativas, senhas SMTP ou a chave secreta do Supabase. A chave publicável do Supabase pode aparecer no frontend; a proteção real é feita pela Edge Function, que valida o token Firebase e limita cada UID à própria pasta de anexos. Não abra as regras do Firestore para leitura e escrita públicas.
 
+## Limitações conhecidas
+- Backup disponível no perfil é exportação/restauração local em JSON; não substitui backup automático do Firestore.
+- Avisos locais funcionam com o app aberto. Push confiável com o app fechado ainda não está ativado.
+- A área institucional só libera acesso a usuários com permissões institucionais atribuídas por administrador.
+- Premium permanece como apresentação, sem cobrança ativa.
+- Recursos de IA foram retirados temporariamente e não exigem chave paga.
 
-## Créditos e Central de Suporte
-
-Veja `SUPORTE-SETUP.md` antes de publicar as novas regras e funções de e-mail. A página Sobre e a Central de Suporte estão integradas ao `index_2.html` e usam a paleta azul existente.
-
-
-## Modo sem cobrança de Cloud Functions (Firebase Spark)
-- O ingresso em grupos foi adaptado para usar somente Firestore: cada grupo usa um código de convite aleatório de 10 caracteres como ID do documento.
-- Para esta versão, publique apenas as regras do Firestore: `firebase deploy --only firestore:rules`.
-- **Não execute `firebase deploy --only functions`**: as funções de e-mail do suporte dependem de Cloud Functions e não fazem parte do fluxo gratuito.
-- As solicitações de suporte continuam sendo registradas e consultáveis no Firestore; o envio automático de e-mails e notificações por servidor fica desativado.
-- Firebase Authentication e Firestore continuam sendo usados. Os anexos continuam no Supabase Storage/Edge Function já configurado.
+## Documentação
+- `PLANO_DE_EVOLUCAO.md`: escopo e etapas de evolução.
+- `CONFIGURAR_FIREBASE.md`: autenticação e Firestore.
+- `SUPABASE-ANEXOS-SETUP.md`: armazenamento privado de anexos.
+- `SUPORTE-SETUP.md`: central de suporte e envio opcional de e-mail.

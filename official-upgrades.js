@@ -4,21 +4,30 @@
   const $ = (id) => document.getElementById(id);
   const subjects = ["Matemática","Português","História","Geografia","Física","Química","Biologia","Inglês"];
   const KEYS = { grades:"comfortOfficialGrades", notes:"comfortOfficialNotes" };
-  let gradesEventsBound=false, notesEventsBound=false, groupsEventsBound=false;
+  let gradesEventsBound=false, notesEventsBound=false, groupsEventsBound=false, editingNoteId=null;
   const read = (key, fallback=[]) => { try { const v=JSON.parse(localStorage.getItem(key)||"null"); return v ?? fallback; } catch { return fallback; } };
   const write = (key, value) => { localStorage.setItem(key, JSON.stringify(value)); };
   const escapeHTML = (s) => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  function sanitizeNoteHTML(html){
+    const doc=new DOMParser().parseFromString(String(html||""),"text/html");
+    const allowed=new Set(["P","BR","DIV","SPAN","STRONG","B","EM","I","U","UL","OL","LI","H1","H2","H3","BLOCKQUOTE","TABLE","TBODY","THEAD","TR","TD","TH","A"]);
+    doc.body.querySelectorAll("*").forEach(node=>{
+      if(!allowed.has(node.tagName)){node.replaceWith(...node.childNodes);return;}
+      [...node.attributes].forEach(attr=>{
+        if(node.tagName==="A"&&attr.name==="href"&&/^(https?:|mailto:)/i.test(attr.value))return;
+        node.removeAttribute(attr.name);
+      });
+      if(node.tagName==="A")node.setAttribute("rel","noopener noreferrer");
+    });
+    return doc.body.innerHTML;
+  }
   function notifyInline(message,type="info"){
-    let host=$("csInlineNotice");
-    if(!host){
-      host=document.createElement("div");host.id="csInlineNotice";host.className="cs-inline-notice";
-      host.setAttribute("role","status");host.setAttribute("aria-live","polite");
-      document.body.appendChild(host);
+    if(typeof window.comfortNotify==="function"){
+      window.comfortNotify(String(message||""),type==="error"?"error":type==="success"?"success":"info");
+      return;
     }
-    host.textContent=String(message||"");
-    host.dataset.state=type;host.hidden=false;
-    clearTimeout(host._hideTimer);
-    host._hideTimer=setTimeout(()=>{host.hidden=true;},5500);
+    const status=$("csNoteStatus");
+    if(status){status.textContent=String(message||"");status.hidden=!message;status.dataset.state=type;}
   }
   function setInlineStatus(id,message,type="info"){
     const el=$(id);if(!el)return;
@@ -104,40 +113,65 @@
     $("csInsertTable")?.addEventListener("click",()=>{ $("csNoteEditor").focus();document.execCommand("insertHTML",false,"<table><tbody><tr><td> </td><td> </td></tr><tr><td> </td><td> </td></tr></tbody></table><p></p>");});
     $("csSaveNote")?.addEventListener("click",async()=>{
       const title=$("csNoteTitle").value.trim(), editor=$("csNoteEditor");
-      const content=editor.innerHTML, plain=editor.innerText.trim();
+      const content=sanitizeNoteHTML(editor.innerHTML), plain=editor.innerText.trim();
       if(!title||!plain){setInlineStatus("csNoteStatus","Preencha o título e escreva sua anotação antes de salvar.","error");if(!title)$("csNoteTitle").focus();else editor.focus();return;}
       const button=$("csSaveNote");button.disabled=true;
       const selectedFiles=Array.from($("csNoteFiles").files||[]);
       const rows=read(KEYS.notes,[]);
-      const note={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),subject:$("csNoteSubject").value,title,content,favorite:$("csNoteFavorite").checked,attachments:[],updatedAt:new Date().toISOString()};
-      rows.push(note); write(KEYS.notes,rows); renderNotes();
-      $("csNoteTitle").value="";editor.innerHTML="";$("csNoteFiles").value="";$("csNoteFavorite").checked=false;
+      const previous=editingNoteId?rows.find(n=>String(n.id)===String(editingNoteId)):null;
+      const note={...(previous||{}),id:previous?.id||(crypto.randomUUID?crypto.randomUUID():String(Date.now())),subject:$("csNoteSubject").value,title,content,favorite:$("csNoteFavorite").checked,attachments:Array.isArray(previous?.attachments)?previous.attachments.slice():[],updatedAt:new Date().toISOString()};
+      if(previous){const index=rows.findIndex(n=>String(n.id)===String(previous.id));rows[index]=note;}else rows.push(note);
+      write(KEYS.notes,rows); renderNotes();
       let uploadErrors=[];
       try{
         for(const f of selectedFiles){
           try{note.attachments.push(await uploadAttachment(f,"notes"));}
           catch(err){uploadErrors.push(f.name+": "+(err.message||"falha no envio"));}
         }
-        if(uploadErrors.length===0 && note.attachments.length) {
-          const updated=read(KEYS.notes,[]).map(n=>n.id===note.id?note:n);write(KEYS.notes,updated);
-        }
-        try{await saveCloud(KEYS.notes,read(KEYS.notes,[]));}
+        const updated=read(KEYS.notes,[]).map(n=>String(n.id)===String(note.id)?note:n);write(KEYS.notes,updated);
+        try{await saveCloud(KEYS.notes,updated);}
         catch(err){console.warn("Anotação salva localmente; sincronização pendente.",err);}
+        editingNoteId=null;
+        $("csNoteTitle").value="";editor.innerHTML="";$("csNoteFiles").value="";$("csNoteFavorite").checked=false;
+        button.textContent="Salvar anotação";
         renderNotes();
         const message=uploadErrors.length
-          ?"Anotação salva neste dispositivo, mas alguns anexos não foram enviados: "+uploadErrors.join("; ")
-          :"Anotação salva com sucesso.";
+          ?"Anotação salva, mas alguns anexos não foram enviados: "+uploadErrors.join("; ")
+          :previous?"Anotação atualizada com sucesso.":"Anotação salva com sucesso.";
         setInlineStatus("csNoteStatus",message,uploadErrors.length?"error":"success");
       } finally {button.disabled=false;}
     });
     $("csNoteList")?.addEventListener("click",async e=>{
-      const button=e.target.closest("[data-note-delete]");if(!button)return;
-      const id=button.dataset.noteDelete;
-      const rows=read(KEYS.notes).filter(n=>String(n.id)!==String(id));
-      write(KEYS.notes,rows);renderNotes();
-      setInlineStatus("csNoteStatus","Anotação apagada deste dispositivo.","success");
-      try{await saveCloud(KEYS.notes,rows);}
-      catch(err){setInlineStatus("csNoteStatus","Anotação apagada deste dispositivo. A sincronização ficará pendente.","error");}
+      const button=e.target.closest("[data-note-delete],[data-note-edit],[data-note-favorite],[data-note-duplicate]");
+      if(!button)return;
+      const id=button.dataset.noteDelete||button.dataset.noteEdit||button.dataset.noteFavorite||button.dataset.noteDuplicate;
+      const rows=read(KEYS.notes,[]);
+      const target=rows.find(n=>String(n.id)===String(id));
+      if(!target)return;
+      if(button.hasAttribute("data-note-edit")){
+        editingNoteId=target.id;
+        $("csNoteSubject").value=target.subject||subjects[0];
+        $("csNoteTitle").value=target.title||"";
+        $("csNoteEditor").innerHTML=sanitizeNoteHTML(target.content||"");
+        $("csNoteFavorite").checked=Boolean(target.favorite);
+        $("csSaveNote").textContent="Atualizar anotação";
+        $("csNoteTitle").focus();
+        setInlineStatus("csNoteStatus","Editando anotação. Salve para registrar as alterações.","info");
+        return;
+      }
+      let next;
+      if(button.hasAttribute("data-note-delete")){
+        next=rows.filter(n=>String(n.id)!==String(id));
+        setInlineStatus("csNoteStatus","Anotação apagada.","success");
+      }else if(button.hasAttribute("data-note-favorite")){
+        next=rows.map(n=>String(n.id)===String(id)?{...n,favorite:!n.favorite,updatedAt:new Date().toISOString()}:n);
+      }else{
+        const copy={...target,id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),title:(target.title||"Anotação")+" (cópia)",attachments:Array.isArray(target.attachments)?target.attachments.slice():[],updatedAt:new Date().toISOString()};
+        next=[...rows,copy];
+      }
+      write(KEYS.notes,next);renderNotes();
+      try{await saveCloud(KEYS.notes,next);}
+      catch(err){setInlineStatus("Alteração salva neste aparelho. A sincronização será retomada quando possível.","warning");}
     });
     $("csDeleteAllNotes")?.addEventListener("click",async()=>{
       const button=$("csDeleteAllNotes");
@@ -156,7 +190,7 @@
   }
   function renderNotes(){
     const el=$("csNoteList");if(!el)return;const rows=read(KEYS.notes).slice().reverse();
-    el.innerHTML=rows.length?rows.map(n=>`<div class="official-row official-note-row"><div><strong>${escapeHTML(n.favorite?"★ ":"")}${escapeHTML(n.title)}</strong><small>${escapeHTML(n.subject)} · ${new Date(n.updatedAt).toLocaleDateString("pt-BR")} · ${n.attachments?.length||0} anexo(s)</small></div><button type="button" class="official-danger" data-note-delete="${escapeHTML(n.id)}" aria-label="Apagar anotação ${escapeHTML(n.title)}">Apagar</button></div>`).join(""):"<div class='official-empty'><strong>Nenhuma anotação salva</strong><span>Suas anotações aparecerão aqui. Você poderá apagá-las individualmente ou todas de uma vez.</span></div>";
+    el.innerHTML=rows.length?rows.map(n=>`<article class="official-row official-note-row"><div class="official-note-main"><strong>${escapeHTML(n.favorite?"★ ":"")}${escapeHTML(n.title)}</strong><small>${escapeHTML(n.subject)} · ${new Date(n.updatedAt).toLocaleDateString("pt-BR")} · ${n.attachments?.length||0} anexo(s)</small><p>${escapeHTML(String(n.content||"").replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,180))}</p></div><div class="official-note-actions-list"><button type="button" data-note-edit="${escapeHTML(n.id)}">Editar</button><button type="button" data-note-favorite="${escapeHTML(n.id)}">${n.favorite?"Desfavoritar":"Favoritar"}</button><button type="button" data-note-duplicate="${escapeHTML(n.id)}">Duplicar</button><button type="button" class="official-danger" data-note-delete="${escapeHTML(n.id)}">Apagar</button></div></article>`).join(""):"<div class='official-empty'><strong>Nenhuma anotação salva</strong><span>Suas anotações aparecerão aqui. Você poderá editar, favoritar, duplicar ou apagar cada uma.</span></div>";
     const bulk=$("csDeleteAllNotes");if(bulk)bulk.disabled=!rows.length;
   }
   async function initGroups(){

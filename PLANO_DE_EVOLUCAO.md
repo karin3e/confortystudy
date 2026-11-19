@@ -28,11 +28,11 @@ Este plano acompanha as oito etapas combinadas. Os recursos existentes foram pre
 
 ## Etapa 7 — Sincronização e modo offline
 
-**Código integrado; ativação e teste remoto pendentes.** Dados e referências de anexos são sincronizados por conta. Fotos e PDFs podem ser enviados ao Firebase Storage e acessados em outros aparelhos; é preciso ativar o bucket e publicar `storage.rules` no Firebase. O app shell continua disponível pelo service worker e as alterações compatíveis feitas offline entram na fila quando a rede volta. Marcações e observações do leitor de PDF permanecem locais e entram no backup.
+**Código integrado; ativação e teste remoto pendentes.** Dados e referências de anexos são sincronizados por conta. Fotos e PDFs novos são enviados ao bucket privado do Supabase pela Edge Function `comfort-attachments` e podem ser acessados em outros aparelhos após autenticação. A função e os secrets precisam permanecer configurados no Supabase. O app shell continua disponível pelo service worker e as alterações compatíveis feitas offline entram na fila quando a rede volta. Marcações e observações do leitor de PDF permanecem locais e entram no backup.
 
 ## Etapa 8 — Validação e publicação
 
-**Validação estática concluída; validação manual pendente.** A sintaxe dos scripts, 168 IDs, 14 formulários, referências locais, regras do Storage e diff foram conferidos. O fluxo autenticado do Firebase, as permissões reais do Storage e a aparência em aparelhos precisam ser validados com a conta e os dispositivos disponíveis. O envio ao GitHub fica a cargo da pessoa responsável pelo repositório.
+**Validação estática concluída; validação manual pendente.** A sintaxe dos scripts, 168 IDs, 14 formulários, referências locais, regras de acesso aos anexos e diff foram conferidos. O fluxo autenticado do Firebase, as permissões reais do Storage e a aparência em aparelhos precisam ser validados com a conta e os dispositivos disponíveis. O envio ao GitHub fica a cargo da pessoa responsável pelo repositório.
 
 ## Preservação
 

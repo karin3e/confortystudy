@@ -91,6 +91,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.setTimeout(() => toast.remove(), options.undo ? 9000 : 3600);
     }
     window.comfortToast = comfortToast;
+    function comfortNotify(message, type = "error") {
+        if (typeof window.comfortToast === "function") {
+            window.comfortToast(String(message || "Não foi possível concluir a ação."), { type });
+        }
+    }
+    window.comfortNotify = comfortNotify;
     const UNDO_KEY = "comfortUndoHistory";
     function pushUndo(label, restore) {
         try {
@@ -738,7 +744,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         if (selectedPage) {
-
+            document.body.dataset.activePage = page;
             selectedPage.classList.add(
                 "active-page"
             );
@@ -1781,7 +1787,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             !date
         ) {
 
-            alert(
+            comfortNotify(
                 "Preencha todos os campos."
             );
 
@@ -1824,7 +1830,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         checkDueDateNotifications();
 
 
-        alert(
+        comfortNotify(
             "Prova adicionada com sucesso! "
         );
     }
@@ -2302,13 +2308,13 @@ document.addEventListener("DOMContentLoaded", async () => {
             const selectedFiles = Array.from(document.getElementById("editSubjectFiles").files || []);
             if (comfortHasInappropriateLanguage([title, text].join(" "))) { comfortToast("Revise o texto: encontramos palavras inadequadas.", { type: "error" }); return; }
             try { await validateAttachmentFiles(selectedFiles); }
-            catch (error) { alert(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
+            catch (error) { comfortNotify(error.message || "Não foi possível reconhecer um dos arquivos."); return; }
             const currentFiles = Array.isArray(item.files) ? item.files : [];
             const currentBytes = currentFiles.reduce((sum, file) => sum + (Number(file.size) || 0), 0);
             const newBytes = selectedFiles.reduce((sum, file) => sum + file.size, 0);
             const cloudStorageAvailable = Boolean(window.comfortAttachmentStorageReady && window.comfortAttachmentStorageReady());
-            if (selectedFiles.some(file => file.size > 10 * 1024 * 1024) || currentBytes + newBytes > 20 * 1024 * 1024) { alert("Cada arquivo pode ter até 10 MB e este conteúdo pode somar até 20 MB."); return; }
-            if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { alert("Para anexos acima de 900 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet."); return; }
+            if (selectedFiles.some(file => file.size > 10 * 1024 * 1024) || currentBytes + newBytes > 20 * 1024 * 1024) { comfortNotify("Cada arquivo pode ter até 10 MB e este conteúdo pode somar até 20 MB."); return; }
+            if (!cloudStorageAvailable && currentBytes + newBytes > 900 * 1024) { comfortNotify("Para anexos acima de 900 KB, entre na sua conta e configure o armazenamento de anexos com conexão à internet."); return; }
             Promise.all(selectedFiles.map(file => window.comfortPrepareAttachmentFile
                 ? window.comfortPrepareAttachmentFile(file, "materias-" + subjectName + "-" + contentId)
                 : new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); }))).then(newFiles => {
@@ -2321,9 +2327,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                     important: document.getElementById("editSubjectImportant").checked,
                     files: currentFiles.concat(newFiles)
                 });
-                if (newFiles.some(file => file.storagePending)) alert("Conteúdo atualizado neste aparelho. O armazenamento de anexos não aceitou um arquivo; confira a configuração do Supabase.");
+                if (newFiles.some(file => file.storagePending)) comfortNotify("Conteúdo atualizado neste aparelho. O armazenamento de anexos não aceitou um arquivo; confira a configuração do Supabase.");
                 return updated;
-            }).catch(error => alert(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
+            }).catch(error => comfortNotify(error && error.message ? error.message : "Não foi possível ler um dos arquivos."));
         });
     };
 
@@ -2331,7 +2337,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const item = getContentsForSubject(subjectName).find(c => Number(c.id) === Number(contentId));
         if (!item) return;
         const text = String(item.text || "").trim();
-        if (!text) { alert("Adicione anotações antes de gerar uma revisão."); return; }
+        if (!text) { comfortNotify("Adicione anotações antes de gerar uma revisão."); return; }
         const sentences = text.split(/(?<=[.!?])\s+|\n+/).map(s => s.trim()).filter(Boolean);
         const questions = sentences.slice(0, 8).map((sentence, i) => `<div style="padding:10px 0;border-bottom:1px solid #e5e7eb"><strong>Pergunta ${i+1}:</strong> Explique com suas palavras: “${escapeHTML(sentence)}”<details style="margin-top:6px"><summary>Ver resposta-base</summary><p>${escapeHTML(sentence)}</p></details></div>`).join("");
         openModal("Revisão: " + (item.title || subjectName), `<p>Esta revisão foi criada a partir das anotações salvas. Confira as respostas com o material da aula.</p><h3>Resumo</h3><p style="white-space:pre-wrap">${escapeHTML(text)}</p><h3 style="margin-top:16px">Perguntas para revisar</h3>${questions || "Não há texto suficiente."}<button type="button" class="btn-primary" onclick="window.print()">Imprimir / salvar em PDF</button>`);
@@ -3098,7 +3104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         pauseTimer();
 
 
-                        alert(
+                        comfortNotify(
                             "Tempo de estudo concluído! 🎉"
                         );
                     }
@@ -4104,7 +4110,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                                 !message
                             ) {
 
-                                alert(
+                                comfortNotify(
                                     "Preencha todos os campos."
                                 );
 
@@ -4195,7 +4201,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function requestNotificationPermission() {
         if (!notificationSupported()) {
-            alert(
+            comfortNotify(
                 "Seu navegador não oferece suporte a notificações."
             );
             return false;
@@ -4212,7 +4218,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             Notification.permission ===
             "denied"
         ) {
-            alert(
+            comfortNotify(
                 "As notificações estão bloqueadas no navegador. Ative-as nas configurações do navegador para receber lembretes."
             );
             return false;
@@ -4226,7 +4232,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 permission ===
                 "granted"
             ) {
-                alert(
+                comfortNotify(
                     "Notificações ativadas! Você receberá lembretes de tarefas e provas."
                 );
 
@@ -4645,7 +4651,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (typeof window.comfortCloudFlush === "function") {
                         const synced = await window.comfortCloudFlush();
                         if (!synced) {
-                            alert("Não consegui confirmar a sincronização. Verifique a conexão e tente sair novamente para evitar perder alterações recentes.");
+                            comfortNotify("Não consegui confirmar a sincronização. Verifique a conexão e tente sair novamente para evitar perder alterações recentes.");
                             btn.disabled = false;
                             return;
                         }
@@ -4657,7 +4663,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     location.replace("index.html");
                 } catch (error) {
                     console.error("ComfortStudy: erro ao sair", error);
-                    alert("Não foi possível encerrar e limpar esta sessão com segurança. Verifique a conexão e tente novamente.");
+                    comfortNotify("Não foi possível encerrar e limpar esta sessão com segurança. Verifique a conexão e tente novamente.");
                     if (window.comfortAuth && !window.comfortAuth.currentUser) location.replace("index.html");
                     else btn.disabled = false;
                 }

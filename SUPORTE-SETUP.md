@@ -6,7 +6,7 @@ A interface e a gravação de solicitações foram adicionadas a `index_2.html`,
 
 Revise `firestore.rules` e publique as regras no Firebase Console (Firestore Database → Rules). Elas permitem que cada usuário autenticado crie e leia apenas os próprios pedidos e impedem alterações pelo cliente depois do envio.
 
-## 2. Configurar o envio automático de e-mail
+## 2. Configurar o envio automático de e-mail (opcional)\n\nEsta etapa exige um plano Firebase que permita Cloud Functions e pode gerar cobrança. Se você estiver no Spark ou não quiser habilitar faturamento, não execute os comandos desta seção. O formulário e o histórico de solicitações continuam funcionando no Firestore sem o e-mail automático.
 
 O site estático no GitHub Pages não pode guardar credenciais SMTP nem enviar e-mails diretamente com segurança. O backend em `functions/` envia aviso para `karinevitoriasousa6@gmail.com`, confirmação ao estudante e atualizações quando o status/mensagem do pedido mudar.
 

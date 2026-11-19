@@ -1,4 +1,12 @@
 (function () {
+  // Fallback de feedback não bloqueante enquanto a sessão Firebase inicializa.
+  window.comfortNotify = window.comfortNotify || function(message,type="error"){
+    let host=document.getElementById("comfortToastRegion");
+    if(!host){host=document.createElement("div");host.id="comfortToastRegion";host.className="comfort-toast-region";host.setAttribute("aria-live","polite");document.body.appendChild(host);}
+    const toast=document.createElement("div");toast.className="comfort-toast "+type;
+    const text=document.createElement("span");text.textContent=String(message||"");
+    toast.appendChild(text);host.appendChild(toast);window.setTimeout(()=>toast.remove(),4200);
+  };
   const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
   const SAFE_EXPORT_EXCLUDE = new Set(["comfortAuthUser", "comfortSession", "comfortLegacyEmail", "comfortLegacyUid", "comfortSyncPendingKeys"]);
   let currentReviewId = null;
@@ -539,7 +547,7 @@
   function savePdfNote() {
     const file = activePdf(); if (!file) return;
     const page = Math.max(1, Number(document.getElementById("pdfPageNumber").value) || 1); const text = document.getElementById("pdfPageNote").value.trim();
-    if (!text) { window.alert("Escreva uma observação antes de salvar."); return; }
+    if (!text) { window.comfortNotify("Escreva uma observação antes de salvar."); return; }
     const all = annotations(); const data = all[String(file.id)] || { bookmarks: [], notes: [] };
     if (!Array.isArray(data.bookmarks)) data.bookmarks = []; if (!Array.isArray(data.notes)) data.notes = [];
     const existing = data.notes.find(item => Number(item.page) === page);
@@ -549,10 +557,10 @@
   async function addPdf(file) {
     if (!file) return;
     const detectedType = window.comfortInspectAttachmentType ? await window.comfortInspectAttachmentType(file) : file.type;
-    if (detectedType !== "application/pdf") { window.alert("Não reconheci esse arquivo como PDF. Escolha um PDF válido."); return; }
+    if (detectedType !== "application/pdf") { window.comfortNotify("Não reconheci esse arquivo como PDF. Escolha um PDF válido."); return; }
     const cloudStorageAvailable = Boolean(window.comfortStorage && window.comfortAuth && window.comfortAuth.currentUser && navigator.onLine !== false);
-    if (file.size > 10 * 1024 * 1024) { window.alert("Cada PDF pode ter até 10 MB."); return; }
-    if (!cloudStorageAvailable && file.size > 700 * 1024) { window.alert("Para PDFs acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
+    if (file.size > 10 * 1024 * 1024) { window.comfortNotify("Cada PDF pode ter até 10 MB."); return; }
+    if (!cloudStorageAvailable && file.size > 700 * 1024) { window.comfortNotify("Para PDFs acima de 700 KB, entre na sua conta e ative o Firebase Storage com conexão à internet."); return; }
     try {
       const data = window.comfortPrepareAttachmentFile ? await window.comfortPrepareAttachmentFile(file, "leitor-pdf") : await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve({ name: file.name, type: "application/pdf", size: file.size, dataUrl: reader.result }); reader.onerror = reject; reader.readAsDataURL(file); });
       if (data.dataUrl && !safePdfDataUrl(data.dataUrl)) throw new Error("O arquivo não parece ser um PDF válido.");
@@ -560,9 +568,9 @@
       files.push(Object.assign({ id: Date.now(), type: "application/pdf" }, data));
       write("comfortStudyReaderFiles", files);
       renderPdf();
-      if (data.storagePending) window.alert("PDF salvo neste aparelho. O Firebase Storage não aceitou o arquivo; confira a configuração e as regras para sincronizá-lo.");
+      if (data.storagePending) window.comfortNotify("PDF salvo neste aparelho. O Firebase Storage não aceitou o arquivo; confira a configuração e as regras para sincronizá-lo.");
     } catch (error) {
-      window.alert(error && error.message ? error.message : "Não foi possível salvar este PDF.");
+      window.comfortNotify(error && error.message ? error.message : "Não foi possível salvar este PDF.");
     }
   }
 
@@ -652,7 +660,7 @@
       write("comfortReminderSettings", settings);
       const toggle = document.getElementById("reminderBrowserEnabled");
       if (toggle) toggle.checked = false;
-      window.alert("Os lembretes internos continuam ativos, mas este navegador não oferece avisos do sistema.");
+      window.comfortNotify("Os lembretes internos continuam ativos, mas este navegador não oferece avisos do sistema.");
       return;
     }
     Notification.requestPermission().then(permission => {
@@ -666,7 +674,7 @@
       if (status) status.textContent = settings.browserEnabled ? "Avisos do navegador ativados." : "Permissão negada; os avisos internos continuam ativos.";
       checkStudyNotifications();
       if (!notificationTimer) notificationTimer = window.setInterval(checkStudyNotifications, 60000);
-    }).catch(() => window.alert("Não foi possível ativar os avisos do navegador. Os avisos internos continuam ativos."));
+    }).catch(() => window.comfortNotify("Não foi possível ativar os avisos do navegador. Os avisos internos continuam ativos."));
   }
 
   function daysBetween(from, to) {
@@ -938,11 +946,11 @@
           if (key.indexOf("comfort") === 0 && !SAFE_EXPORT_EXCLUDE.has(key) && typeof backup.data[key] === "string") localStorage.setItem(key, backup.data[key]);
         });
         if (window.comfortCloudFlush) await window.comfortCloudFlush();
-        window.alert("Backup restaurado. O app será atualizado.");
+        window.comfortNotify("Backup restaurado. O app será atualizado.");
         window.location.reload();
-      } catch (_) { window.alert("Não foi possível ler esse backup do ComfortStudy."); }
+      } catch (_) { window.comfortNotify("Não foi possível ler esse backup do ComfortStudy."); }
     };
-    reader.onerror = function () { window.alert("Não foi possível abrir o arquivo."); };
+    reader.onerror = function () { window.comfortNotify("Não foi possível abrir o arquivo."); };
     reader.readAsText(file);
   }
 
@@ -951,7 +959,7 @@
     const examId = Number(document.getElementById("studyPlanExam").value);
     const requestedDays = Math.max(1, Math.min(30, Number(document.getElementById("studyPlanDays").value) || 7));
     const exam = list("comfortExams").find(function (item) { return Number(item.id) === examId; });
-    if (!exam || exam.date <= today()) { window.alert("Escolha uma prova que aconteça em outro dia."); return; }
+    if (!exam || exam.date <= today()) { window.comfortNotify("Escolha uma prova que aconteça em outro dia."); return; }
     const daysUntilExam = Math.ceil((new Date(exam.date + "T12:00:00") - new Date(today() + "T12:00:00")) / 86400000);
     const days = Math.max(1, Math.min(requestedDays, daysUntilExam));
     const plans = list("comfortStudyPlans").filter(function (item) { return Number(item.examId) !== examId; });
@@ -985,7 +993,7 @@
       const data = new FormData(form);
       const start = String(data.get("start") || "");
       const end = String(data.get("end") || "");
-      if (start >= end) { window.alert("O horário de término precisa ser depois do início."); return; }
+      if (start >= end) { window.comfortNotify("O horário de término precisa ser depois do início."); return; }
       const items = list("comfortClassSchedule");
       items.push({ id: Date.now(), day: Number(data.get("day")), subject: String(data.get("subject")), label: String(data.get("label") || "").trim(), start: start, end: end });
       write("comfortClassSchedule", items);
@@ -1020,7 +1028,7 @@
       const data = new FormData(form);
       const score = Number(data.get("score"));
       const maximum = Number(data.get("maximum"));
-      if (maximum <= 0 || score < 0) { window.alert("Informe uma nota válida."); return; }
+      if (maximum <= 0 || score < 0) { window.comfortNotify("Informe uma nota válida."); return; }
       const grades = list("comfortGrades");
       grades.push({ id: Date.now(), title: String(data.get("title") || "").trim(), subject: String(data.get("subject")), score: score, maximum: maximum, date: String(data.get("date")) });
       write("comfortGrades", grades);

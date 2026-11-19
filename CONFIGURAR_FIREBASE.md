@@ -24,14 +24,9 @@ Se o e-mail Google já tiver uma conta de e-mail/senha, o app pede a senha exist
 3. Regras previstas: cada conta só pode ler/gravar documentos dentro de `/users/{seu-uid}/data/`. O app associa as informações ao UID do Firebase, não ao nome de exibição.
 4. Nunca publique regras abertas como `allow read, write: if true`.
 
-## 4. Ativar sincronização de fotos e PDFs
-1. Firebase Console → Storage → Get started/Primeiros passos e crie o bucket no mesmo projeto usado pelo app.
-2. Confira se `storageBucket` em `firebase-config-v2.js` corresponde ao bucket exibido no Firebase.
-3. Publique `storage.rules` na aba Storage → Rules. As regras permitem que cada conta acesse somente seus próprios anexos em `users/{uid}/attachments/` e limitam cada arquivo a 10 MB.
-4. O app envia anexos novos ao Storage quando a conta está conectada e migra anexos locais pequenos ao sincronizar. Em aparelhos diferentes, a conta precisa ser a mesma. O modo local e os backups continuam disponíveis.
-5. Configure alertas de orçamento no Firebase e confira os custos do Storage antes de compartilhar o app amplamente.
+## 4. Anexos (Supabase)
 
-Ao sair do app, as alterações pendentes precisam ser sincronizadas antes de a sessão ser encerrada; em seguida, o cache local da conta é removido deste navegador. Se a sincronização falhar, o app mantém a sessão e os dados locais para evitar perda. As regras do Firebase são a proteção que impede uma conta de ler ou alterar dados de outra; nunca publique regras abertas.
+Os novos anexos usam Supabase Storage privado, não Firebase Storage. Siga `SUPABASE-ANEXOS-SETUP.md`. Não é necessário ativar Firebase Storage para novos anexos. Mantenha arquivos antigos intactos até confirmar que foram migrados e abrem corretamente.
 
 ## 5. Publicar no GitHub Pages
 Inclua todos os arquivos da pasta do projeto, inclusive firebase-config-v2.js, firebase-init.js, auth.js, cloud-sync.js, extras.js, extras.css, service-worker.js, firestore.rules, storage.rules e os ícones. Em Settings → Pages, selecione a branch e a pasta correta. Acesse sempre por HTTPS.
