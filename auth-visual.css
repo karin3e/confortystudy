@@ -1,0 +1,56 @@
+
+/* Identidade visual compartilhada das telas de acesso */
+body{
+  background:
+    radial-gradient(ellipse at 12% 8%,rgba(70,129,255,.32),transparent 35%),
+    radial-gradient(ellipse at 92% 88%,rgba(123,88,232,.23),transparent 34%),
+    linear-gradient(145deg,#091225 0%,#101b34 52%,#11152d 100%)!important;
+  position:relative;isolation:isolate;
+}
+body:before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.22;
+  background-image:linear-gradient(rgba(164,190,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(164,190,255,.08) 1px,transparent 1px);
+  background-size:42px 42px;mask-image:linear-gradient(to bottom,black,transparent 85%);
+}
+.brand-icon,.brand .icon,.icon{
+  background:linear-gradient(135deg,#4b91ff,#725ce8)!important;
+  box-shadow:0 12px 30px rgba(65,111,232,.34),inset 0 1px rgba(255,255,255,.28)!important;
+  border:1px solid rgba(255,255,255,.18);
+}
+.brand-header h1,.brand h1{letter-spacing:-.8px}
+.login-card,.card{
+  background:linear-gradient(155deg,rgba(21,34,60,.94),rgba(13,23,43,.94))!important;
+  border:1px solid rgba(170,194,240,.17)!important;
+  border-radius:24px!important;
+  box-shadow:0 28px 75px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.055)!important;
+  backdrop-filter:blur(18px);
+}
+.card-title,.card h2{letter-spacing:-.35px}
+.input-wrapper input,.input input,input[type=email],input[type=password],input[type=text]{
+  border:1px solid rgba(155,180,225,.2)!important;
+  background:rgba(7,16,33,.58)!important;
+  border-radius:12px!important;
+  min-height:47px;
+  transition:border-color .2s,box-shadow .2s,background .2s;
+}
+.input-wrapper input:focus,.input input:focus,input:focus{
+  border-color:#6599ff!important;box-shadow:0 0 0 3px rgba(76,133,255,.16)!important;
+}
+.btn-primary,.card button[type=submit],form button[type=submit]{
+  background:linear-gradient(105deg,#347cf5,#705ce8)!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  border-radius:12px!important;min-height:48px;
+  box-shadow:0 10px 24px rgba(57,110,230,.23);
+  transition:transform .18s,filter .18s,box-shadow .18s;
+}
+.btn-primary:hover,.card button[type=submit]:hover,form button[type=submit]:hover{
+  filter:brightness(1.08);transform:translateY(-1px);box-shadow:0 14px 28px rgba(57,110,230,.3)
+}
+.forgot-pass,.signup-text a,.back a{color:#8bb5ff!important}
+.google-link-panel{background:rgba(8,17,34,.55)!important;border-color:rgba(155,180,225,.2)!important}
+.google-link-cancel{border-radius:11px!important}
+@media(max-width:520px){
+ body{padding:16px!important}
+ .login-card,.card{padding:25px 21px!important;border-radius:20px!important}
+ .brand-header{margin-bottom:21px}
+}

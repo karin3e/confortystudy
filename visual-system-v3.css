@@ -1,0 +1,76 @@
+
+/* COMFORTSTUDY — VISUAL SYSTEM 2026.11
+   Camada exclusivamente visual. Não altera IDs, conteúdo, navegação ou scripts. */
+:root{
+  --cs-v3-blue:#3978f6; --cs-v3-violet:#7559e8;
+  --cs-v3-radius:18px;
+}
+html{scroll-behavior:smooth}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.sidebar{
+  background:
+    radial-gradient(ellipse at 15% 0%,rgba(64,125,255,.22),transparent 38%),
+    radial-gradient(ellipse at 100% 100%,rgba(117,89,232,.12),transparent 36%),
+    linear-gradient(180deg,#101a32 0%,#0a1122 100%)!important;
+  border-right:1px solid rgba(255,255,255,.075);
+  box-shadow:12px 0 40px rgba(13,27,55,.08);
+}
+.logo{color:#f3f6ff!important;letter-spacing:-.55px}
+.logo i{color:#72a4ff;filter:drop-shadow(0 4px 12px rgba(57,120,246,.38))}
+.menu a,.sidebar-bottom>a{border:1px solid transparent;transition:background .2s ease,border-color .2s ease,transform .2s ease}
+.menu a:hover,.sidebar-bottom>a:hover{background:rgba(111,157,255,.12)!important;border-color:rgba(143,177,255,.12);transform:translateX(2px)}
+.menu a.active{background:linear-gradient(105deg,rgba(57,120,246,.27),rgba(117,89,232,.16))!important;border:1px solid rgba(125,164,255,.23);color:#fff!important;box-shadow:inset 3px 0 #76a5ff,0 8px 22px rgba(0,0,0,.12)}
+.menu a.active i{color:#91b8ff}
+.nav-group-label{color:#8192b2!important;letter-spacing:1.45px!important;font-size:9px!important}
+.content{background:
+  radial-gradient(ellipse at 86% 0%,rgba(111,132,255,.055),transparent 32%),
+  #f5f7fc}
+.topbar{border-bottom:1px solid rgba(220,228,241,.85)!important}
+.page-section{animation:csFadeIn .32s ease both}
+@keyframes csFadeIn{from{opacity:.72;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.page-header{border-bottom-color:#e4eaf5!important}
+.page-header h2{color:#172744}
+.feature-card,.official-card,.performance-section,.calendar-card,.timer-card,
+.tasks-section,.info-card,.subject-card,.today-card,.dashboard-card,
+#page-perfil .profile-settings-section{
+  transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;
+}
+.feature-card:hover,.official-card:hover,.performance-section:hover,
+.calendar-card:hover,.timer-card:hover,.tasks-section:hover,.info-card:hover,
+.subject-card:hover,.today-card:hover,.dashboard-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 16px 36px rgba(36,62,112,.09)!important;
+  border-color:#d5e1f5!important;
+}
+button,.btn-primary,.official-primary{transition:transform .18s ease,filter .18s ease,box-shadow .18s ease}
+button:hover,.btn-primary:hover,.official-primary:hover{filter:saturate(1.08);box-shadow:0 9px 22px rgba(57,120,246,.2)}
+button:active,.btn-primary:active,.official-primary:active{transform:translateY(1px)}
+input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea{
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(57,120,246,.13)!important}
+:root[data-mode="dark"] .content{background:
+  radial-gradient(ellipse at 85% 0%,rgba(89,111,218,.10),transparent 34%),#111a2a}
+:root[data-mode="dark"] .topbar{border-bottom-color:#2c3a50!important}
+:root[data-mode="dark"] .page-header{border-bottom-color:#303d53!important}
+:root[data-mode="dark"] .page-header h2{color:#edf3ff}
+:root[data-mode="dark"] .feature-card:hover,:root[data-mode="dark"] .official-card:hover,
+:root[data-mode="dark"] .performance-section:hover,:root[data-mode="dark"] .calendar-card:hover,
+:root[data-mode="dark"] .timer-card:hover,:root[data-mode="dark"] .tasks-section:hover,
+:root[data-mode="dark"] .info-card:hover,:root[data-mode="dark"] .subject-card:hover,
+:root[data-mode="dark"] .today-card:hover,:root[data-mode="dark"] .dashboard-card:hover{
+  border-color:#52627e!important;box-shadow:0 16px 34px rgba(0,0,0,.22)!important;
+}
+@media(max-width:800px){
+ .content{background:#f5f7fc}
+ .sidebar{box-shadow:0 10px 30px rgba(13,27,55,.12)}
+}
+@media(max-width:600px){
+ .page-section{animation:none}
+ .feature-card:hover,.official-card:hover,.performance-section:hover,
+ .calendar-card:hover,.timer-card:hover,.tasks-section:hover,.info-card:hover,
+ .subject-card:hover,.today-card:hover,.dashboard-card:hover{transform:none}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
