@@ -1,0 +1,84 @@
+/* ComfortStudy — correções específicas para celulares.
+   Última camada de estilo para neutralizar regras mobile conflitantes. */
+@media (max-width: 800px) {
+  html, body { max-width: 100%; overflow-x: hidden; }
+  body { padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important; }
+  .sidebar {
+    position: fixed !important; inset: auto 0 0 0 !important;
+    width: 100vw !important; max-width: 100vw !important;
+    height: auto !important; min-height: 0 !important; max-height: none !important;
+    box-sizing: border-box !important;
+    padding: 6px 6px calc(7px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important; z-index: 1000 !important;
+  }
+  .sidebar > div:first-child { width: 100% !important; }
+  .sidebar .logo, .sidebar .sidebar-bottom, .sidebar .user-profile { display: none !important; }
+  .sidebar .menu {
+    display: grid !important; grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch !important; width: 100% !important; max-width: 100% !important;
+    gap: 3px !important; margin: 0 !important; padding: 0 !important; overflow: visible !important;
+  }
+  .sidebar .menu > .nav-group-label, .sidebar .menu > a { display: none !important; }
+  .sidebar .menu > a[data-page="dashboard"],
+  .sidebar .menu > a[data-page="materias"],
+  .sidebar .menu > a[data-page="tarefas"],
+  .sidebar .menu > a[data-page="provas"],
+  .sidebar .menu > .mobile-more-button { display: flex !important; }
+  .sidebar .menu > a, .sidebar .menu > .mobile-more-button {
+    min-width: 0 !important; width: 100% !important; min-height: 54px !important;
+    margin: 0 !important; padding: 6px 2px !important; box-sizing: border-box !important;
+    flex-direction: column !important; align-items: center !important; justify-content: center !important;
+    gap: 4px !important; border-radius: 11px !important; white-space: normal !important;
+    text-align: center !important; font-size: 10px !important; line-height: 1.1 !important;
+  }
+  .sidebar .menu > a i, .sidebar .menu > .mobile-more-button i {
+    display: block !important; font-size: 21px !important; line-height: 1 !important;
+  }
+  .sidebar .menu > a span, .sidebar .menu > .mobile-more-button span {
+    display: block !important; max-width: 100% !important; overflow: hidden !important;
+    text-overflow: ellipsis !important; font-size: 9px !important; line-height: 1.1 !important;
+  }
+  .content {
+    width: 100% !important; min-width: 0 !important; margin: 0 !important;
+    padding: max(14px, env(safe-area-inset-top)) 14px calc(92px + env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+  }
+  .topbar {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important; gap: 12px !important; width: 100% !important; min-width: 0 !important;
+  }
+  .topbar > div:first-child { min-width: 0 !important; }
+  .topbar h1 {
+    max-width: 100% !important; font-size: clamp(21px, 5.5vw, 27px) !important;
+    line-height: 1.2 !important; overflow-wrap: anywhere !important;
+  }
+  .topbar .top-actions {
+    grid-column: 2 !important; grid-row: 1 !important; display: flex !important;
+    flex-direction: row !important; flex-wrap: nowrap !important; align-items: center !important;
+    gap: 7px !important; min-width: 0 !important;
+  }
+  .topbar .global-search {
+    grid-column: 1 / -1 !important; grid-row: 2 !important; display: flex !important;
+    width: 100% !important; max-width: none !important; min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .topbar .global-search input { width: 100% !important; min-width: 0 !important; font-size: 16px !important; }
+  .dashboard-welcome-panel, .page-section, .card, .feature-card, .tasks-section, .info-card {
+    min-width: 0 !important; max-width: 100% !important;
+  }
+  .dashboard-welcome-panel { padding: 24px 20px !important; }
+  .dashboard-welcome-copy h2 { font-size: clamp(24px, 6vw, 30px) !important; line-height: 1.15 !important; }
+  .dashboard-welcome-copy p { font-size: 15px !important; line-height: 1.55 !important; }
+  .dashboard-quick-actions {
+    display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; width: 100% !important;
+  }
+  .dashboard-quick-actions button { min-width: 0 !important; white-space: normal !important; }
+  .mobile-more-backdrop:not([hidden]) { display: block !important; }
+  .mobile-more-menu:not([hidden]) { display: flex !important; }
+}
+@media (max-width: 390px) {
+  .content { padding-left: 11px !important; padding-right: 11px !important; }
+  .topbar .top-actions button { padding-left: 9px !important; padding-right: 9px !important; }
+  .dashboard-welcome-panel { padding: 21px 16px !important; }
+  .dashboard-quick-actions { grid-template-columns: 1fr !important; }
+}
